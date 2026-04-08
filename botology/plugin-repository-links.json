@@ -386,8 +386,8 @@
                                         ],
                         "notes":  "Ensure you are only using one rotation plugin at the same time.",
                         "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
+                        "repoUrl":  "https://github.com/StackBLU/UltimateCombo",
+                        "repoJsonUrl":  "https://raw.githubusercontent.com/StackBLU/UltimateCombo/main/pluginmaster.json",
                         "ruleType":  "rotation_conflict"
                     },
                     {
