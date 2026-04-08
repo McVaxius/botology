@@ -385,9 +385,9 @@
                                             "UltimateCombo"
                                         ],
                         "notes":  "Ensure you are only using one rotation plugin at the same time.",
-                        "description":  "placeholder description",
+                        "description":  "Ultimate Combo is based off of several combo plugins, but has completely new logic, features, and many quality of life improvements.",
                         "repoUrl":  "https://github.com/StackBLU/UltimateCombo",
-                        "repoJsonUrl":  "https://raw.githubusercontent.com/StackBLU/UltimateCombo/main/pluginmaster.json",
+                        "repoJsonUrl":  "https://raw.githubusercontent.com/StackBLU/UltimateCombo/main/pluginmaster.json-",
                         "ruleType":  "rotation_conflict"
                     },
                     {
@@ -494,19 +494,6 @@
                         "matchTokens":  [
                                             "XAHUD",
                                             "XA HUD"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "https://aethertek.io/x.json"
-                    },
-                    {
-                        "id":  "xa_debug",
-                        "category":  "Utility Bots",
-                        "displayName":  "XA Debug",
-                        "matchTokens":  [
-                                            "XADebug",
-                                            "XA Debug"
                                         ],
                         "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
                         "description":  "placeholder description",
