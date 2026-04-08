@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using botology.Models;
 
 namespace botology.Services;
@@ -11,25 +13,44 @@ public static class RepositoryLinkResolver
     public static string? ResolveRepoUrl(PluginAssessmentRow row)
         => FirstNonEmpty(row.Entry.RepoUrl, row.RuntimeState?.RepoUrl);
 
+    public static IReadOnlyList<string> ResolveRepoJsonUrls(PluginAssessmentRow row)
+    {
+        if (TryResolveConcreteRepoJsonUrls(row, out var repoJsonUrls))
+            return repoJsonUrls;
+
+        return [BuildPlaceholderRepoJsonUrl(row)];
+    }
+
     public static string ResolveRepoJsonUrl(PluginAssessmentRow row)
     {
-        if (TryResolveConcreteRepoJsonUrl(row, out var concreteRepoJsonUrl))
-            return concreteRepoJsonUrl;
-
-        var repoName = SanitizeRepoName(row.RuntimeState?.InternalName ?? row.Entry.Id);
-        return $"https://raw.githubusercontent.com/{PlaceholderOwner}/{repoName}/refs/heads/{DefaultBranch}/repo.json";
+        var repoJsonUrls = ResolveRepoJsonUrls(row);
+        return repoJsonUrls.FirstOrDefault() ?? BuildPlaceholderRepoJsonUrl(row);
     }
 
     public static bool HasConcreteRepoJsonUrl(PluginAssessmentRow row)
-        => TryResolveConcreteRepoJsonUrl(row, out _);
+        => TryResolveConcreteRepoJsonUrls(row, out _);
 
-    private static bool TryResolveConcreteRepoJsonUrl(PluginAssessmentRow row, out string repoJsonUrl)
+    private static bool TryResolveConcreteRepoJsonUrls(PluginAssessmentRow row, out string[] repoJsonUrls)
     {
-        repoJsonUrl = FirstNonEmpty(row.Entry.RepoJsonUrl, row.RuntimeState?.RepoJsonUrl) ?? string.Empty;
-        if (!string.IsNullOrWhiteSpace(repoJsonUrl))
-            return true;
+        var resolvedUrls = new List<string>();
+        AddIfUnique(resolvedUrls, row.Entry.RepoJsonUrls);
+        AddIfUnique(resolvedUrls, row.Entry.RepoJsonUrl);
+        AddIfUnique(resolvedUrls, row.RuntimeState?.RepoJsonUrl);
 
-        return TryBuildGitHubRepoJsonUrl(FirstNonEmpty(row.Entry.RepoUrl, row.RuntimeState?.RepoUrl), out repoJsonUrl);
+        if (resolvedUrls.Count > 0)
+        {
+            repoJsonUrls = resolvedUrls.ToArray();
+            return true;
+        }
+
+        if (TryBuildGitHubRepoJsonUrl(FirstNonEmpty(row.Entry.RepoUrl, row.RuntimeState?.RepoUrl), out var repoJsonUrl))
+        {
+            repoJsonUrls = [repoJsonUrl];
+            return true;
+        }
+
+        repoJsonUrls = [];
+        return false;
     }
 
     private static string? FirstNonEmpty(params string?[] values)
@@ -49,6 +70,31 @@ public static class RepositoryLinkResolver
             return "REPO";
 
         return value.Trim().Replace(' ', '-');
+    }
+
+    private static string BuildPlaceholderRepoJsonUrl(PluginAssessmentRow row)
+    {
+        var repoName = SanitizeRepoName(row.RuntimeState?.InternalName ?? row.Entry.Id);
+        return $"https://raw.githubusercontent.com/{PlaceholderOwner}/{repoName}/refs/heads/{DefaultBranch}/repo.json";
+    }
+
+    private static void AddIfUnique(List<string> values, IEnumerable<string>? candidates)
+    {
+        if (candidates is null)
+            return;
+
+        foreach (var candidate in candidates)
+            AddIfUnique(values, candidate);
+    }
+
+    private static void AddIfUnique(List<string> values, string? candidate)
+    {
+        if (string.IsNullOrWhiteSpace(candidate))
+            return;
+
+        var trimmed = candidate.Trim();
+        if (!values.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+            values.Add(trimmed);
     }
 
     private static bool TryBuildGitHubRepoJsonUrl(string? repoUrl, out string repoJsonUrl)

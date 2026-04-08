@@ -135,7 +135,7 @@ public sealed class RepositoryMetadataService : IDisposable
                 {
                     Id = request.Id,
                     RepoUrl = request.RepoUrl,
-                    RepoJsonUrl = request.RepoJsonUrl,
+                    RepoJsonUrl = BuildRepoJsonSignature(request.RepoJsonUrls),
                     FetchedAtUtc = DateTime.UtcNow,
                     Description = metadata.Description,
                     Author = metadata.Author,
@@ -161,19 +161,22 @@ public sealed class RepositoryMetadataService : IDisposable
         DateTimeOffset? lastUpdateUtc = null;
         string? resolvedRepoUrl = request.RepoUrl;
 
-        if (TryGetConcreteUrl(request.RepoJsonUrl, out var repoJsonUrl))
+        foreach (var candidateRepoJsonUrl in request.RepoJsonUrls)
         {
+            if (!TryGetConcreteUrl(candidateRepoJsonUrl, out var repoJsonUrl))
+                continue;
+
             var manifests = await GetRemoteManifestsAsync(repoJsonUrl, repoFeedCache).ConfigureAwait(false);
             var manifest = FindBestManifest(manifests, request);
-            if (manifest != null)
-            {
-                description = FirstNonEmpty(description, manifest.Description);
-                author = FirstNonEmpty(author, manifest.Author);
-                dalamudApiLevel ??= manifest.DalamudApiLevel;
-                downloads ??= manifest.Downloads;
-                lastUpdateUtc ??= manifest.LastUpdateUtc;
-                resolvedRepoUrl = FirstNonEmpty(resolvedRepoUrl, manifest.RepoUrl);
-            }
+            if (manifest == null)
+                continue;
+
+            description = FirstNonEmpty(description, manifest.Description);
+            author = FirstNonEmpty(author, manifest.Author);
+            dalamudApiLevel ??= manifest.DalamudApiLevel;
+            downloads ??= manifest.Downloads;
+            lastUpdateUtc ??= manifest.LastUpdateUtc;
+            resolvedRepoUrl = FirstNonEmpty(resolvedRepoUrl, manifest.RepoUrl);
         }
 
         if (TryParseGitHubRepository(FirstNonEmpty(resolvedRepoUrl, request.RepoUrl), out var owner, out var repo))
@@ -364,9 +367,12 @@ public sealed class RepositoryMetadataService : IDisposable
     private MetadataRefreshRequest? CreateRefreshRequest(PluginAssessmentRow row)
     {
         var repoUrl = RepositoryLinkResolver.ResolveRepoUrl(row);
-        var repoJsonUrl = RepositoryLinkResolver.ResolveRepoJsonUrl(row);
+        var repoJsonUrls = RepositoryLinkResolver.ResolveRepoJsonUrls(row)
+            .Where(url => TryGetConcreteUrl(url, out _))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-        if (!TryGetConcreteUrl(repoUrl, out _) && !TryGetConcreteUrl(repoJsonUrl, out _))
+        if (!TryGetConcreteUrl(repoUrl, out _) && repoJsonUrls.Length == 0)
             return null;
 
         var matchTokens = row.Entry.MatchTokens
@@ -384,7 +390,7 @@ public sealed class RepositoryMetadataService : IDisposable
             row.Entry.DisplayName,
             row.RuntimeState?.InternalName,
             repoUrl,
-            repoJsonUrl,
+            repoJsonUrls,
             matchTokens);
     }
 
@@ -394,7 +400,7 @@ public sealed class RepositoryMetadataService : IDisposable
             return true;
 
         if (!string.Equals(cachedEntry.RepoUrl, request.RepoUrl, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(cachedEntry.RepoJsonUrl, request.RepoJsonUrl, StringComparison.OrdinalIgnoreCase))
+            !string.Equals(cachedEntry.RepoJsonUrl, BuildRepoJsonSignature(request.RepoJsonUrls), StringComparison.OrdinalIgnoreCase))
             return true;
 
         return (DateTime.UtcNow - cachedEntry.FetchedAtUtc).TotalHours >= CacheLifetimeHours;
@@ -562,6 +568,11 @@ public sealed class RepositoryMetadataService : IDisposable
     private static string NormalizeText(string? value)
         => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
 
+    private static string BuildRepoJsonSignature(IEnumerable<string> repoJsonUrls)
+        => string.Join("\n", repoJsonUrls
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .Select(url => url.Trim()));
+
     private static string GetCachePath()
         => Path.Combine(Plugin.PluginInterface.GetPluginConfigDirectory(), CacheFileName);
 
@@ -570,7 +581,7 @@ public sealed class RepositoryMetadataService : IDisposable
         string DisplayName,
         string? InternalName,
         string? RepoUrl,
-        string? RepoJsonUrl,
+        string[] RepoJsonUrls,
         string[] MatchTokens);
 
     private sealed record RemoteManifest

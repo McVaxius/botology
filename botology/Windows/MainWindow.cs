@@ -17,6 +17,8 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     private const string ColumnSelectionPopupId = "BotologyColumnSelection";
 
     private readonly Plugin plugin;
+    private string categoryFilterText = string.Empty;
+    private string pluginNameFilterText = string.Empty;
 
     private enum GridColumn
     {
@@ -109,12 +111,32 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         if (ImGui.Checkbox("Hide uninstalled Plugins", ref hideUninstalled))
             plugin.SetHideUninstalledPlugins(hideUninstalled);
 
+        ImGui.SetNextItemWidth(190f);
+        ImGui.InputTextWithHint("##CategoryFilter", "CATEGORY", ref categoryFilterText, 128);
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(220f);
+        ImGui.InputTextWithHint("##PluginNameFilter", "PLUGIN NAME", ref pluginNameFilterText, 128);
+
         ImGui.TextUnformatted("Use the (?) button in Category / Plugin for plugin descriptions.");
         ImGui.TextUnformatted("Use the (?) button in Ignore / ? for warning-rule details.");
 
         var visibleRows = plugin.Configuration.HideUninstalledPlugins
             ? rows.Where(row => row.IsInstalled).ToList()
             : rows;
+        visibleRows = visibleRows
+            .Where(MatchesFilters)
+            .ToList();
+
+        if (visibleRows.Count == 0)
+        {
+            ImGui.Separator();
+            ImGui.TextWrapped("No plugins match the current category/plugin filters.");
+            DrawColumnSelectionPopup();
+            DrawJsonGuidePopup();
+            DrawBlockingAlertPopup();
+            FinalizePendingWindowPlacement();
+            return;
+        }
 
         var tableFlags =
             ImGuiTableFlags.Borders |
@@ -311,8 +333,12 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     private void DrawRepoColumn(PluginAssessmentRow row)
     {
         var repoUrl = RepositoryLinkResolver.ResolveRepoUrl(row);
-        var repoJsonUrl = RepositoryLinkResolver.ResolveRepoJsonUrl(row);
+        var repoJsonUrls = RepositoryLinkResolver.ResolveRepoJsonUrls(row).ToArray();
+        var repoJsonUrl = repoJsonUrls.FirstOrDefault() ?? RepositoryLinkResolver.ResolveRepoJsonUrl(row);
         var hasConcreteRepoJsonUrl = RepositoryLinkResolver.HasConcreteRepoJsonUrl(row);
+        var copyText = repoJsonUrls.Length > 1
+            ? string.Join(Environment.NewLine, repoJsonUrls)
+            : repoJsonUrl;
         ImGui.BeginDisabled(string.IsNullOrWhiteSpace(repoUrl));
         if (ImGui.SmallButton("Repo") && !string.IsNullOrWhiteSpace(repoUrl))
             plugin.OpenUrl(repoUrl);
@@ -320,14 +346,23 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.SameLine();
         if (ImGui.SmallButton("[Copy]"))
         {
-            ImGui.SetClipboardText(repoJsonUrl);
+            ImGui.SetClipboardText(copyText);
             plugin.PrintStatus(hasConcreteRepoJsonUrl
-                ? $"Copied repo.json URL for {row.Entry.DisplayName}."
+                ? repoJsonUrls.Length > 1
+                    ? $"Copied {repoJsonUrls.Length} repo feed URLs for {row.Entry.DisplayName}."
+                    : $"Copied repo.json URL for {row.Entry.DisplayName}."
                 : $"Copied placeholder repo.json URL for {row.Entry.DisplayName}; adjust owner, repo, or branch if needed.");
         }
 
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(hasConcreteRepoJsonUrl ? repoJsonUrl : $"Placeholder repo.json URL:\n{repoJsonUrl}");
+        {
+            var tooltipText = hasConcreteRepoJsonUrl
+                ? repoJsonUrls.Length > 1
+                    ? $"Repo feeds:\n{copyText}"
+                    : repoJsonUrl
+                : $"Placeholder repo.json URL:\n{repoJsonUrl}";
+            ImGui.SetTooltip(tooltipText);
+        }
     }
 
     private void DrawEnabledColumn(PluginAssessmentRow row)
@@ -487,6 +522,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.BulletText("description: plugin summary for the (?) button in Category / Plugin. If missing, Botology tries repo.json and otherwise falls back to placeholder description.");
         ImGui.BulletText("repoUrl: source repository used by the Repo button and GitHub metadata fallback.");
         ImGui.BulletText("repoJsonUrl: concrete feed URL used for repo.json scraping. If this is missing and repoUrl points at GitHub, Botology will try the standard raw repo.json path.");
+        ImGui.BulletText("repoJsonUrls: optional array of multiple concrete feed URLs. Botology will scrape all of them, merge the best matching manifest metadata, and [Copy] will copy every listed feed.");
         ImGui.BulletText("ruleType: optional built-in rule selector.");
         ImGui.BulletText("relatedIds: optional array of one or more plugin ids used by paired/direct rules, for example [\"bossmod_reborn\"] or [\"gatherbuddy\", \"gatherbuddy_reborn\"].");
         ImGui.Separator();
@@ -547,4 +583,25 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             ? configuredDescription
             : "placeholder description";
     }
+
+    private bool MatchesFilters(PluginAssessmentRow row)
+    {
+        if (!string.IsNullOrWhiteSpace(categoryFilterText) &&
+            !ContainsInvariant(row.Entry.Category, categoryFilterText))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(pluginNameFilterText))
+            return true;
+
+        if (ContainsInvariant(row.Entry.DisplayName, pluginNameFilterText))
+            return true;
+
+        return row.Entry.MatchTokens.Any(token => ContainsInvariant(token, pluginNameFilterText));
+    }
+
+    private static bool ContainsInvariant(string? haystack, string needle)
+        => !string.IsNullOrWhiteSpace(haystack) &&
+           haystack.Contains(needle.Trim(), StringComparison.OrdinalIgnoreCase);
 }

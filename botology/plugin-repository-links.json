@@ -10,6 +10,7 @@
                        "description":  "Optional plugin summary for the Category / Plugin (?) popup. If omitted, botology tries repo.json data and otherwise falls back to placeholder description.",
                        "repoUrl":  "Optional repository homepage or source URL used by the Repo button.",
                        "repoJsonUrl":  "Optional concrete repo.json URL or human note shown by the [Copy] button.",
+                       "repoJsonUrls":  "Optional array of multiple concrete repo.json feed URLs. Botology merges metadata across them and [Copy] copies them all.",
                        "ruleType":  "Optional built-in assessment rule. Omit it to fall back to the compiled default handling for that id.",
                        "relatedIds":  "Optional plugin ids consulted by paired/direct/bossmod rules."
                    },
@@ -123,6 +124,44 @@
                         "ruleType":  "autoduty_conflict"
                     },
                     {
+                        "id":  "hoard_farm",
+                        "category":  "DOW/DOM Content Bots",
+                        "displayName":  "Hoard Farm",
+                        "matchTokens":  [
+                                            "HoardFarm",
+                                            "Hoard Farm"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/Jukkales/HoardFarm",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/jukka"
+                    },
+                    {
+                        "id":  "necrolens",
+                        "category":  "DOW/DOM Content Bots",
+                        "displayName":  "NecroLens",
+                        "matchTokens":  [
+                                            "NecroLens"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/Jukkales/NecroLens",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/jukka"
+                    },
+                    {
+                        "id":  "palace_pal",
+                        "category":  "DOW/DOM Content Bots",
+                        "displayName":  "Palace Pal",
+                        "matchTokens":  [
+                                            "PalacePal",
+                                            "Palace Pal"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/PunishXIV/PalacePal",
+                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
+                    },
+                    {
                         "id":  "accountant",
                         "category":  "Empire Management",
                         "displayName":  "Accountant",
@@ -173,6 +212,67 @@
                         "repoJsonUrl":  "https://love.puni.sh/ment.json"
                     },
                     {
+                        "id":  "arc",
+                        "category":  "Empire Management",
+                        "displayName":  "ARC",
+                        "matchTokens":  [
+                                            "ARControl",
+                                            "ARC"
+                                        ],
+                        "notes":  "Keep this if you want a stronger AutoRetainer venture-planning surface. Otherwise basic AutoRetainer is enough for most empires.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/zbee/ARC",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/justbees"
+                    },
+                    {
+                        "id":  "deliveroo",
+                        "category":  "Empire Management",
+                        "displayName":  "Deliveroo",
+                        "matchTokens":  [
+                                            "Deliveroo"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/VeraNala/Deliveroo",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/vera"
+                    },
+                    {
+                        "id":  "dropbox",
+                        "category":  "Empire Management",
+                        "displayName":  "Dropbox",
+                        "matchTokens":  [
+                                            "Dropbox"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/kawaii/Dropbox",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/kawaii"
+                    },
+                    {
+                        "id":  "workshoppa",
+                        "category":  "Empire Management",
+                        "displayName":  "Workshoppa",
+                        "matchTokens":  [
+                                            "Workshoppa"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://git.carvel.li/liza/Workshoppa",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/vera"
+                    },
+                    {
+                        "id":  "squadronista",
+                        "category":  "Empire Management",
+                        "displayName":  "Squadronista",
+                        "matchTokens":  [
+                                            "Squadronista"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/vera"
+                    },
+                    {
                         "id":  "submarine_tracker",
                         "category":  "Empire Management",
                         "displayName":  "Submarine Tracker",
@@ -207,8 +307,8 @@
                                         ],
                         "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
                         "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  ""
+                        "repoUrl":  "https://github.com/PunishXIV/Artisan",
+                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
                     },
                     {
                         "id":  "autohook",
@@ -256,12 +356,13 @@
                         "category":  "DOH/L Content Bots",
                         "displayName":  "GatherBuddyReborn",
                         "matchTokens":  [
-                                            "GatherBuddyReborn"
+                                            "GatherBuddyReborn",
+                                            "GatherbuddyReborn"
                                         ],
                         "notes":  "Pick one GatherBuddy only.",
                         "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
+                        "repoUrl":  "https://github.com/AtmoOmen/GatherBuddyReborn",
+                        "repoJsonUrl":  "https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json",
                         "ruleType":  "paired_conflict_red",
                         "relatedIds":  [
                                            "gatherbuddy"
@@ -290,7 +391,7 @@
                         "notes":  "It has a small problem of not auto-deactivating itself if you get stuck in an unfinished cycle, so be sure to hit stop tasks before doing something else.",
                         "description":  "placeholder description",
                         "repoUrl":  "",
-                        "repoJsonUrl":  ""
+                        "repoJsonUrl":  "https://puni.sh/api/repository/veyn"
                     },
                     {
                         "id":  "autoduty",
@@ -327,8 +428,8 @@
                                         ],
                         "notes":  "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.",
                         "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
+                        "repoUrl":  "https://github.com/awgil/ffxiv_bossmod",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/veyn",
                         "ruleType":  "bossmod_pair",
                         "relatedIds":  [
                                            "bossmod_reborn"
@@ -340,11 +441,13 @@
                         "displayName":  "BossModReborn",
                         "matchTokens":  [
                                             "BossModReborn"
-                                        ],
+                        ],
                         "notes":  "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.",
                         "description":  "placeholder description",
                         "repoUrl":  "https://github.com/FFXIV-CombatReborn/BossmodReborn",
-                        "repoJsonUrl":  "",
+                        "repoJsonUrls":  [
+                                             "https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json"
+                                         ],
                         "ruleType":  "bossmod_pair",
                         "relatedIds":  [
                                            "bossmod"
@@ -370,11 +473,15 @@
                         "matchTokens":  [
                                             "RotationSolverReborn",
                                             "RotationSolver"
-                                        ],
+                        ],
                         "notes":  "Ensure you are only using one rotation plugin at the same time.",
                         "description":  "placeholder description",
                         "repoUrl":  "https://github.com/FFXIV-CombatReborn/RotationSolverReborn",
-                        "repoJsonUrl":  "",
+                        "repoJsonUrls":  [
+                                             "https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json",
+                                             "https://raw.githubusercontent.com/FFXIV-CombatReborn/RotationSolverReborn/refs/heads/main/pluginmasterCN.json",
+                                             "https://raw.githubusercontent.com/FFXIV-CombatReborn/RotationSolverReborn/refs/heads/main/pluginmasterKR.json"
+                                         ],
                         "ruleType":  "rotation_conflict"
                     },
                     {
@@ -471,8 +578,108 @@
                                         ],
                         "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
                         "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  ""
+                        "repoUrl":  "https://github.com/awgil/ffxiv_visland",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/veyn"
+                    },
+                    {
+                        "id":  "chocoholic",
+                        "category":  "Utility Bots",
+                        "displayName":  "Chocoholic",
+                        "matchTokens":  [
+                                            "Chocoholic"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/kawaii/Chocoholic",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/kawaii"
+                    },
+                    {
+                        "id":  "daily_routines",
+                        "category":  "Utility Bots",
+                        "displayName":  "Daily Routines",
+                        "matchTokens":  [
+                                            "DailyRoutines",
+                                            "Daily Routines"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/Dalamud-DailyRoutines/DailyRoutines",
+                        "repoJsonUrl":  "https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json"
+                    },
+                    {
+                        "id":  "lifestream",
+                        "category":  "Utility Bots",
+                        "displayName":  "Lifestream",
+                        "matchTokens":  [
+                                            "Lifestream"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/NightmareXIV/Lifestream",
+                        "repoJsonUrl":  "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+                    },
+                    {
+                        "id":  "pandoras_box",
+                        "category":  "Utility Bots",
+                        "displayName":  "Pandora's Box",
+                        "matchTokens":  [
+                                            "PandorasBox",
+                                            "Pandora's Box"
+                                        ],
+                        "notes":  "Wide QoL surface. Review what you have enabled so you do not forget it is quietly doing work for you.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/PunishXIV/PandorasBox",
+                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
+                    },
+                    {
+                        "id":  "plugin_preset_manager",
+                        "category":  "Utility Bots",
+                        "displayName":  "Plugin Preset Manager",
+                        "matchTokens":  [
+                                            "PluginPresetManager",
+                                            "Plugin Preset Manager"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. It is useful if you swap between different plugin sets often.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/Brappp/PluginPresetManager",
+                        "repoJsonUrl":  "https://puni.sh/api/repository/wah"
+                    },
+                    {
+                        "id":  "saucy",
+                        "category":  "Utility Bots",
+                        "displayName":  "Saucy",
+                        "matchTokens":  [
+                                            "Saucy"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/PunishXIV/Saucy",
+                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
+                    },
+                    {
+                        "id":  "splatoon",
+                        "category":  "Utility Bots",
+                        "displayName":  "Splatoon",
+                        "matchTokens":  [
+                                            "Splatoon"
+                                        ],
+                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Just remember it is an always-visible overlay surface rather than a passive manager.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/PunishXIV/Splatoon",
+                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
+                    },
+                    {
+                        "id":  "yesalready",
+                        "category":  "Utility Bots",
+                        "displayName":  "Yes Already",
+                        "matchTokens":  [
+                                            "YesAlready",
+                                            "Yes Already"
+                                        ],
+                        "notes":  "Usually safe to keep. Just remember it automates dialog confirmations if you leave rules enabled.",
+                        "description":  "placeholder description",
+                        "repoUrl":  "https://github.com/PunishXIV/YesAlready",
+                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
                     },
                     {
                         "id":  "xa_slave",

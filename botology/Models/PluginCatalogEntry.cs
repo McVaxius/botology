@@ -10,4 +10,5 @@ public sealed record PluginCatalogEntry(
     string? RepoJsonUrl = null,
     string? RuleType = null,
     string[]? RelatedIds = null,
-    string? Description = null);
+    string? Description = null,
+    string[]? RepoJsonUrls = null);

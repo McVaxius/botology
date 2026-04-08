@@ -59,6 +59,14 @@ public static class RepositoryLinkCatalog
             if (relatedIds.Length == 0 && fallbackEntry?.RelatedIds is { Length: > 0 } fallbackRelatedIds)
                 relatedIds = fallbackRelatedIds;
 
+            var repoJsonUrls = manifestEntry.RepoJsonUrls
+                .Where(url => !string.IsNullOrWhiteSpace(url))
+                .Select(url => url.Trim())
+                .Distinct(LinkComparer)
+                .ToArray();
+            if (repoJsonUrls.Length == 0 && fallbackEntry?.RepoJsonUrls is { Length: > 0 } fallbackRepoJsonUrls)
+                repoJsonUrls = fallbackRepoJsonUrls;
+
             mergedEntries.Add(new PluginCatalogEntry(
                 id,
                 FirstNonEmpty(manifestEntry.Category, fallbackEntry?.Category) ?? "Uncategorized",
@@ -69,7 +77,8 @@ public static class RepositoryLinkCatalog
                 FirstNonEmpty(manifestEntry.RepoJsonUrl, fallbackEntry?.RepoJsonUrl),
                 FirstNonEmpty(manifestEntry.RuleType, fallbackEntry?.RuleType),
                 relatedIds.Length > 0 ? relatedIds : null,
-                FirstNonEmpty(manifestEntry.Description, fallbackEntry?.Description)));
+                FirstNonEmpty(manifestEntry.Description, fallbackEntry?.Description),
+                repoJsonUrls.Length > 0 ? repoJsonUrls : null));
             seenIds.Add(id);
         }
 
@@ -117,7 +126,7 @@ public static class RepositoryLinkCatalog
                     group =>
                     {
                         var entry = group.Last();
-                        return (Normalize(entry.RepoUrl), Normalize(entry.RepoJsonUrl));
+                        return (Normalize(entry.RepoUrl), Normalize(entry.RepoJsonUrl ?? entry.RepoJsonUrls.FirstOrDefault()));
                     },
                     LinkComparer);
             manifestLoaded = true;
@@ -173,6 +182,8 @@ public static class RepositoryLinkCatalog
         public string? RepoUrl { get; init; }
 
         public string? RepoJsonUrl { get; init; }
+
+        public string[] RepoJsonUrls { get; init; } = [];
 
         public string? RuleType { get; init; }
 
