@@ -47,7 +47,7 @@
                         "description":  "M.O.G.T.O.M.E. automates duty farming (Praetorium/Porta Decumana) with party coordination, repair, food, potions, rotation management, and stuck detection. Use /mogtome or /mog to open. M.O.G.T.O.M.E. = Management Of Grand Tome Operations \u0026 Management Engine",
                         "repoUrl":  "https://github.com/McVaxius/MOGTOME",
                         "repoJsonUrl":  "https://aethertek.io/x.json",
-                        "ruleType":  "autoduty_conflict"
+                        "ruleType":  "none_yet"
                     },
                     {
                         "id":  "aurafarmer",
