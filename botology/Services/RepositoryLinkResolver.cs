@@ -9,28 +9,27 @@ public static class RepositoryLinkResolver
     private const string DefaultBranch = "main";
 
     public static string? ResolveRepoUrl(PluginAssessmentRow row)
-        => FirstNonEmpty(row.RuntimeState?.RepoUrl, row.Entry.RepoUrl);
+        => FirstNonEmpty(row.Entry.RepoUrl, row.RuntimeState?.RepoUrl);
 
     public static string ResolveRepoJsonUrl(PluginAssessmentRow row)
     {
-        var explicitRepoJsonUrl = FirstNonEmpty(row.RuntimeState?.RepoJsonUrl, row.Entry.RepoJsonUrl);
-        if (!string.IsNullOrWhiteSpace(explicitRepoJsonUrl))
-            return explicitRepoJsonUrl;
-
-        if (TryBuildGitHubRepoJsonUrl(ResolveRepoUrl(row), out var derivedRepoJsonUrl))
-            return derivedRepoJsonUrl;
+        if (TryResolveConcreteRepoJsonUrl(row, out var concreteRepoJsonUrl))
+            return concreteRepoJsonUrl;
 
         var repoName = SanitizeRepoName(row.RuntimeState?.InternalName ?? row.Entry.Id);
         return $"https://raw.githubusercontent.com/{PlaceholderOwner}/{repoName}/refs/heads/{DefaultBranch}/repo.json";
     }
 
     public static bool HasConcreteRepoJsonUrl(PluginAssessmentRow row)
+        => TryResolveConcreteRepoJsonUrl(row, out _);
+
+    private static bool TryResolveConcreteRepoJsonUrl(PluginAssessmentRow row, out string repoJsonUrl)
     {
-        var explicitRepoJsonUrl = FirstNonEmpty(row.RuntimeState?.RepoJsonUrl, row.Entry.RepoJsonUrl);
-        if (!string.IsNullOrWhiteSpace(explicitRepoJsonUrl))
+        repoJsonUrl = FirstNonEmpty(row.Entry.RepoJsonUrl, row.RuntimeState?.RepoJsonUrl) ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(repoJsonUrl))
             return true;
 
-        return TryBuildGitHubRepoJsonUrl(ResolveRepoUrl(row), out _);
+        return TryBuildGitHubRepoJsonUrl(row.RuntimeState?.RepoUrl, out repoJsonUrl);
     }
 
     private static string? FirstNonEmpty(params string?[] values)

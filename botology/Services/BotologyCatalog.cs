@@ -69,12 +69,13 @@ public static class BotologyCatalog
         "ultimate_combo",
     };
 
-    public static IReadOnlyList<PluginCatalogEntry> Entries => entries;
+    public static IReadOnlyList<PluginCatalogEntry> Entries => ApplyRepositoryLinks(entries);
 
     public static IReadOnlyList<PluginAssessmentRow> BuildRows(PluginSnapshot snapshot, ISet<string> ignoredIds)
     {
-        var rows = new List<PluginAssessmentRow>(entries.Count);
-        foreach (var entry in entries)
+        var effectiveEntries = ApplyRepositoryLinks(entries);
+        var rows = new List<PluginAssessmentRow>(effectiveEntries.Count);
+        foreach (var entry in effectiveEntries)
         {
             var runtimeState = snapshot.FindBestMatch(entry.MatchTokens);
             var assessment = Evaluate(entry, runtimeState, snapshot);
@@ -194,6 +195,27 @@ public static class BotologyCatalog
             ? Red(entry, "AutoDuty is loaded.")
             : Green(entry, "No AutoDuty conflict detected.");
 
+    private static IReadOnlyList<PluginCatalogEntry> ApplyRepositoryLinks(IReadOnlyList<PluginCatalogEntry> sourceEntries)
+    {
+        var links = RepositoryLinkCatalog.GetLinks();
+        if (links.Count == 0)
+            return sourceEntries;
+
+        return sourceEntries
+            .Select(entry =>
+            {
+                if (!links.TryGetValue(entry.Id, out var link))
+                    return entry;
+
+                return entry with
+                {
+                    RepoUrl = FirstNonEmpty(link.RepoUrl, entry.RepoUrl),
+                    RepoJsonUrl = FirstNonEmpty(link.RepoJsonUrl, entry.RepoJsonUrl),
+                };
+            })
+            .ToArray();
+    }
+
     private static AssessmentResult RotationEvaluation(PluginCatalogEntry entry, PluginSnapshot snapshot, string selfId)
     {
         var otherLoaded = rotationIds.Any(id =>
@@ -215,6 +237,17 @@ public static class BotologyCatalog
 
     private static bool IsLoaded(PluginSnapshot snapshot, string id)
         => entryMap.TryGetValue(id, out var entry) && snapshot.IsLoaded(entry.MatchTokens);
+
+    private static string? FirstNonEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return null;
+    }
 
     private static AssessmentResult Inactive(PluginCatalogEntry entry, string summary)
         => new(AssessmentSeverity.Green, summary, entry.Notes);
