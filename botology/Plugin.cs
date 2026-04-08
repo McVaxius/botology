@@ -139,6 +139,14 @@ public sealed class Plugin : IDalamudPlugin
             PrintStatus($"Could not run command: {command}");
     }
 
+    public void ReloadRepositoryLinks()
+    {
+        RepositoryLinkCatalog.Reload();
+        lastAssessmentFingerprint = string.Empty;
+        nextAssessmentCheckUtc = DateTime.MinValue;
+        PrintStatus("Reloaded repository link JSON.");
+    }
+
     public IReadOnlyList<PluginAssessmentRow> CaptureRows()
     {
         var ignoredIds = new HashSet<string>(Configuration.IgnoredPluginIds, StringComparer.OrdinalIgnoreCase);

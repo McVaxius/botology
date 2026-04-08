@@ -57,6 +57,12 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.SameLine();
         if (ImGui.SmallButton("XLPLUGINS"))
             plugin.RunTextCommand("/xlplugins");
+        ImGui.SameLine();
+        if (ImGui.SmallButton("XLLOG"))
+            plugin.RunTextCommand("/xllog");
+        ImGui.SameLine();
+        if (ImGui.SmallButton("JSON reload"))
+            plugin.ReloadRepositoryLinks();
 
         ImGui.Separator();
         ImGui.TextWrapped(PluginInfo.Description);

@@ -9,6 +9,7 @@ namespace botology.Services;
 public static class RepositoryLinkCatalog
 {
     private const string FileName = "plugin-repository-links.json";
+    private static readonly StringComparer LinkComparer = StringComparer.OrdinalIgnoreCase;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         AllowTrailingCommas = true,
@@ -17,7 +18,7 @@ public static class RepositoryLinkCatalog
     };
 
     private static IReadOnlyDictionary<string, (string? RepoUrl, string? RepoJsonUrl)> cachedLinks =
-        new Dictionary<string, (string? RepoUrl, string? RepoJsonUrl)>(StringComparer.OrdinalIgnoreCase);
+        new Dictionary<string, (string? RepoUrl, string? RepoJsonUrl)>(LinkComparer);
 
     private static string cachedPath = string.Empty;
     private static DateTime cachedLastWriteUtc = DateTime.MinValue;
@@ -27,7 +28,7 @@ public static class RepositoryLinkCatalog
         var path = GetManifestPath();
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         {
-            cachedLinks = new Dictionary<string, (string? RepoUrl, string? RepoJsonUrl)>(StringComparer.OrdinalIgnoreCase);
+            cachedLinks = new Dictionary<string, (string? RepoUrl, string? RepoJsonUrl)>(LinkComparer);
             cachedPath = path ?? string.Empty;
             cachedLastWriteUtc = DateTime.MinValue;
             return cachedLinks;
@@ -43,7 +44,7 @@ public static class RepositoryLinkCatalog
             var manifest = JsonSerializer.Deserialize<RepositoryLinkManifest>(File.ReadAllText(path), JsonOptions);
             cachedLinks = (manifest?.Plugins ?? [])
                 .Where(entry => !string.IsNullOrWhiteSpace(entry.Id))
-                .GroupBy(entry => entry.Id.Trim(), StringComparer.OrdinalIgnoreCase)
+                .GroupBy(entry => entry.Id.Trim(), LinkComparer)
                 .ToDictionary(
                     group => group.Key,
                     group =>
@@ -51,19 +52,27 @@ public static class RepositoryLinkCatalog
                         var entry = group.Last();
                         return (Normalize(entry.RepoUrl), Normalize(entry.RepoJsonUrl));
                     },
-                    StringComparer.OrdinalIgnoreCase);
+                    LinkComparer);
             cachedPath = path;
             cachedLastWriteUtc = lastWriteUtc;
         }
         catch (Exception ex)
         {
             Plugin.Log.Warning(ex, "[botology] Failed to load packaged repository link manifest.");
-            cachedLinks = new Dictionary<string, (string? RepoUrl, string? RepoJsonUrl)>(StringComparer.OrdinalIgnoreCase);
+            cachedLinks = new Dictionary<string, (string? RepoUrl, string? RepoJsonUrl)>(LinkComparer);
             cachedPath = path;
             cachedLastWriteUtc = lastWriteUtc;
         }
 
         return cachedLinks;
+    }
+
+    public static void Reload()
+    {
+        cachedLinks = new Dictionary<string, (string? RepoUrl, string? RepoJsonUrl)>(LinkComparer);
+        cachedPath = string.Empty;
+        cachedLastWriteUtc = DateTime.MinValue;
+        _ = GetLinks();
     }
 
     private static string? Normalize(string? value)
