@@ -27,6 +27,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public Configuration Configuration { get; }
     public PluginManagerBridge PluginManagerBridge { get; }
+    public RepositoryMetadataService RepositoryMetadataService { get; }
     public WindowSystem WindowSystem { get; } = new(PluginInfo.InternalName);
 
     private readonly MainWindow mainWindow;
@@ -41,6 +42,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         PluginManagerBridge = new PluginManagerBridge(PluginInterface, CommandManager, Log);
+        RepositoryMetadataService = new RepositoryMetadataService(Log);
+        RepositoryLinkCatalog.Reload();
         mainWindow = new MainWindow(this);
         configWindow = new ConfigWindow(this);
 
@@ -58,7 +61,7 @@ public sealed class Plugin : IDalamudPlugin
         UpdateDtrBar();
 
         if (Configuration.OpenMainWindowOnLoad)
-            mainWindow.IsOpen = true;
+            OpenMainUi();
 
         Log.Information("[botology] Plugin loaded.");
     }
@@ -74,15 +77,35 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.RemoveAllWindows();
         dtrEntry?.Remove();
 
+        RepositoryMetadataService.Dispose();
         configWindow.Dispose();
         mainWindow.Dispose();
     }
 
-    public void OpenMainUi() => mainWindow.IsOpen = true;
+    public void OpenMainUi()
+    {
+        ReloadRepositoryLinks(silent: true);
+        mainWindow.IsOpen = true;
+        QueueRepositoryMetadataRefresh();
+    }
 
-    public void ToggleMainUi() => mainWindow.Toggle();
+    public void ToggleMainUi()
+    {
+        if (!mainWindow.IsOpen)
+        {
+            OpenMainUi();
+            return;
+        }
 
-    public void OpenConfigUi() => configWindow.IsOpen = true;
+        mainWindow.Toggle();
+    }
+
+    public void OpenConfigUi()
+    {
+        ReloadRepositoryLinks(silent: true);
+        configWindow.IsOpen = true;
+        QueueRepositoryMetadataRefresh();
+    }
 
     public void ToggleConfigUi() => configWindow.Toggle();
 
@@ -139,19 +162,61 @@ public sealed class Plugin : IDalamudPlugin
             PrintStatus($"Could not run command: {command}");
     }
 
-    public void ReloadRepositoryLinks()
+    public void ReloadRepositoryLinks(bool silent = false)
     {
         RepositoryLinkCatalog.Reload();
+        RepositoryMetadataService.InvalidateRefreshThrottle();
         lastAssessmentFingerprint = string.Empty;
         nextAssessmentCheckUtc = DateTime.MinValue;
-        PrintStatus("Reloaded repository link JSON.");
+        QueueRepositoryMetadataRefresh();
+        if (!silent)
+            PrintStatus("Reloaded repository link JSON.");
     }
 
     public IReadOnlyList<PluginAssessmentRow> CaptureRows()
     {
+        var rows = CaptureBaseRows();
+        return rows
+            .Select(row => row with { Metadata = RepositoryMetadataService.GetCachedMetadata(row) })
+            .ToArray();
+    }
+
+    public void OpenJsonFolder()
+    {
+        var manifestPath = RepositoryLinkCatalog.GetManifestPath();
+        if (string.IsNullOrWhiteSpace(manifestPath))
+        {
+            PrintStatus("Could not locate plugin-repository-links.json.");
+            return;
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{manifestPath}\"",
+                UseShellExecute = true,
+            });
+
+            PrintStatus("Opened the JSON folder. Share good changes on Discord or GitHub if you want them included.");
+            ShowOperatorToast("Opened plugin-repository-links.json. Share useful updates on Discord or GitHub if you want them included.");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[botology] Failed to open JSON folder.");
+            PrintStatus("Could not open the JSON folder.");
+        }
+    }
+
+    private IReadOnlyList<PluginAssessmentRow> CaptureBaseRows()
+    {
         var ignoredIds = new HashSet<string>(Configuration.IgnoredPluginIds, StringComparer.OrdinalIgnoreCase);
         return BotologyCatalog.BuildRows(PluginManagerBridge.CaptureSnapshot(), ignoredIds);
     }
+
+    private void QueueRepositoryMetadataRefresh()
+        => RepositoryMetadataService.QueueRefresh(CaptureBaseRows());
 
     public void SetIgnored(string id, bool ignored)
     {
@@ -288,13 +353,16 @@ public sealed class Plugin : IDalamudPlugin
     {
         UpdateDtrBar();
 
-        if (!Configuration.PluginEnabled)
-            return;
-
         if (DateTime.UtcNow < nextAssessmentCheckUtc)
             return;
 
         nextAssessmentCheckUtc = DateTime.UtcNow.AddSeconds(2);
+
+        if (mainWindow.IsOpen || configWindow.IsOpen)
+            QueueRepositoryMetadataRefresh();
+
+        if (!Configuration.PluginEnabled)
+            return;
 
         var rows = CaptureRows();
         var alertRows = rows
@@ -330,5 +398,18 @@ public sealed class Plugin : IDalamudPlugin
     {
         dtrEntry = DtrBar.Get(PluginInfo.DisplayName);
         dtrEntry.OnClick = _ => OpenMainUi();
+    }
+
+    private void ShowOperatorToast(string message)
+    {
+        var payload = new SeString(new TextPayload(message));
+        var showQuestMethod = ToastGui.GetType().GetMethod("ShowQuest", new[] { typeof(SeString) });
+        if (showQuestMethod != null)
+        {
+            showQuestMethod.Invoke(ToastGui, new object[] { payload });
+            return;
+        }
+
+        ToastGui.ShowNormal(payload);
     }
 }

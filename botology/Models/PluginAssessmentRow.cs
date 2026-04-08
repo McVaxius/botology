@@ -4,7 +4,8 @@ public sealed record PluginAssessmentRow(
     PluginCatalogEntry Entry,
     PluginRuntimeState? RuntimeState,
     AssessmentResult Assessment,
-    bool Ignored)
+    bool Ignored,
+    PluginRepositoryMetadata? Metadata = null)
 {
     public bool IsInstalled => RuntimeState != null;
 

@@ -18,6 +18,16 @@ public sealed class Configuration : IPluginConfiguration
     public bool OpenWindowOnAssessmentChange { get; set; } = false;
     public bool OpenMainWindowOnLoad { get; set; } = false;
     public bool HideUninstalledPlugins { get; set; } = false;
+    public bool ShowInstalledColumn { get; set; } = true;
+    public bool ShowUpdateColumn { get; set; } = true;
+    public bool ShowRepoColumn { get; set; } = true;
+    public bool ShowDtrColumn { get; set; } = true;
+    public bool ShowNotesColumn { get; set; } = true;
+    public bool ShowIgnoreColumn { get; set; } = true;
+    public bool ShowDownloadsColumn { get; set; } = false;
+    public bool ShowLastUpdateColumn { get; set; } = false;
+    public bool ShowDalamudApiLevelColumn { get; set; } = false;
+    public bool ShowAuthorColumn { get; set; } = false;
     public List<string> IgnoredPluginIds { get; set; } = new();
 
     public void Save() => Plugin.PluginInterface.SavePluginConfig(this);

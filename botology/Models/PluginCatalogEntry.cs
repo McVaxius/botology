@@ -7,4 +7,7 @@ public sealed record PluginCatalogEntry(
     string[] MatchTokens,
     string Notes,
     string? RepoUrl = null,
-    string? RepoJsonUrl = null);
+    string? RepoJsonUrl = null,
+    string? RuleType = null,
+    string[]? RelatedIds = null,
+    string? Description = null);

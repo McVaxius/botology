@@ -29,7 +29,7 @@ public static class RepositoryLinkResolver
         if (!string.IsNullOrWhiteSpace(repoJsonUrl))
             return true;
 
-        return TryBuildGitHubRepoJsonUrl(row.RuntimeState?.RepoUrl, out repoJsonUrl);
+        return TryBuildGitHubRepoJsonUrl(FirstNonEmpty(row.Entry.RepoUrl, row.RuntimeState?.RepoUrl), out repoJsonUrl);
     }
 
     private static string? FirstNonEmpty(params string?[] values)
