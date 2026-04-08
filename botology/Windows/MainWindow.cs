@@ -289,7 +289,11 @@ public sealed class MainWindow : PositionedWindow, IDisposable
 
     private static void DrawCategoryColumn(PluginAssessmentRow row)
     {
-        ImGui.TextUnformatted(row.Entry.DisplayName);
+        var color = GetAssessmentColor(row);
+        if (row.IsAssessable)
+            ImGui.TextColored(color, row.Entry.DisplayName);
+        else
+            ImGui.TextUnformatted(row.Entry.DisplayName);
         ImGui.SameLine();
         if (ImGui.SmallButton("(?)"))
             ImGui.OpenPopup("PluginDescription");
@@ -401,16 +405,22 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             return;
         }
 
-        var color = row.Ignored
-            ? new Vector4(1.0f, 0.84f, 0.25f, 1f)
-            : row.Assessment.Severity switch
-            {
-                AssessmentSeverity.Red => new Vector4(1f, 0.35f, 0.35f, 1f),
-                AssessmentSeverity.Yellow => new Vector4(1f, 0.86f, 0.35f, 1f),
-                _ => new Vector4(0.45f, 0.95f, 0.45f, 1f),
-            };
+        var color = GetAssessmentColor(row);
         var prefix = row.Ignored ? "[Ignored] " : string.Empty;
         ImGui.TextColored(color, $"{prefix}{row.Assessment.Severity}: {row.Assessment.Summary}");
+    }
+
+    private static Vector4 GetAssessmentColor(PluginAssessmentRow row)
+    {
+        if (row.Ignored)
+            return new Vector4(1.0f, 0.84f, 0.25f, 1f);
+
+        return row.Assessment.Severity switch
+        {
+            AssessmentSeverity.Red => new Vector4(1f, 0.35f, 0.35f, 1f),
+            AssessmentSeverity.Yellow => new Vector4(1f, 0.86f, 0.35f, 1f),
+            _ => new Vector4(0.45f, 0.95f, 0.45f, 1f),
+        };
     }
 
     private void DrawIgnoreColumn(PluginAssessmentRow row)
