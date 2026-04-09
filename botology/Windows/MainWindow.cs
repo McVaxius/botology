@@ -19,6 +19,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     private readonly Plugin plugin;
     private string categoryFilterText = string.Empty;
     private string pluginNameFilterText = string.Empty;
+    private string authorFilterText = string.Empty;
 
     private enum GridColumn
     {
@@ -116,6 +117,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.SameLine();
         ImGui.SetNextItemWidth(220f);
         ImGui.InputTextWithHint("##PluginNameFilter", "PLUGIN NAME", ref pluginNameFilterText, 128);
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(180f);
+        ImGui.InputTextWithHint("##AuthorFilter", "AUTHOR", ref authorFilterText, 128);
 
         ImGui.TextUnformatted("Use the (?) button in Category / Plugin for plugin descriptions.");
         ImGui.TextUnformatted("Use the (?) button in Ignore / ? for warning-rule details.");
@@ -130,7 +134,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         if (visibleRows.Count == 0)
         {
             ImGui.Separator();
-            ImGui.TextWrapped("No plugins match the current category/plugin filters.");
+            ImGui.TextWrapped("No plugins match the current category/plugin/author filters.");
             DrawColumnSelectionPopup();
             DrawJsonGuidePopup();
             DrawBlockingAlertPopup();
@@ -511,7 +515,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.PushTextWrapPos(720f);
         ImGui.TextWrapped("plugin-repository-links.json is a human-edited manifest. Botology only reloads it when the plugin/settings window is opened or when you click JSON reload.");
         ImGui.Separator();
-        ImGui.TextWrapped($"Loaded file: {manifestPath}");
+        ImGui.TextWrapped($"Enabled file: {manifestPath}");
         ImGui.TextWrapped("Raw GitHub path: https://raw.githubusercontent.com/McVaxius/botology/refs/heads/main/botology/plugin-repository-links.json");
         ImGui.Separator();
         ImGui.BulletText("id: stable key used for rule matching and relatedIds references.");
@@ -527,13 +531,13 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.BulletText("relatedIds: optional array of one or more plugin ids used by paired/direct rules, for example [\"bossmod_reborn\"] or [\"gatherbuddy\", \"gatherbuddy_reborn\"].");
         ImGui.Separator();
         ImGui.TextWrapped("Available ruleType values:");
-        ImGui.BulletText("autoduty_conflict: row goes red when AutoDuty is loaded.");
-        ImGui.BulletText("paired_conflict_yellow: row goes yellow when any relatedIds entry is loaded.");
-        ImGui.BulletText("paired_conflict_red: row goes red when any relatedIds entry is loaded.");
-        ImGui.BulletText("direct_conflict_red: row goes red when any relatedIds entry is loaded.");
-        ImGui.BulletText("rotation_conflict: row goes yellow when another tracked rotation/bossmod entry is loaded.");
+        ImGui.BulletText("autoduty_conflict: row goes red when AutoDuty is enabled.");
+        ImGui.BulletText("paired_conflict_yellow: row goes yellow when any relatedIds entry is enabled.");
+        ImGui.BulletText("paired_conflict_red: row goes red when any relatedIds entry is enabled.");
+        ImGui.BulletText("direct_conflict_red: row goes red when any relatedIds entry is enabled.");
+        ImGui.BulletText("rotation_conflict: row goes yellow when another tracked rotation/bossmod entry is enabled.");
         ImGui.BulletText("bossmod_pair: row goes red for direct bossmod rivals, otherwise falls back to rotation_conflict.");
-        ImGui.BulletText("loaded_warning_yellow: row goes yellow when the plugin itself is loaded.");
+        ImGui.BulletText("loaded_warning_yellow: row goes yellow when the plugin itself is enabled.");
         ImGui.Separator();
         ImGui.TextWrapped("Downloads, Last Update Date, DalamudApiLevel, Author, and description fallback are auto-scraped and cached for 24 hours. Those columns are not configured in the JSON file.");
         ImGui.PopTextWrapPos();
@@ -588,6 +592,12 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     {
         if (!string.IsNullOrWhiteSpace(categoryFilterText) &&
             !ContainsInvariant(row.Entry.Category, categoryFilterText))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(authorFilterText) &&
+            !ContainsInvariant(row.Metadata?.Author, authorFilterText))
         {
             return false;
         }

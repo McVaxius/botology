@@ -10,7 +10,7 @@ internal static class PluginInfo
     public const string SupportUrl = "https://ko-fi.com/mcvaxius";
     public const string DiscordUrl = "https://discord.gg/VsXqydsvpu";
     public const string DiscordFeedbackNote = "Scroll down to \"The Dumpster Fire\" channel to discuss issues / suggestions for specific plugins.";
-    public const string Description = "Let's face it, you are a Botologist now, you need proper analysis of all of your tools so they work and play nice together.";
+    public const string Description = "Let's face it, you are a Botologist now, you need proper analysis of all of your tools so they work and play nice together, plus fast category, plugin, and author filtering over the tracked JSON catalog.";
 
     public static readonly string[] CommandAliases =
     {

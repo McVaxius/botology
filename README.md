@@ -19,7 +19,7 @@ Scroll down to "The Dumpster Fire" channel to discuss issues / suggestions for s
 
 ## Current Status
 
-Bootstrap scaffold created on 2026-04-07. This repo now has a buildable `Debug x64` shell with a first functional compatibility grid: installed state, update availability, repo link, enable toggle, best-effort DTR toggle, ignore flags, and rule detail popups.
+Bootstrap scaffold created on 2026-04-07. This repo now has a buildable `Debug x64` shell with a functional compatibility grid: installed state, update availability, repo link, enable toggle, best-effort DTR toggle, ignore flags, rule detail popups, category/plugin/author filters, and a growing `plugin-repository-links.json` catalog for tracked plugins.
 
 - Solution: `Z:\botology\botology.sln`
 - Project: `Z:\botology\botology\botology.csproj`

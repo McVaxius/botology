@@ -114,25 +114,25 @@ public static class BotologyCatalog
                 : Green(entry, "No overlapping empire trackers detected."),
 
             "allagan_tools" => IsLoaded(snapshot, "xa_db", entryMap)
-                ? Yellow(entry, "XA DB is loaded and overlaps the same empire data capture.")
+                ? Yellow(entry, "XA DB is enabled and overlaps the same empire data capture.")
                 : Green(entry, "No XA DB overlap detected."),
 
             "altoholic" => IsLoaded(snapshot, "xa_db", entryMap)
-                ? Yellow(entry, "Altoholic is loaded and XA DB is also present.")
-                : Yellow(entry, "Altoholic is loaded; XA DB is the preferred option."),
+                ? Yellow(entry, "Altoholic is enabled and XA DB is also present.")
+                : Yellow(entry, "Altoholic is enabled; XA DB is the preferred option."),
 
             "autoretainer" => IsLoaded(snapshot, "autoduty", entryMap) && IsLoaded(snapshot, "vermaxion", entryMap)
-                ? Green(entry, "AutoDuty is loaded, but VerMaxion is also present for the current safe workaround.")
+                ? Green(entry, "AutoDuty is enabled, but VerMaxion is also present for the current safe workaround.")
                 : IsLoaded(snapshot, "autoduty", entryMap)
-                    ? Yellow(entry, "AutoDuty is loaded and may interfere with retainer checks.")
+                    ? Yellow(entry, "AutoDuty is enabled and may interfere with retainer checks.")
                     : Green(entry, "No AutoDuty interference detected."),
 
             "submarine_tracker" => IsLoaded(snapshot, "accountant", entryMap)
-                ? Yellow(entry, "Accountant is loaded and overlaps part of this data surface.")
+                ? Yellow(entry, "Accountant is enabled and overlaps part of this data surface.")
                 : Green(entry, "No overlapping submarine tracker warning triggered."),
 
             "xa_db" => IsLoaded(snapshot, "allagan_tools", entryMap) || IsLoaded(snapshot, "altoholic", entryMap)
-                ? Yellow(entry, "Allagan Tools or Altoholic is loaded alongside XA DB.")
+                ? Yellow(entry, "Allagan Tools or Altoholic is enabled alongside XA DB.")
                 : Green(entry, "No overlapping empire data plugins detected."),
 
             _ => Green(entry, "No warning rules triggered."),
