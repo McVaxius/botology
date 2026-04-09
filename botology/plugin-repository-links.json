@@ -1,1230 +1,1559 @@
 {
-    "schemaVersion":  2,
-    "sourceUrl":  "https://raw.githubusercontent.com/McVaxius/botology/refs/heads/main/botology/plugin-repository-links.json",
-    "fieldGuide":  {
-                       "id":  "Stable catalog id used by botology for matching and rule references.",
-                       "category":  "UI group heading for the row.",
-                       "displayName":  "Visible row label shown in the manager window.",
-                       "matchTokens":  "Plugin names or internal names botology will match against installed/runtime plugin data.",
-                       "notes":  "Long-form warning/help text shown in the (?) popup and reused in green/yellow/red rows.",
-                       "description":  "Optional plugin summary for the Category / Plugin (?) popup. If omitted, botology tries repo.json data and otherwise falls back to placeholder description.",
-                       "repoUrl":  "Optional repository homepage or source URL used by the Repo button.",
-                       "repoJsonUrl":  "Optional concrete repo.json URL or human note shown by the [Copy] button.",
-                       "repoJsonUrls":  "Optional array of multiple concrete repo.json feed URLs. Botology merges metadata across them and [Copy] copies them all.",
-                       "ruleType":  "Optional built-in assessment rule. Omit it to fall back to the compiled default handling for that id.",
-                       "relatedIds":  "Optional plugin ids consulted by paired/direct/bossmod rules."
-                   },
-    "ruleTypeGuide":  {
-                          "autoduty_conflict":  "Marks the row red when AutoDuty is loaded.",
-                          "paired_conflict_yellow":  "Marks the row yellow when any relatedIds entry is loaded.",
-                          "paired_conflict_red":  "Marks the row red when any relatedIds entry is loaded.",
-                          "direct_conflict_red":  "Marks the row red when any relatedIds entry is loaded.",
-                          "rotation_conflict":  "Marks the row yellow when another rotation/bossmod rule-driven entry is loaded.",
-                          "bossmod_pair":  "Marks the row red when any relatedIds bossmod rival is loaded; otherwise falls back to rotation_conflict.",
-                          "loaded_warning_yellow":  "Marks the row yellow whenever the plugin itself is currently loaded."
-                      },
-    "plugins":  [
-                    {
-                        "id":  "lootgoblin",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "LootGoblin",
-                        "matchTokens":  [
-                                            "LootGoblin"
-                                        ],
-                        "notes":  "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn\u0027t even manage normally. This is volatile behaviour.",
-                        "description":  "LootGoblin automates treasure map hunting by opening maps, detecting locations via GlobeTrotter, teleporting to the nearest aetheryte, coordinating with party members, and flying to the treasure location. Use /lootgoblin or /lg to open.",
-                        "repoUrl":  "https://github.com/McVaxius/LootGoblin",
-                        "repoJsonUrl":  "https://aethertek.io/x.json",
-                        "ruleType":  "autoduty_conflict"
-                    },
-                    {
-                        "id":  "mogtome",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "MOGTOME",
-                        "matchTokens":  [
-                                            "MOGTOME"
-                                        ],
-                        "notes":  "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn\u0027t even manage normally. This is volatile behaviour.",
-                        "description":  "M.O.G.T.O.M.E. automates duty farming (Praetorium/Porta Decumana) with party coordination, repair, food, potions, rotation management, and stuck detection. Use /mogtome or /mog to open. M.O.G.T.O.M.E. = Management Of Grand Tome Operations \u0026 Management Engine",
-                        "repoUrl":  "https://github.com/McVaxius/MOGTOME",
-                        "repoJsonUrl":  "https://aethertek.io/x.json",
-                        "ruleType":  "none_yet"
-                    },
-                    {
-                        "id":  "aurafarmer",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "AuraFarmer",
-                        "matchTokens":  [
-                                            "AuraFarmer"
-                                        ],
-                        "notes":  "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn\u0027t even manage normally. This is volatile behaviour.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/McVaxius/AuraFarmer",
-                        "repoJsonUrl":  "https://aethertek.io/x.json",
-                        "ruleType":  "autoduty_conflict"
-                    },
-                    {
-                        "id":  "lanparty",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "LANParty",
-                        "matchTokens":  [
-                                            "LANParty"
-                                        ],
-                        "notes":  "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn\u0027t even manage normally. This is volatile behaviour.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/McVaxius/LanParty",
-                        "repoJsonUrl":  "https://aethertek.io/x.json",
-                        "ruleType":  "autoduty_conflict"
-                    },
-                    {
-                        "id":  "cbt_vfate",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "CBT (vfate activated)",
-                        "matchTokens":  [
-                                            "CBT"
-                                        ],
-                        "notes":  "If you use Twist of Fayte at the same time as CBT vfate there might be issues.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
-                        "ruleType":  "paired_conflict_yellow",
-                        "relatedIds":  [
-                                           "twist_of_fayte"
-                                       ]
-                    },
-                    {
-                        "id":  "twist_of_fayte",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "Twist of Fayte",
-                        "matchTokens":  [
-                                            "TwistOfFayte",
-                                            "Twist of Fayte"
-                                        ],
-                        "notes":  "If you use CBT vfate at the same time as Twist of Fayte there might be issues.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
-                        "ruleType":  "paired_conflict_yellow",
-                        "relatedIds":  [
-                                           "cbt_vfate"
-                                       ]
-                    },
-                    {
-                        "id":  "bunny_farm_eureka",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "Bunny Farm Eureka",
-                        "matchTokens":  [
-                                            "BunnyFarmEureka",
-                                            "Bunny Farm Eureka"
-                                        ],
-                        "notes":  "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn\u0027t even manage normally. This is volatile behaviour.",
-                        "description":  "A new BFE shell focused on duty communication first: configured Hydatos/bunny callout presets, quick send buttons, standard Dhog window controls, and DTR visibility.",
-                        "repoUrl":  "https://github.com/McVaxius/BFE",
-                        "repoJsonUrl":  "https://raw.githubusercontent.com/McVaxius/BFE/refs/heads/main/repo.json",
-                        "ruleType":  "autoduty_conflict"
-                    },
-                    {
-                        "id":  "hoard_farm",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "Hoard Farm",
-                        "matchTokens":  [
-                                            "HoardFarm",
-                                            "Hoard Farm"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/Jukkales/HoardFarm",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/jukka"
-                    },
-                    {
-                        "id":  "necrolens",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "NecroLens",
-                        "matchTokens":  [
-                                            "NecroLens"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/Jukkales/NecroLens",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/jukka"
-                    },
-                    {
-                        "id":  "palace_pal",
-                        "category":  "DOW/DOM Content Bots",
-                        "displayName":  "Palace Pal",
-                        "matchTokens":  [
-                                            "PalacePal",
-                                            "Palace Pal"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/PunishXIV/PalacePal",
-                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
-                    },
-                    {
-                        "id":  "accountant",
-                        "category":  "Empire Management",
-                        "displayName":  "Accountant",
-                        "matchTokens":  [
-                                            "Accountant"
-                                        ],
-                        "notes":  "This plugin is fine to keep if you want to use the Garden tracker. Otherwise Submarine Tracker and AutoRetainer are sufficient to cover retainer and submarine information.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "1PP no repo URL needed"
-                    },
-                    {
-                        "id":  "allagan_tools",
-                        "category":  "Empire Management",
-                        "displayName":  "Allagan Tools",
-                        "matchTokens":  [
-                                            "AllaganTools",
-                                            "Allagan Tools"
-                                        ],
-                        "notes":  "This tool offers the same data recording as XA DB and additional tools and guides but will frequently corrupt its own database and is unreliable for long term 100% data mining of a large empire of characters and FCs.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "1PP no repo URL needed"
-                    },
-                    {
-                        "id":  "altoholic",
-                        "category":  "Empire Management",
-                        "displayName":  "Altoholic",
-                        "matchTokens":  [
-                                            "Altoholic"
-                                        ],
-                        "notes":  "You should use XA DB instead. This plugin will CTD you if you try to browse the sheets tabs. Only use this over XA DB if you like the layout.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  ""
-                    },
-                    {
-                        "id":  "autoretainer",
-                        "category":  "Empire Management",
-                        "displayName":  "AutoRetainer",
-                        "matchTokens":  [
-                                            "AutoRetainer",
-                                            "Autoretainer"
-                                        ],
-                        "notes":  "AutoDuty should be disabled or it can cause problems with checking retainers. Solution for now is to have an \"/ad stop\". If VerMaxion is installed we are safe with AutoDuty being enabled.",
-                        "description":  "Collect and assign ventures to your retainers from the comfort of your bed.",
-                        "repoUrl":  "https://github.com/PunishXIV/AutoRetainer",
-                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
-                    },
-                    {
-                        "id":  "arc",
-                        "category":  "Empire Management",
-                        "displayName":  "ARC",
-                        "matchTokens":  [
-                                            "ARControl",
-                                            "ARC"
-                                        ],
-                        "notes":  "Keep this if you want a stronger AutoRetainer venture-planning surface. Otherwise basic AutoRetainer is enough for most empires.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/zbee/ARC",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/justbees"
-                    },
-                    {
-                        "id":  "deliveroo",
-                        "category":  "Empire Management",
-                        "displayName":  "Deliveroo",
-                        "matchTokens":  [
-                                            "Deliveroo"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/VeraNala/Deliveroo",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/vera"
-                    },
-                    {
-                        "id":  "dropbox",
-                        "category":  "Empire Management",
-                        "displayName":  "Dropbox",
-                        "matchTokens":  [
-                                            "Dropbox"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/kawaii/Dropbox",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/kawaii"
-                    },
-                    {
-                        "id":  "workshoppa",
-                        "category":  "Empire Management",
-                        "displayName":  "Workshoppa",
-                        "matchTokens":  [
-                                            "Workshoppa"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://git.carvel.li/liza/Workshoppa",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/vera"
-                    },
-                    {
-                        "id":  "squadronista",
-                        "category":  "Empire Management",
-                        "displayName":  "Squadronista",
-                        "matchTokens":  [
-                                            "Squadronista"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/vera"
-                    },
-                    {
-                        "id":  "submarine_tracker",
-                        "category":  "Empire Management",
-                        "displayName":  "Submarine Tracker",
-                        "matchTokens":  [
-                                            "SubmarineTracker",
-                                            "Submarine Tracker"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. The folder can get large.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  ""
-                    },
-                    {
-                        "id":  "xa_db",
-                        "category":  "Empire Management",
-                        "displayName":  "XA DB",
-                        "matchTokens":  [
-                                            "XADB",
-                                            "XA DB"
-                                        ],
-                        "notes":  "This tool covers all of the data of Allagan Tools and Altoholic. For now it doesn\u0027t have auto list via tooltip for hovered item, so keep Allagan Tools if you need that feature.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "https://aethertek.io/x.json"
-                    },
-                    {
-                        "id":  "artisan",
-                        "category":  "DOH/L Content Bots",
-                        "displayName":  "Artisan",
-                        "matchTokens":  [
-                                            "Artisan"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/PunishXIV/Artisan",
-                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
-                    },
-                    {
-                        "id":  "autohook",
-                        "category":  "DOH/L Content Bots",
-                        "displayName":  "AutoHook",
-                        "matchTokens":  [
-                                            "AutoHook",
-                                            "Autohook"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "It hooks the fish for you, can you believe it?",
-                        "repoUrl":  "https://github.com/PunishXIV/AutoHook",
-                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
-                    },
-                    {
-                        "id":  "henchman",
-                        "category":  "DOH/L Content Bots",
-                        "displayName":  "Henchman",
-                        "matchTokens":  [
-                                            "Henchman"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "Your personal Henchman doing all the heavy lifting for you!\n\n- A/B Rank Farmer\n- Hunt Logs (incl. Multibox Carry)\n- Hunt Bills\n- Retainer Creation\n- Character Creation\n- Multi Account Trading\n- Ocean Fishing\n- Chocobokeeps\nand more to come.",
-                        "repoUrl":  "https://github.com/Knightmore/Henchman",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/knightmore"
-                    },
-                    {
-                        "id":  "gatherbuddy",
-                        "category":  "DOH/L Content Bots",
-                        "displayName":  "GatherBuddy",
-                        "matchTokens":  [
-                                            "GatherBuddy"
-                                        ],
-                        "notes":  "Pick one GatherBuddy only.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
-                        "ruleType":  "paired_conflict_red",
-                        "relatedIds":  [
-                                           "gatherbuddy_reborn"
-                                       ]
-                    },
-                    {
-                        "id":  "gatherbuddy_reborn",
-                        "category":  "DOH/L Content Bots",
-                        "displayName":  "GatherBuddyReborn",
-                        "matchTokens":  [
-                                            "GatherBuddyReborn",
-                                            "GatherbuddyReborn"
-                                        ],
-                        "notes":  "Pick one GatherBuddy only.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/AtmoOmen/GatherBuddyReborn",
-                        "repoJsonUrl":  "https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json",
-                        "ruleType":  "paired_conflict_red",
-                        "relatedIds":  [
-                                           "gatherbuddy"
-                                       ]
-                    },
-                    {
-                        "id":  "icecosmic",
-                        "category":  "DOH/L Content Bots",
-                        "displayName":  "ICECOSMIC",
-                        "matchTokens":  [
-                                            "ICECOSMIC"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  ""
-                    },
-                    {
-                        "id":  "vsatisfy",
-                        "category":  "DOH/L Content Bots",
-                        "displayName":  "vSatisfy",
-                        "matchTokens":  [
-                                            "vSatisfy",
-                                            "Vsatisfy"
-                                        ],
-                        "notes":  "It has a small problem of not auto-deactivating itself if you get stuck in an unfinished cycle, so be sure to hit stop tasks before doing something else.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/veyn"
-                    },
-                    {
-                        "id":  "autoduty",
-                        "category":  "Duty solving",
-                        "displayName":  "AutoDuty",
-                        "matchTokens":  [
-                                            "AutoDuty"
-                                        ],
-                        "notes":  "Keep this plugin disabled unless you specifically need it on. It interferes with many things without even being activated.",
-                        "description":  "A plugin to run dungeons for you with Trust, Duty Support, Squadrons, Variants, and Regular, Requires BossMod, vnavmesh and a Rotation Plugin (BossMod AutoRotation, Wrath or RotationSolverReborn)",
-                        "repoUrl":  "https://github.com/erdelf/AutoDuty",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/erdelf",
-                        "ruleType":  "loaded_warning_yellow"
-                    },
-                    {
-                        "id":  "ai_duty_solver",
-                        "category":  "Duty solving",
-                        "displayName":  "AI Duty Solver",
-                        "matchTokens":  [
-                                            "AIDutySolver",
-                                            "AI Duty Solver"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  ""
-                    },
-                    {
-                        "id":  "bossmod",
-                        "category":  "Rotations/AI",
-                        "displayName":  "BossMod",
-                        "matchTokens":  [
-                                            "BossMod"
-                                        ],
-                        "notes":  "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/awgil/ffxiv_bossmod",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/veyn",
-                        "ruleType":  "bossmod_pair",
-                        "relatedIds":  [
-                                           "bossmod_reborn"
-                                       ]
-                    },
-                    {
-                        "id":  "bossmod_reborn",
-                        "category":  "Rotations/AI",
-                        "displayName":  "BossModReborn",
-                        "matchTokens":  [
-                                            "BossModReborn"
-                        ],
-                        "notes":  "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/FFXIV-CombatReborn/BossmodReborn",
-                        "repoJsonUrls":  [
-                                             "https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json"
-                                         ],
-                        "ruleType":  "bossmod_pair",
-                        "relatedIds":  [
-                                           "bossmod"
-                                       ]
-                    },
-                    {
-                        "id":  "wrath",
-                        "category":  "Rotations/AI",
-                        "displayName":  "Wrath",
-                        "matchTokens":  [
-                                            "Wrath"
-                                        ],
-                        "notes":  "Ensure you are only using one rotation plugin at the same time.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
-                        "ruleType":  "rotation_conflict"
-                    },
-                    {
-                        "id":  "rotation_solver_reborn",
-                        "category":  "Rotations/AI",
-                        "displayName":  "RotationSolverReborn",
-                        "matchTokens":  [
-                                            "RotationSolverReborn",
-                                            "RotationSolver"
-                        ],
-                        "notes":  "Ensure you are only using one rotation plugin at the same time.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/FFXIV-CombatReborn/RotationSolverReborn",
-                        "repoJsonUrls":  [
-                                             "https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json",
-                                             "https://raw.githubusercontent.com/FFXIV-CombatReborn/RotationSolverReborn/refs/heads/main/pluginmasterCN.json",
-                                             "https://raw.githubusercontent.com/FFXIV-CombatReborn/RotationSolverReborn/refs/heads/main/pluginmasterKR.json"
-                                         ],
-                        "ruleType":  "rotation_conflict"
-                    },
-                    {
-                        "id":  "ultimate_combo",
-                        "category":  "Rotations/AI",
-                        "displayName":  "UltimateCombo",
-                        "matchTokens":  [
-                                            "UltimateCombo"
-                                        ],
-                        "notes":  "Ensure you are only using one rotation plugin at the same time.",
-                        "description":  "Ultimate Combo is based off of several combo plugins, but has completely new logic, features, and many quality of life improvements.",
-                        "repoUrl":  "https://github.com/StackBLU/UltimateCombo",
-                        "repoJsonUrl":  "https://raw.githubusercontent.com/StackBLU/UltimateCombo/main/pluginmaster.json-",
-                        "ruleType":  "rotation_conflict"
-                    },
-                    {
-                        "id":  "frenrider",
-                        "category":  "Utility Bots",
-                        "displayName":  "FrenRider",
-                        "matchTokens":  [
-                                            "FrenRider"
-                                        ],
-                        "notes":  "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn\u0027t even manage normally. This is volatile behaviour.",
-                        "description":  "Native Dalamud plugin for managing 2+ characters in various situations. Follow party members, auto-mount, combat integration, and more. Use /frenrider or /fr to open.",
-                        "repoUrl":  "https://github.com/McVaxius/FrenRider",
-                        "repoJsonUrl":  "https://aethertek.io/x.json",
-                        "ruleType":  "autoduty_conflict"
-                    },
-                    {
-                        "id":  "hellofellowhumans",
-                        "category":  "Utility Bots",
-                        "displayName":  "HelloFellowHumans",
-                        "matchTokens":  [
-                                            "HelloFellowHumans"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game unless you want it to hahaha.",
-                        "description":  "Configure emote responses that trigger when specific players are nearby. Perfect for passive RP automation. Use /hfh to configure.",
-                        "repoUrl":  "https://github.com/McVaxius/HelloFellowHuman",
-                        "repoJsonUrl":  "https://aethertek.io/x.json"
-                    },
-                    {
-                        "id":  "vermaxion",
-                        "category":  "Utility Bots",
-                        "displayName":  "VerMaxion",
-                        "matchTokens":  [
-                                            "VERMAXION",
-                                            "VerMaxion"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "Automates weekly and daily tasks triggered by AutoRetainer post-processing. Configurable per character: Verminion queue, Cactpot, Chocobo Racing, FC buff refill, and Henchman management.",
-                        "repoUrl":  "https://github.com/McVaxius/VERMAXION",
-                        "repoJsonUrl":  "https://aethertek.io/x.json"
-                    },
-                    {
-                        "id":  "vnavmesh",
-                        "category":  "Utility Bots",
-                        "displayName":  "VNAVMESH",
-                        "matchTokens":  [
-                                            "vnavmesh",
-                                            "VNAVMESH"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "Utility to automatically move the character around in the world, skilfully avoiding any obstacles.",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/veyn",
-                        "ruleType":  "direct_conflict_red",
-                        "relatedIds":  [
-                                           "smartnav"
-                                       ]
-                    },
-                    {
-                        "id":  "smartnav",
-                        "category":  "Utility Bots",
-                        "displayName":  "SmartNav",
-                        "matchTokens":  [
-                                            "SmartNav"
-                                        ],
-                        "notes":  "Wiggly TBD plugin.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
-                        "ruleType":  "direct_conflict_red",
-                        "relatedIds":  [
-                                           "vnavmesh"
-                                       ]
-                    },
-                    {
-                        "id":  "visland",
-                        "category":  "Utility Bots",
-                        "displayName":  "VISLAND",
-                        "matchTokens":  [
-                                            "VISLAND",
-                                            "visland"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/awgil/ffxiv_visland",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/veyn"
-                    },
-                    {
-                        "id":  "chocoholic",
-                        "category":  "Utility Bots",
-                        "displayName":  "Chocoholic",
-                        "matchTokens":  [
-                                            "Chocoholic"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/kawaii/Chocoholic",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/kawaii"
-                    },
-                    {
-                        "id":  "daily_routines",
-                        "category":  "Utility Bots",
-                        "displayName":  "Daily Routines",
-                        "matchTokens":  [
-                                            "DailyRoutines",
-                                            "Daily Routines"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/Dalamud-DailyRoutines/DailyRoutines",
-                        "repoJsonUrl":  "https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json"
-                    },
-                    {
-                        "id":  "lifestream",
-                        "category":  "Utility Bots",
-                        "displayName":  "Lifestream",
-                        "matchTokens":  [
-                                            "Lifestream"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/NightmareXIV/Lifestream",
-                        "repoJsonUrl":  "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
-                    },
-                    {
-                        "id":  "pandoras_box",
-                        "category":  "Utility Bots",
-                        "displayName":  "Pandora's Box",
-                        "matchTokens":  [
-                                            "PandorasBox",
-                                            "Pandora's Box"
-                                        ],
-                        "notes":  "Wide QoL surface. Review what you have enabled so you do not forget it is quietly doing work for you.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/PunishXIV/PandorasBox",
-                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
-                    },
-                    {
-                        "id":  "plugin_preset_manager",
-                        "category":  "Utility Bots",
-                        "displayName":  "Plugin Preset Manager",
-                        "matchTokens":  [
-                                            "PluginPresetManager",
-                                            "Plugin Preset Manager"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. It is useful if you swap between different plugin sets often.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/Brappp/PluginPresetManager",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/wah"
-                    },
-                    {
-                        "id":  "saucy",
-                        "category":  "Utility Bots",
-                        "displayName":  "Saucy",
-                        "matchTokens":  [
-                                            "Saucy"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/PunishXIV/Saucy",
-                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
-                    },
-                    {
-                        "id":  "splatoon",
-                        "category":  "Utility Bots",
-                        "displayName":  "Splatoon",
-                        "matchTokens":  [
-                                            "Splatoon"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Just remember it is an always-visible overlay surface rather than a passive manager.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/PunishXIV/Splatoon",
-                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
-                    },
-                    {
-                        "id":  "yesalready",
-                        "category":  "Utility Bots",
-                        "displayName":  "Yes Already",
-                        "matchTokens":  [
-                                            "YesAlready",
-                                            "Yes Already"
-                                        ],
-                        "notes":  "Usually safe to keep. Just remember it automates dialog confirmations if you leave rules enabled.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/PunishXIV/YesAlready",
-                        "repoJsonUrl":  "https://love.puni.sh/ment.json"
-                    },
-                    {
-                        "id":  "xa_slave",
-                        "category":  "Utility Bots",
-                        "displayName":  "XA Slave",
-                        "matchTokens":  [
-                                            "XASlave",
-                                            "XA Slave"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "Don\u0027t manual.",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "https://aethertek.io/x.json"
-                    },
-                    {
-                        "id":  "xa_hud",
-                        "category":  "Utility Bots",
-                        "displayName":  "XA HUD",
-                        "matchTokens":  [
-                                            "XAHUD",
-                                            "XA HUD"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "https://aethertek.io/x.json"
-                    },
-                    {
-                        "id":  "something_need_doing",
-                        "category":  "Utility Bots",
-                        "displayName":  "Something Need Doing",
-                        "matchTokens":  [
-                                            "SomethingNeedDoing",
-                                            "SND"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game unless you want it to hahaha.",
-                        "description":  "Now for more than crafting!",
-                        "repoUrl":  "https://github.com/Jaksuhn/SomethingNeedDoing",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/croizat"
-                    },
-                    {
-                        "id":  "tracky_track",
-                        "category":  "Utility Bots",
-                        "displayName":  "Tracky Track",
-                        "matchTokens":  [
-                                            "TrackyTrack",
-                                            "Tracky Track"
-                                        ],
-                        "notes":  "There is no reason to uninstall this plugin unless you want to save space on your HD. It does get a bit spicy in terms of storage.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  ""
-                    },
-                    {
-                        "id":  "questionable_wiggly",
-                        "category":  "Quest",
-                        "displayName":  "Questionable (wiggly)",
-                        "matchTokens":  [
-                                            "Questionable",
-                                            "QuestionableWiggly"
-                                        ],
-                        "notes":  "These plugins have diverged already.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "https://github.com/WigglyMuffin/Questionable",
-                        "repoJsonUrl":  "",
-                        "ruleType":  "paired_conflict_red",
-                        "relatedIds":  [
-                                           "questionable_punish"
-                                       ]
-                    },
-                    {
-                        "id":  "questionable_punish",
-                        "category":  "Quest",
-                        "displayName":  "Questionable (punish)",
-                        "matchTokens":  [
-                                            "QuestionablePunish",
-                                            "QuestionablePunished"
-                                        ],
-                        "notes":  "These plugins have diverged already.",
-                        "description":  "placeholder description",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "",
-                        "ruleType":  "paired_conflict_red",
-                        "relatedIds":  [
-                                           "questionable_wiggly"
-                                       ]
-                    },
-                    {
-                        "id":  "antiafkkick",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "AntiAfkKick",
-                        "matchTokens":  [
-                                            "AntiAfkKick",
-                                            "AntiAfkKick-Dalamud"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/NightmareXIV/AntiAfkKick"
-                    },
-                    {
-                        "id":  "bfe",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "BFE",
-                        "matchTokens":  [
-                                            "BFE"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/McVaxius/BFE"
-                    },
-                    {
-                        "id":  "botology",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Botology",
-                        "matchTokens":  [
-                                            "Botology",
-                                            "botology"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/McVaxius/botology"
-                    },
-                    {
-                        "id":  "burning_down_the_house",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Burning Down the House",
-                        "matchTokens":  [
-                                            "Burning Down the House",
-                                            "BDTHPlugin"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/LeonBlade/BDTHPlugin"
-                    },
-                    {
-                        "id":  "cammy",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Cammy",
-                        "matchTokens":  [
-                                            "Cammy"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/UnknownX7/Cammy"
-                    },
-                    {
-                        "id":  "chill_frames",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Chill Frames",
-                        "matchTokens":  [
-                                            "Chill Frames",
-                                            "ChillFrames"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/MidoriKami/ChillFrames"
-                    },
-                    {
-                        "id":  "choke_abo",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Choke-abo",
-                        "matchTokens":  [
-                                            "Choke-abo",
-                                            "ChokeAbo"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "customresolution",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "CustomResolution",
-                        "matchTokens":  [
-                                            "CustomResolution",
-                                            "CustomResolution2782"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://gitea.0x0a.de/0x0ade/DP-CustomResolution"
-                    },
-                    {
-                        "id":  "deep_ducking",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Deep Ducking",
-                        "matchTokens":  [
-                                            "Deep Ducking",
-                                            "DDuck"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "dheacon",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Dheacon",
-                        "matchTokens":  [
-                                            "Dheacon",
-                                            "dheacon"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "dhog_potato_system",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Dhog Potato System",
-                        "matchTokens":  [
-                                            "Dhog Potato System",
-                                            "DPS"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/McVaxius/DPS"
-                    },
-                    {
-                        "id":  "doze_anywhere",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Doze Anywhere",
-                        "matchTokens":  [
-                                            "Doze Anywhere",
-                                            "DozeAnywhere"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/SoyaX/DozeAnywhere"
-                    },
-                    {
-                        "id":  "elitehacks",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "EliteHacks",
-                        "matchTokens":  [
-                                            "EliteHacks"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "footballer",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Footballer",
-                        "matchTokens":  [
-                                            "Footballer",
-                                            "footballer"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/McVaxius/footballer"
-                    },
-                    {
-                        "id":  "globetrotter",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Globetrotter",
-                        "matchTokens":  [
-                                            "Globetrotter"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/chirpxiv/Globetrotter"
-                    },
-                    {
-                        "id":  "haseltweaks",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "HaselTweaks",
-                        "matchTokens":  [
-                                            "HaselTweaks"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/Haselnussbomber/HaselTweaks"
-                    },
-                    {
-                        "id":  "hello_fellow_human",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Hello Fellow Human",
-                        "matchTokens":  [
-                                            "Hello Fellow Human",
-                                            "HelloFellowHuman"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "hyperborea",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Hyperborea",
-                        "matchTokens":  [
-                                            "Hyperborea"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/kawaii/Hyperborea"
-                    },
-                    {
-                        "id":  "krangler",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Krangler",
-                        "matchTokens":  [
-                                            "Krangler"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "lazyloot",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "LazyLoot",
-                        "matchTokens":  [
-                                            "LazyLoot"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/PunishXIV/LazyLoot"
-                    },
-                    {
-                        "id":  "maplinker",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "MapLinker",
-                        "matchTokens":  [
-                                            "MapLinker"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/Bluefissure/MapLinker"
-                    },
-                    {
-                        "id":  "monsterdex",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "MonsterDex",
-                        "matchTokens":  [
-                                            "MonsterDex",
-                                            "DeepDungeonDex"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/wolfcomp/MonsterDex"
-                    },
-                    {
-                        "id":  "nightmaretools",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "NightmareTools",
-                        "matchTokens":  [
-                                            "NightmareTools"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://www.patreon.com/NightmareXIV"
-                    },
-                    {
-                        "id":  "peeping_tom",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Peeping Tom",
-                        "matchTokens":  [
-                                            "Peeping Tom",
-                                            "PeepingTom"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/Caraxi/PeepingTom"
-                    },
-                    {
-                        "id":  "playertrack",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "PlayerTrack",
-                        "matchTokens":  [
-                                            "PlayerTrack"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/Infiziert90/PlayerTrack"
-                    },
-                    {
-                        "id":  "qol_bar",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "QoL Bar",
-                        "matchTokens":  [
-                                            "QoL Bar",
-                                            "QoLBar"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/UnknownX7/QoLBar"
-                    },
-                    {
-                        "id":  "questionable_companion",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Questionable Companion",
-                        "matchTokens":  [
-                                            "Questionable Companion",
-                                            "QSTCompanion"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/MacaronDream/QSTCompanion"
-                    },
-                    {
-                        "id":  "simple_tweaks_plugin",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Simple Tweaks Plugin",
-                        "matchTokens":  [
-                                            "Simple Tweaks Plugin",
-                                            "SimpleTweaksPlugin"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/Caraxi/SimpleTweaksPlugin"
-                    },
-                    {
-                        "id":  "skipcutscene",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "SkipCutscene",
-                        "matchTokens":  [
-                                            "SkipCutscene"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/a08381/Dalamud.SkipCutscene"
-                    },
-                    {
-                        "id":  "standalonepluginmanager",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "StandalonePluginManager",
-                        "matchTokens":  [
-                                            "StandalonePluginManager"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/NightmareXIV/StandalonePluginManager"
-                    },
-                    {
-                        "id":  "target_furniture",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Target Furniture",
-                        "matchTokens":  [
-                                            "Target Furniture",
-                                            "TargetFurniture"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/InitialDet/TargetFurniture"
-                    },
-                    {
-                        "id":  "teleporter",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Teleporter",
-                        "matchTokens":  [
-                                            "Teleporter",
-                                            "TeleporterPlugin"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/pohky/TeleporterPlugin"
-                    },
-                    {
-                        "id":  "textadvance",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "TextAdvance",
-                        "matchTokens":  [
-                                            "TextAdvance"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/NightmareXIV/TextAdvance"
-                    },
-                    {
-                        "id":  "thick_thighs_save_lives",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Thick Thighs Save Lives",
-                        "matchTokens":  [
-                                            "Thick Thighs Save Lives",
-                                            "TTSL"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/McVaxius/TTSL"
-                    },
-                    {
-                        "id":  "triadbuddy",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "TriadBuddy",
-                        "matchTokens":  [
-                                            "TriadBuddy"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "unloaderrorfuckoff",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "UnloadErrorFuckOff",
-                        "matchTokens":  [
-                                            "UnloadErrorFuckOff"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/NightmareXIV/UnloadErrorFuckOff"
-                    },
-                    {
-                        "id":  "which_patch_was_that",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Which Patch Was That?",
-                        "matchTokens":  [
-                                            "Which Patch Was That?",
-                                            "WhichPatchWasThat"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/kouzukii/ffxiv-itempatch"
-                    },
-                    {
-                        "id":  "xa_hud_navigator",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "XA HUD Navigator",
-                        "matchTokens":  [
-                                            "XA HUD Navigator",
-                                            "XAHudNavigator"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/xa-io/XA-HUD-Navigator"
-                    },
-                    {
-                        "id":  "dhoggpt",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "DhogGPT",
-                        "matchTokens":  [
-                                            "DhogGPT"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "househunter",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "HouseHunter",
-                        "matchTokens":  [
-                                            "HouseHunter"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  ""
-                    },
-                    {
-                        "id":  "visibility",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Visibility",
-                        "matchTokens":  [
-                                            "Visibility"
-                                        ],
-                        "notes":  "Manual review pending. This row came from the user-supplied installed plugin list and is parked in ZZUNCATEGORIZED until the team assigns a better bucket.",
-                        "repoUrl":  "https://github.com/SheepGoMeh/VisibilityPlugin"
-                    },
-                    {
-                        "id":  "viwi",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Vera's Integrated World Improvements",
-                        "matchTokens":  [
-                                            "Vera's Integrated World Improvements",
-                                            "VIWI"
-                                        ],
-                        "notes":  "Manual review pending. This row was added from the audited vera puni feed after the user called out that VIWI was still missing.",
-                        "description":  "A collection of plugins-turned-modules, QoL improvements, and Automation features.",
-                        "repoUrl":  "",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/vera"
-                    },
-                    {
-                        "id":  "chilled_leves",
-                        "category":  "ZZUNCATEGORIZED",
-                        "displayName":  "Chilled Leves",
-                        "matchTokens":  [
-                                            "Chilled Leves",
-                                            "ChilledLeves"
-                                        ],
-                        "notes":  "Manual review pending. This row was added from the audited ice puni feed after the user called out that Chilled Leves was still missing.",
-                        "description":  "A leve helper that lets you select which ones you want to do, and help turn them in for you. YOU NEED NAVMESH INSTALLED AS AN FYI.",
-                        "repoUrl":  "https://github.com/LeontopodiumNivale14/LeveItAlone",
-                        "repoJsonUrl":  "https://puni.sh/api/repository/ice"
-                    }
-                ]
+    "schemaVersion": 2,
+    "sourceUrl": "https://raw.githubusercontent.com/McVaxius/botology/refs/heads/main/botology/plugin-repository-links.json",
+    "fieldGuide": {
+        "id": "Stable catalog id used by botology for matching and rule references.",
+        "category": "UI group heading for the row.",
+        "displayName": "Visible row label shown in the manager window.",
+        "matchTokens": "Plugin names or internal names botology will match against installed/runtime plugin data.",
+        "notes": "Long-form warning/help text shown in the (?) popup and reused in green/yellow/red rows.",
+        "description": "Optional plugin summary for the Category / Plugin (?) popup. If omitted, botology tries repo.json data and otherwise falls back to placeholder description.",
+        "repoUrl": "Optional repository homepage or source URL used by the Repo button.",
+        "repoJsonUrl": "Optional concrete repo.json URL or human note shown by the [Copy] button.",
+        "repoJsonUrls": "Optional array of multiple concrete repo.json feed URLs. Botology merges metadata across them and [Copy] copies them all.",
+        "ruleType": "Optional built-in assessment rule. Omit it to fall back to the compiled default handling for that id.",
+        "relatedIds": "Optional plugin ids consulted by paired/direct/bossmod rules."
+    },
+    "ruleTypeGuide": {
+        "autoduty_conflict": "Marks the row red when AutoDuty is loaded.",
+        "paired_conflict_yellow": "Marks the row yellow when any relatedIds entry is loaded.",
+        "paired_conflict_red": "Marks the row red when any relatedIds entry is loaded.",
+        "direct_conflict_red": "Marks the row red when any relatedIds entry is loaded.",
+        "rotation_conflict": "Marks the row yellow when another rotation/bossmod rule-driven entry is loaded.",
+        "bossmod_pair": "Marks the row red when any relatedIds bossmod rival is loaded; otherwise falls back to rotation_conflict.",
+        "loaded_warning_yellow": "Marks the row yellow whenever the plugin itself is currently loaded."
+    },
+    "plugins": [
+        {
+            "id": "artisan",
+            "category": "DOH/L Content Bots",
+            "displayName": "Artisan",
+            "matchTokens": [
+                "Artisan"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/PunishXIV/Artisan",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        },
+        {
+            "id": "autohook",
+            "category": "DOH/L Content Bots",
+            "displayName": "AutoHook",
+            "matchTokens": [
+                "AutoHook",
+                "Autohook"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "It hooks the fish for you, can you believe it?",
+            "repoUrl": "https://github.com/PunishXIV/AutoHook",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        },
+        {
+            "id": "chilled_leves",
+            "category": "DOH/L Content Bots",
+            "displayName": "Chilled Leves",
+            "matchTokens": [
+                "Chilled Leves",
+                "ChilledLeves"
+            ],
+            "notes": "Useful leve helper. Requires Navmesh; otherwise safe to keep.",
+            "description": "A leve helper that lets you select which ones you want to do, and help turn them in for you. YOU NEED NAVMESH INSTALLED AS AN FYI.",
+            "repoUrl": "https://github.com/LeontopodiumNivale14/LeveItAlone",
+            "repoJsonUrl": "https://puni.sh/api/repository/ice"
+        },
+        {
+            "id": "explorers_icebox",
+            "category": "DOH/L Content Bots",
+            "displayName": "Explorer's Icebox",
+            "matchTokens": [
+                "ExplorersIcebox",
+                "Explorer's Icebox"
+            ],
+            "notes": "Island/Cosmic-side helper. Requires Navmesh and Visland.",
+            "description": "Island Sanctuary helper for leveling up and gathering materials; requires Navmesh and Visland.",
+            "repoUrl": "https://github.com/LeontopodiumNivale14/Explorers-Icebox/tree/master",
+            "repoJsonUrl": "https://puni.sh/api/repository/ice"
+        },
+        {
+            "id": "fish_notify",
+            "category": "DOH/L Content Bots",
+            "displayName": "Fish Notify",
+            "matchTokens": [
+                "FishNotify",
+                "Fish Notify"
+            ],
+            "notes": "Lightweight fishing helper. No conflicts identified from the audited feeds.",
+            "description": "Plays a sound when a fish is caught depending on tug strength.",
+            "repoUrl": "https://github.com/VeraNala/FishNotify",
+            "repoJsonUrl": "https://puni.sh/api/repository/vera"
+        },
+        {
+            "id": "gatherbuddy",
+            "category": "DOH/L Content Bots",
+            "displayName": "GatherBuddy",
+            "matchTokens": [
+                "GatherBuddy"
+            ],
+            "notes": "Pick one GatherBuddy only.",
+            "description": "Legacy GatherBuddy line; only keep one GatherBuddy variant installed.",
+            "repoUrl": "",
+            "repoJsonUrl": "official / legacy feed",
+            "ruleType": "paired_conflict_red",
+            "relatedIds": [
+                "gatherbuddy_reborn"
+            ]
+        },
+        {
+            "id": "gatherbuddy_reborn",
+            "category": "DOH/L Content Bots",
+            "displayName": "GatherBuddyReborn",
+            "matchTokens": [
+                "GatherBuddyReborn",
+                "GatherbuddyReborn"
+            ],
+            "notes": "Pick one GatherBuddy only.",
+            "description": "Simplifies gathering by finding nodes/fish, tracking uptime/weather, and optionally auto-gathering from lists.",
+            "repoUrl": "https://github.com/AtmoOmen/GatherBuddyReborn",
+            "repoJsonUrl": "https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json",
+            "ruleType": "paired_conflict_red",
+            "relatedIds": [
+                "gatherbuddy"
+            ]
+        },
+        {
+            "id": "henchman",
+            "category": "DOH/L Content Bots",
+            "displayName": "Henchman",
+            "matchTokens": [
+                "Henchman"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Your personal Henchman doing all the heavy lifting for you!\n\n- A/B Rank Farmer\n- Hunt Logs (incl. Multibox Carry)\n- Hunt Bills\n- Retainer Creation\n- Character Creation\n- Multi Account Trading\n- Ocean Fishing\n- Chocobokeeps\nand more to come.",
+            "repoUrl": "https://github.com/Knightmore/Henchman",
+            "repoJsonUrl": "https://puni.sh/api/repository/knightmore"
+        },
+        {
+            "id": "icecosmic",
+            "category": "DOH/L Content Bots",
+            "displayName": "ICECOSMIC",
+            "matchTokens": [
+                "ICECOSMIC"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Automation helper for Cosmic Exploration content.",
+            "repoUrl": "",
+            "repoJsonUrl": "https://puni.sh/api/repository/ice"
+        },
+        {
+            "id": "prioritizer",
+            "category": "DOH/L Content Bots",
+            "displayName": "Prioritizer",
+            "matchTokens": [
+                "Prioritizer"
+            ],
+            "notes": "Crafting-side helper. Safe to keep if you rely on it while crafting.",
+            "description": "Sets the game's process priority to high while crafting to reduce failed crafts from lag.",
+            "repoUrl": "https://github.com/NightmareXIV/Prioritizer",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "vsatisfy",
+            "category": "DOH/L Content Bots",
+            "displayName": "vSatisfy",
+            "matchTokens": [
+                "vSatisfy",
+                "Vsatisfy"
+            ],
+            "notes": "It has a small problem of not auto-deactivating itself if you get stuck in an unfinished cycle, so be sure to hit stop tasks before doing something else.",
+            "description": "Make custom deliveries less annoying by automating the process.",
+            "repoUrl": "",
+            "repoJsonUrl": "https://puni.sh/api/repository/veyn"
+        },
+        {
+            "id": "aurafarmer",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "AuraFarmer",
+            "matchTokens": [
+                "AuraFarmer"
+            ],
+            "notes": "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/McVaxius/AuraFarmer",
+            "repoJsonUrl": "https://aethertek.io/x.json",
+            "ruleType": "autoduty_conflict"
+        },
+        {
+            "id": "bocchi",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "BOCCHI",
+            "matchTokens": [
+                "BOCCHI"
+            ],
+            "notes": "Occult Crescent helper with optional aggressive automation; review settings carefully.",
+            "description": "Occult Crescent helper with reward panels, chest/path help, and optional automation features.",
+            "repoUrl": "https://github.com/OhKannaDuh/BOCCHI",
+            "repoJsonUrl": "https://ffxiv.ohkannaduh.com/plugins.json"
+        },
+        {
+            "id": "bunny_farm_eureka",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "Bunny Farm Eureka",
+            "matchTokens": [
+                "BunnyFarmEureka",
+                "Bunny Farm Eureka"
+            ],
+            "notes": "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.",
+            "description": "A new BFE shell focused on duty communication first: configured Hydatos/bunny callout presets, quick send buttons, standard Dhog window controls, and DTR visibility.",
+            "repoUrl": "https://github.com/McVaxius/BFE",
+            "repoJsonUrl": "https://raw.githubusercontent.com/McVaxius/BFE/refs/heads/main/repo.json",
+            "ruleType": "autoduty_conflict"
+        },
+        {
+            "id": "cbt_vfate",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "CBT (vfate activated)",
+            "matchTokens": [
+                "CBT"
+            ],
+            "notes": "If you use Twist of Fayte at the same time as CBT vfate there might be issues.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "",
+            "ruleType": "paired_conflict_yellow",
+            "relatedIds": [
+                "twist_of_fayte"
+            ]
+        },
+        {
+            "id": "hoard_farm",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "Hoard Farm",
+            "matchTokens": [
+                "HoardFarm",
+                "Hoard Farm"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Helps farm Accursed Hoards in Deep Dungeons.",
+            "repoUrl": "https://github.com/Jukkales/HoardFarm",
+            "repoJsonUrl": "https://puni.sh/api/repository/jukka"
+        },
+        {
+            "id": "lanparty",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "LANParty",
+            "matchTokens": [
+                "LANParty"
+            ],
+            "notes": "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/McVaxius/LanParty",
+            "repoJsonUrl": "https://aethertek.io/x.json",
+            "ruleType": "autoduty_conflict"
+        },
+        {
+            "id": "lootgoblin",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "LootGoblin",
+            "matchTokens": [
+                "LootGoblin"
+            ],
+            "notes": "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.",
+            "description": "LootGoblin automates treasure map hunting by opening maps, detecting locations via GlobeTrotter, teleporting to the nearest aetheryte, coordinating with party members, and flying to the treasure location. Use /lootgoblin or /lg to open.",
+            "repoUrl": "https://github.com/McVaxius/LootGoblin",
+            "repoJsonUrl": "https://aethertek.io/x.json",
+            "ruleType": "autoduty_conflict"
+        },
+        {
+            "id": "mogtome",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "MOGTOME",
+            "matchTokens": [
+                "MOGTOME"
+            ],
+            "notes": "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.",
+            "description": "M.O.G.T.O.M.E. automates duty farming (Praetorium/Porta Decumana) with party coordination, repair, food, potions, rotation management, and stuck detection. Use /mogtome or /mog to open. M.O.G.T.O.M.E. = Management Of Grand Tome Operations & Management Engine",
+            "repoUrl": "https://github.com/McVaxius/MOGTOME",
+            "repoJsonUrl": "https://aethertek.io/x.json",
+            "ruleType": "none_yet"
+        },
+        {
+            "id": "monsterdex",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "MonsterDex",
+            "matchTokens": [
+                "MonsterDex",
+                "DeepDungeonDex"
+            ],
+            "notes": "Deep Dungeon helper. Safe to keep if you use DD tracking/reference features.",
+            "repoUrl": "https://github.com/wolfcomp/MonsterDex",
+            "description": "Deep Dungeon / monster reference helper.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "necrolens",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "NecroLens",
+            "matchTokens": [
+                "NecroLens"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Deep Dungeon helper with radar for mobs, aggro, sight, and more.",
+            "repoUrl": "https://github.com/Jukkales/NecroLens",
+            "repoJsonUrl": "https://puni.sh/api/repository/jukka"
+        },
+        {
+            "id": "palace_pal",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "Palace Pal",
+            "matchTokens": [
+                "PalacePal",
+                "Palace Pal"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/PunishXIV/PalacePal",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        },
+        {
+            "id": "twist_of_fayte",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "Twist of Fayte",
+            "matchTokens": [
+                "TwistOfFayte",
+                "Twist of Fayte"
+            ],
+            "notes": "If you use CBT vfate at the same time as Twist of Fayte there might be issues.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "",
+            "ruleType": "paired_conflict_yellow",
+            "relatedIds": [
+                "cbt_vfate"
+            ]
+        },
+        {
+            "id": "vfallguy",
+            "category": "DOW/DOM Content Bots",
+            "displayName": "vfallguy",
+            "matchTokens": [
+                "vfallguy"
+            ],
+            "notes": "Seasonal/event content bot. Keep only if you actually use it.",
+            "description": "Bot that automates the Fall Guys collaboration event.",
+            "repoUrl": "",
+            "repoJsonUrl": "https://puni.sh/api/repository/veyn"
+        },
+        {
+            "id": "ai_duty_solver",
+            "category": "Duty solving",
+            "displayName": "AI Duty Solver",
+            "matchTokens": [
+                "AIDutySolver",
+                "AI Duty Solver"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": ""
+        },
+        {
+            "id": "autoduty",
+            "category": "Duty solving",
+            "displayName": "AutoDuty",
+            "matchTokens": [
+                "AutoDuty"
+            ],
+            "notes": "Keep this plugin disabled unless you specifically need it on. It interferes with many things without even being activated.",
+            "description": "A plugin to run dungeons for you with Trust, Duty Support, Squadrons, Variants, and Regular, Requires BossMod, vnavmesh and a Rotation Plugin (BossMod AutoRotation, Wrath or RotationSolverReborn)",
+            "repoUrl": "https://github.com/erdelf/AutoDuty",
+            "repoJsonUrl": "https://puni.sh/api/repository/erdelf",
+            "ruleType": "loaded_warning_yellow"
+        },
+        {
+            "id": "accountant",
+            "category": "Empire Management",
+            "displayName": "Accountant",
+            "matchTokens": [
+                "Accountant"
+            ],
+            "notes": "This plugin is fine to keep if you want to use the Garden tracker. Otherwise Submarine Tracker and AutoRetainer are sufficient to cover retainer and submarine information.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "1PP no repo URL needed"
+        },
+        {
+            "id": "allagan_tools",
+            "category": "Empire Management",
+            "displayName": "Allagan Tools",
+            "matchTokens": [
+                "AllaganTools",
+                "Allagan Tools"
+            ],
+            "notes": "This tool offers the same data recording as XA DB and additional tools and guides but will frequently corrupt its own database and is unreliable for long term 100% data mining of a large empire of characters and FCs.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "1PP no repo URL needed"
+        },
+        {
+            "id": "altoholic",
+            "category": "Empire Management",
+            "displayName": "Altoholic",
+            "matchTokens": [
+                "Altoholic"
+            ],
+            "notes": "You should use XA DB instead. This plugin will CTD you if you try to browse the sheets tabs. Only use this over XA DB if you like the layout.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": ""
+        },
+        {
+            "id": "arc",
+            "category": "Empire Management",
+            "displayName": "ARC",
+            "matchTokens": [
+                "ARControl",
+                "ARC"
+            ],
+            "notes": "Keep this if you want a stronger AutoRetainer venture-planning surface. Otherwise basic AutoRetainer is enough for most empires.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/zbee/ARC",
+            "repoJsonUrl": "https://puni.sh/api/repository/justbees"
+        },
+        {
+            "id": "autoretainer",
+            "category": "Empire Management",
+            "displayName": "AutoRetainer",
+            "matchTokens": [
+                "AutoRetainer",
+                "Autoretainer"
+            ],
+            "notes": "AutoDuty should be disabled or it can cause problems with checking retainers. Solution for now is to have an \"/ad stop\". If VerMaxion is installed we are safe with AutoDuty being enabled.",
+            "description": "Collect and assign ventures to your retainers from the comfort of your bed.",
+            "repoUrl": "https://github.com/PunishXIV/AutoRetainer",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        },
+        {
+            "id": "deliveroo",
+            "category": "Empire Management",
+            "displayName": "Deliveroo",
+            "matchTokens": [
+                "Deliveroo"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Better Grand Company Deliveries.",
+            "repoUrl": "https://github.com/VeraNala/Deliveroo",
+            "repoJsonUrl": "https://puni.sh/api/repository/vera"
+        },
+        {
+            "id": "discard_helper",
+            "category": "Empire Management",
+            "displayName": "Discard Helper",
+            "matchTokens": [
+                "ARDiscard",
+                "Discard Helper"
+            ],
+            "notes": "Inventory cleanup helper for AutoRetainer-style setups. Safe to keep if you intentionally use discard rules.",
+            "description": "Discard items automatically via a command or as a post-venture task for AutoRetainer.",
+            "repoUrl": "https://github.com/VeraNala/ARDiscard",
+            "repoJsonUrl": "https://puni.sh/api/repository/vera"
+        },
+        {
+            "id": "dropbox",
+            "category": "Empire Management",
+            "displayName": "Dropbox",
+            "matchTokens": [
+                "Dropbox"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Your personal vending machine.",
+            "repoUrl": "https://github.com/kawaii/Dropbox",
+            "repoJsonUrl": "https://puni.sh/api/repository/kawaii"
+        },
+        {
+            "id": "squadronista",
+            "category": "Empire Management",
+            "displayName": "Squadronista",
+            "matchTokens": [
+                "Squadronista"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Helps optimize squadron mission compositions.",
+            "repoUrl": "https://github.com/yourusername/Squadronista",
+            "repoJsonUrl": "https://puni.sh/api/repository/vera"
+        },
+        {
+            "id": "submarine_tracker",
+            "category": "Empire Management",
+            "displayName": "Submarine Tracker",
+            "matchTokens": [
+                "SubmarineTracker",
+                "Submarine Tracker"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. The folder can get large.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": ""
+        },
+        {
+            "id": "workshoppa",
+            "category": "Empire Management",
+            "displayName": "Workshoppa",
+            "matchTokens": [
+                "Workshoppa"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Better Company Workshop Turn-In.",
+            "repoUrl": "https://git.carvel.li/liza/Workshoppa",
+            "repoJsonUrl": "https://puni.sh/api/repository/vera"
+        },
+        {
+            "id": "xa_db",
+            "category": "Empire Management",
+            "displayName": "XA DB",
+            "matchTokens": [
+                "XADB",
+                "XA DB"
+            ],
+            "notes": "This tool covers all of the data of Allagan Tools and Altoholic. For now it doesn't have auto list via tooltip for hovered item, so keep Allagan Tools if you need that feature.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "battlevest",
+            "category": "Quest",
+            "displayName": "Battlevest",
+            "matchTokens": [
+                "Battlevest"
+            ],
+            "notes": "Battle leve helper. No conflicts identified from the audited feeds.",
+            "description": "Battle LeveQuest helper.",
+            "repoUrl": "https://github.com/NightmareXIV/Battlevest",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "questionable_punish",
+            "category": "Quest",
+            "displayName": "Questionable (punish)",
+            "matchTokens": [
+                "QuestionablePunish",
+                "QuestionablePunished"
+            ],
+            "notes": "These plugins have diverged already.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "",
+            "ruleType": "paired_conflict_red",
+            "relatedIds": [
+                "questionable_wiggly"
+            ]
+        },
+        {
+            "id": "questionable_wiggly",
+            "category": "Quest",
+            "displayName": "Questionable (wiggly)",
+            "matchTokens": [
+                "Questionable",
+                "QuestionableWiggly"
+            ],
+            "notes": "These plugins have diverged already.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/WigglyMuffin/Questionable",
+            "repoJsonUrl": "",
+            "ruleType": "paired_conflict_red",
+            "relatedIds": [
+                "questionable_punish"
+            ]
+        },
+        {
+            "id": "questionable_companion",
+            "category": "Quest",
+            "displayName": "Questionable Companion",
+            "matchTokens": [
+                "Questionable Companion",
+                "QSTCompanion"
+            ],
+            "notes": "Companion helper for the Questionable ecosystem. Keep it aligned with whichever Questionable fork you actually use.",
+            "repoUrl": "https://github.com/MacaronDream/QSTCompanion",
+            "description": "Companion/adjunct tooling for Questionable quest automation.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "skipcutscene",
+            "category": "Quest",
+            "displayName": "SkipCutscene",
+            "matchTokens": [
+                "SkipCutscene"
+            ],
+            "notes": "This overlaps conceptually with TextAdvance. Avoid running both for cutscene/dialog skipping at the same time.",
+            "repoUrl": "https://github.com/a08381/Dalamud.SkipCutscene",
+            "description": "Automatically confirms or skips supported cutscenes.",
+            "repoJsonUrl": "official / Dalamud-hosted",
+            "ruleType": "paired_conflict_yellow",
+            "relatedIds": [
+                "textadvance"
+            ]
+        },
+        {
+            "id": "textadvance",
+            "category": "Quest",
+            "displayName": "TextAdvance",
+            "matchTokens": [
+                "TextAdvance"
+            ],
+            "notes": "Quest/dialog automation helper. Avoid running both this and SkipCutscene for overlapping cutscene handling at the same time.",
+            "repoUrl": "https://github.com/NightmareXIV/TextAdvance",
+            "description": "Quest speedrunning assistance tool that automatically skips subtitle boxes and confirms cutscene skipping.",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json",
+            "ruleType": "paired_conflict_yellow",
+            "relatedIds": [
+                "skipcutscene"
+            ]
+        },
+        {
+            "id": "bossmod",
+            "category": "Rotations/AI",
+            "displayName": "BossMod",
+            "matchTokens": [
+                "BossMod"
+            ],
+            "notes": "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.",
+            "description": "A bunch of utilities to simplify boss mechanics.",
+            "repoUrl": "https://github.com/awgil/ffxiv_bossmod",
+            "repoJsonUrl": "https://puni.sh/api/repository/veyn",
+            "ruleType": "bossmod_pair",
+            "relatedIds": [
+                "bossmod_reborn"
+            ]
+        },
+        {
+            "id": "bossmod_reborn",
+            "category": "Rotations/AI",
+            "displayName": "BossModReborn",
+            "matchTokens": [
+                "BossModReborn"
+            ],
+            "notes": "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/FFXIV-CombatReborn/BossmodReborn",
+            "repoJsonUrls": [
+                "https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json"
+            ],
+            "ruleType": "bossmod_pair",
+            "relatedIds": [
+                "bossmod"
+            ]
+        },
+        {
+            "id": "rotation_solver_reborn",
+            "category": "Rotations/AI",
+            "displayName": "RotationSolverReborn",
+            "matchTokens": [
+                "RotationSolverReborn",
+                "RotationSolver"
+            ],
+            "notes": "Ensure you are only using one rotation plugin at the same time.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/FFXIV-CombatReborn/RotationSolverReborn",
+            "repoJsonUrls": [
+                "https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json",
+                "https://raw.githubusercontent.com/FFXIV-CombatReborn/RotationSolverReborn/refs/heads/main/pluginmasterCN.json",
+                "https://raw.githubusercontent.com/FFXIV-CombatReborn/RotationSolverReborn/refs/heads/main/pluginmasterKR.json"
+            ],
+            "ruleType": "rotation_conflict"
+        },
+        {
+            "id": "ultimate_combo",
+            "category": "Rotations/AI",
+            "displayName": "UltimateCombo",
+            "matchTokens": [
+                "UltimateCombo"
+            ],
+            "notes": "Ensure you are only using one rotation plugin at the same time.",
+            "description": "Ultimate Combo is based off of several combo plugins, but has completely new logic, features, and many quality of life improvements.",
+            "repoUrl": "https://github.com/StackBLU/UltimateCombo",
+            "repoJsonUrl": "https://raw.githubusercontent.com/StackBLU/UltimateCombo/main/pluginmaster.json-",
+            "ruleType": "rotation_conflict"
+        },
+        {
+            "id": "wrath",
+            "category": "Rotations/AI",
+            "displayName": "Wrath",
+            "matchTokens": [
+                "Wrath"
+            ],
+            "notes": "Ensure you are only using one rotation plugin at the same time.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "",
+            "ruleType": "rotation_conflict"
+        },
+        {
+            "id": "action_timeline_reborn",
+            "category": "Utility Bots",
+            "displayName": "ActionTimeline Reborn",
+            "matchTokens": [
+                "ActionTimelineReborn",
+                "ActionTimeline Reborn"
+            ],
+            "notes": "Combat history/timeline utility. No conflicts identified from the audited feeds.",
+            "description": "Configurable timeline display of all the actions you use.",
+            "repoUrl": "https://github.com/FFXIV-CombatReborn/ActionTimelineReborn",
+            "repoJsonUrl": "https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json"
+        },
+        {
+            "id": "antiafkkick",
+            "category": "Utility Bots",
+            "displayName": "AntiAfkKick",
+            "matchTokens": [
+                "AntiAfkKick",
+                "AntiAfkKick-Dalamud"
+            ],
+            "notes": "Usually safe to keep. It only prevents AFK kicks and does not materially interfere with the rest of the stack.",
+            "repoUrl": "https://github.com/NightmareXIV/AntiAfkKick",
+            "description": "Prevents being auto-kicked from FFXIV due to inactivity. Install and forget; no configuration required.",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "botology",
+            "category": "Utility Bots",
+            "displayName": "Botology",
+            "matchTokens": [
+                "Botology",
+                "botology"
+            ],
+            "notes": "Safe to keep if you use its auditing/catalog features. It is informational rather than invasive automation.",
+            "repoUrl": "https://github.com/McVaxius/botology",
+            "description": "Catalog and audit helper for plugin repository/link management and rule-based matching.",
+            "repoJsonUrl": "https://raw.githubusercontent.com/McVaxius/botology/refs/heads/main/botology/plugin-repository-links.json"
+        },
+        {
+            "id": "buildingway",
+            "category": "Utility Bots",
+            "displayName": "Buildingway",
+            "matchTokens": [
+                "Buildingway"
+            ],
+            "notes": "Housing/build utility. No conflicts identified from the audited feeds.",
+            "description": "Build anything, anywhere.",
+            "repoUrl": "https://github.com/Abyeon/Buildingway",
+            "repoJsonUrl": "https://puni.sh/api/repository/abe"
+        },
+        {
+            "id": "burning_down_the_house",
+            "category": "Utility Bots",
+            "displayName": "Burning Down the House",
+            "matchTokens": [
+                "Burning Down the House",
+                "BDTHPlugin"
+            ],
+            "notes": "Housing/tooling plugin. No specific conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/LeonBlade/BDTHPlugin",
+            "description": "Housing placement and layout helper for furnishing and decorating.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "cammy",
+            "category": "Utility Bots",
+            "displayName": "Cammy",
+            "matchTokens": [
+                "Cammy"
+            ],
+            "notes": "Camera utility; generally isolated from the rest of the automation stack.",
+            "repoUrl": "https://github.com/UnknownX7/Cammy",
+            "description": "Advanced camera controls and camera utility features.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "chill_frames",
+            "category": "Utility Bots",
+            "displayName": "Chill Frames",
+            "matchTokens": [
+                "Chill Frames",
+                "ChillFrames"
+            ],
+            "notes": "Performance-oriented visual utility. Safe to keep if you use it.",
+            "repoUrl": "https://github.com/MidoriKami/ChillFrames",
+            "description": "Reduces rendering/update work in low-activity situations to improve performance.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "chocoholic",
+            "category": "Utility Bots",
+            "displayName": "Chocoholic",
+            "matchTokens": [
+                "Chocoholic"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/kawaii/Chocoholic",
+            "repoJsonUrl": "https://puni.sh/api/repository/kawaii"
+        },
+        {
+            "id": "choke_abo",
+            "category": "Utility Bots",
+            "displayName": "Choke-abo",
+            "matchTokens": [
+                "Choke-abo",
+                "ChokeAbo"
+            ],
+            "notes": "Still could not verify a public repo feed from the provided sources. Kept categorized by likely utility role.",
+            "repoUrl": "",
+            "description": "placeholder description"
+        },
+        {
+            "id": "customresolution",
+            "category": "Utility Bots",
+            "displayName": "CustomResolution",
+            "matchTokens": [
+                "CustomResolution",
+                "CustomResolution2782"
+            ],
+            "notes": "Display utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://gitea.0x0a.de/0x0ade/DP-CustomResolution",
+            "description": "Lets you use custom game resolutions and window sizing behaviour.",
+            "repoJsonUrl": "standalone / non-listed repo feed"
+        },
+        {
+            "id": "daily_routines",
+            "category": "Utility Bots",
+            "displayName": "Daily Routines",
+            "matchTokens": [
+                "DailyRoutines",
+                "Daily Routines"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/Dalamud-DailyRoutines/DailyRoutines",
+            "repoJsonUrl": "https://raw.githubusercontent.com/AtmoOmen/DalamudPlugins/main/pluginmaster.json"
+        },
+        {
+            "id": "deep_ducking",
+            "category": "Utility Bots",
+            "displayName": "Deep Ducking",
+            "matchTokens": [
+                "Deep Ducking",
+                "DDuck"
+            ],
+            "notes": "Could not verify a concrete feed from the provided repo list. Categorized as utility pending better metadata.",
+            "repoUrl": "",
+            "description": "placeholder description"
+        },
+        {
+            "id": "dheacon",
+            "category": "Utility Bots",
+            "displayName": "Dheacon",
+            "matchTokens": [
+                "Dheacon",
+                "dheacon"
+            ],
+            "notes": "Could not verify a concrete feed from the provided repo list. Categorized as utility pending better metadata.",
+            "repoUrl": "",
+            "description": "placeholder description"
+        },
+        {
+            "id": "dhog_potato_system",
+            "category": "Utility Bots",
+            "displayName": "Dhog Potato System",
+            "matchTokens": [
+                "Dhog Potato System",
+                "DPS"
+            ],
+            "notes": "Dhog ecosystem helper. No direct conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/McVaxius/DPS",
+            "description": "Dhog-side utility/control plugin used alongside the broader McVaxius automation stack.",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "dhoggpt",
+            "category": "Utility Bots",
+            "displayName": "DhogGPT",
+            "matchTokens": [
+                "DhogGPT"
+            ],
+            "notes": "Could not verify a concrete feed from the provided repo list. Categorized as utility pending better metadata.",
+            "repoUrl": "",
+            "description": "placeholder description"
+        },
+        {
+            "id": "doze_anywhere",
+            "category": "Utility Bots",
+            "displayName": "Doze Anywhere",
+            "matchTokens": [
+                "Doze Anywhere",
+                "DozeAnywhere"
+            ],
+            "notes": "Emote/social utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/SoyaX/DozeAnywhere",
+            "description": "Allows using the doze emote more freely outside its usual limitations.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "dsr_toolbox",
+            "category": "Utility Bots",
+            "displayName": "DSR Toolbox",
+            "matchTokens": [
+                "DSREyeLocator",
+                "DSR Toolbox"
+            ],
+            "notes": "Fight-specific helper. Keep only if you actively use it.",
+            "description": "Helper plugin for Dragonsong's Reprise with eye position, Wroth Flames markers, and chain-partner tether support.",
+            "repoUrl": "https://github.com/NightmareXIV/DSREyeLocator",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "dynamic_bridge",
+            "category": "Utility Bots",
+            "displayName": "DynamicBridge",
+            "matchTokens": [
+                "DynamicBridge"
+            ],
+            "notes": "Appearance automation utility. No conflicts identified from the audited feeds.",
+            "description": "Automatically changes character appearance based on rule-based presets and customization-plugin integrations.",
+            "repoUrl": "https://github.com/NightmareXIV/DynamicBridge",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "vfaux",
+            "category": "Utility Bots",
+            "displayName": "Easier Faux Hollows",
+            "matchTokens": [
+                "vfaux",
+                "Easier Faux Hollows"
+            ],
+            "notes": "Mini-game solver utility. No conflicts identified from the audited feeds.",
+            "description": "Faux Hollows solver based on known patterns.",
+            "repoUrl": "https://github.com/awgil/vfaux",
+            "repoJsonUrl": "https://puni.sh/api/repository/veyn"
+        },
+        {
+            "id": "easyzoom_reborn",
+            "category": "Utility Bots",
+            "displayName": "EasyZoom Reborn",
+            "matchTokens": [
+                "EasyZoomReborn",
+                "EasyZoom Reborn"
+            ],
+            "notes": "Camera utility. No conflicts identified from the audited feeds.",
+            "description": "Easy zoom distance unlock and field-of-view control.",
+            "repoUrl": "https://github.com/FFXIV-CombatReborn/EasyZoomReborn",
+            "repoJsonUrl": "https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json"
+        },
+        {
+            "id": "elitehacks",
+            "category": "Utility Bots",
+            "displayName": "EliteHacks",
+            "matchTokens": [
+                "EliteHacks"
+            ],
+            "notes": "Could not verify a concrete feed from the provided repo list. Categorized as utility pending better metadata.",
+            "repoUrl": "",
+            "description": "placeholder description"
+        },
+        {
+            "id": "footballer",
+            "category": "Utility Bots",
+            "displayName": "Footballer",
+            "matchTokens": [
+                "Footballer",
+                "footballer"
+            ],
+            "notes": "Gold Saucer side utility. No direct conflicts identified, but review overlap with Saucy if you automate overlapping mini-games.",
+            "repoUrl": "https://github.com/McVaxius/footballer",
+            "description": "Football/minigame helper plugin from McVaxius.",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "frenrider",
+            "category": "Utility Bots",
+            "displayName": "FrenRider",
+            "matchTokens": [
+                "FrenRider"
+            ],
+            "notes": "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.",
+            "description": "Native Dalamud plugin for managing 2+ characters in various situations. Follow party members, auto-mount, combat integration, and more. Use /frenrider or /fr to open.",
+            "repoUrl": "https://github.com/McVaxius/FrenRider",
+            "repoJsonUrl": "https://aethertek.io/x.json",
+            "ruleType": "autoduty_conflict"
+        },
+        {
+            "id": "gearsetter",
+            "category": "Utility Bots",
+            "displayName": "Gearsetter",
+            "matchTokens": [
+                "Gearsetter"
+            ],
+            "notes": "Gear browsing/upgrade utility. No conflicts identified from the audited feeds.",
+            "description": "Browse gear pieces for each class/job and show possible upgrades.",
+            "repoUrl": "https://git.carvel.li/liza/Gearsetter",
+            "repoJsonUrl": "https://puni.sh/api/repository/vera"
+        },
+        {
+            "id": "globetrotter",
+            "category": "Utility Bots",
+            "displayName": "Globetrotter",
+            "matchTokens": [
+                "Globetrotter"
+            ],
+            "notes": "Treasure-map helper. Safe to keep and often complementary to map automation tools.",
+            "repoUrl": "https://github.com/chirpxiv/Globetrotter",
+            "description": "Treasure map helper that helps locate deciphered maps on the world map.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "haseltweaks",
+            "category": "Utility Bots",
+            "displayName": "HaselTweaks",
+            "matchTokens": [
+                "HaselTweaks"
+            ],
+            "notes": "General QoL tweak bundle. Review enabled tweaks so you do not forget what it is changing.",
+            "repoUrl": "https://github.com/Haselnussbomber/HaselTweaks",
+            "description": "Collection of miscellaneous UI/gameplay tweaks.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "hellofellowhumans",
+            "category": "Utility Bots",
+            "displayName": "HelloFellowHumans",
+            "matchTokens": [
+                "HelloFellowHumans"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game unless you want it to hahaha.",
+            "description": "Configure emote responses that trigger when specific players are nearby. Perfect for passive RP automation. Use /hfh to configure.",
+            "repoUrl": "https://github.com/McVaxius/HelloFellowHuman",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "househunter",
+            "category": "Utility Bots",
+            "displayName": "HouseHunter",
+            "matchTokens": [
+                "HouseHunter"
+            ],
+            "notes": "Housing finder utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "",
+            "description": "Housing placard / availability helper.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "hunt_train_assistant",
+            "category": "Utility Bots",
+            "displayName": "HuntTrainAssistant",
+            "matchTokens": [
+                "HuntTrainAssistant"
+            ],
+            "notes": "Hunt utility. No conflicts identified from the audited feeds.",
+            "description": "Provides hunt train tools such as conductor chat highlighting, flag opening, and auto-teleporting to announced destinations.",
+            "repoUrl": "https://github.com/NightmareXIV/HuntTrainAssistant",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "hyperborea",
+            "category": "Utility Bots",
+            "displayName": "Hyperborea",
+            "matchTokens": [
+                "Hyperborea"
+            ],
+            "notes": "Gpose/location utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/kawaii/Hyperborea",
+            "description": "Load and explore any zone in relative safety, mainly for taking GPoses in inaccessible locations.",
+            "repoJsonUrl": "https://puni.sh/api/repository/kawaii"
+        },
+        {
+            "id": "imagenation",
+            "category": "Utility Bots",
+            "displayName": "Imagenation",
+            "matchTokens": [
+                "Imagenation"
+            ],
+            "notes": "Backend/helper plugin. Only useful if you use dependent tooling like Triggernometry.",
+            "description": "Image drawing backend intended for use with Triggernometry.",
+            "repoUrl": "https://github.com/NightmareXIV/Imagenation",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "kitchen_sink",
+            "category": "Utility Bots",
+            "displayName": "KitchenSink",
+            "matchTokens": [
+                "KitchenSink"
+            ],
+            "notes": "Miscellaneous bundle. Review enabled features so you do not forget what it is changing.",
+            "description": "A plugin for things that aren't worth their own plugins.",
+            "repoUrl": "https://git.carvel.li/liza/KitchenSink",
+            "repoJsonUrl": "https://puni.sh/api/repository/vera"
+        },
+        {
+            "id": "krangler",
+            "category": "Utility Bots",
+            "displayName": "Krangler",
+            "matchTokens": [
+                "Krangler"
+            ],
+            "notes": "Could not verify a concrete feed from the provided repo list. Categorized as utility pending better metadata.",
+            "repoUrl": "",
+            "description": "placeholder description"
+        },
+        {
+            "id": "lazyloot",
+            "category": "Utility Bots",
+            "displayName": "LazyLoot",
+            "matchTokens": [
+                "LazyLoot"
+            ],
+            "notes": "Usually safe to keep. Just remember it automates loot roll behaviour.",
+            "repoUrl": "https://github.com/PunishXIV/LazyLoot",
+            "description": "Roll command helper with need/greed/pass automation options, chat output, and delay controls.",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        },
+        {
+            "id": "lifestream",
+            "category": "Utility Bots",
+            "displayName": "Lifestream",
+            "matchTokens": [
+                "Lifestream"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/NightmareXIV/Lifestream",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "maplinker",
+            "category": "Utility Bots",
+            "displayName": "MapLinker",
+            "matchTokens": [
+                "MapLinker"
+            ],
+            "notes": "Map/share utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/Bluefissure/MapLinker",
+            "description": "Creates easier map links and map sharing workflows.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "native_meters",
+            "category": "Utility Bots",
+            "displayName": "NativeMeters",
+            "matchTokens": [
+                "NativeMeters"
+            ],
+            "notes": "Parsing/meter overlay. No conflicts identified from the audited feeds.",
+            "description": "Native DPS meters for FFXIV that aim to feel like part of the game.",
+            "repoUrl": "https://github.com/Zeffuro/NativeMeters",
+            "repoJsonUrl": "https://github.com/Zeffuro/MyDalamudPlugins/blob/main/repo.json"
+        },
+        {
+            "id": "nightmaretools",
+            "category": "Utility Bots",
+            "displayName": "NightmareTools",
+            "matchTokens": [
+                "NightmareTools"
+            ],
+            "notes": "Could not verify a concrete downloadable feed from the provided repo list. Left as utility/tool bundle placeholder.",
+            "repoUrl": "https://www.patreon.com/NightmareXIV",
+            "description": "placeholder description"
+        },
+        {
+            "id": "object_explorer",
+            "category": "Utility Bots",
+            "displayName": "ObjectExplorer",
+            "matchTokens": [
+                "ObjectExplorer"
+            ],
+            "notes": "Inspector utility. No conflicts identified from the audited feeds.",
+            "description": "Convenient way to explore current objects around you.",
+            "repoUrl": "https://github.com/NightmareXIV/ObjectExplorer",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "pandoras_box",
+            "category": "Utility Bots",
+            "displayName": "Pandora's Box",
+            "matchTokens": [
+                "PandorasBox",
+                "Pandora's Box"
+            ],
+            "notes": "Wide QoL surface. Review what you have enabled so you do not forget it is quietly doing work for you.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/PunishXIV/PandorasBox",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        },
+        {
+            "id": "peeping_tom",
+            "category": "Utility Bots",
+            "displayName": "Peeping Tom",
+            "matchTokens": [
+                "Peeping Tom",
+                "PeepingTom"
+            ],
+            "notes": "Inspection/observer utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/Caraxi/PeepingTom",
+            "description": "Lets you inspect details about nearby players/actors.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "playertrack",
+            "category": "Utility Bots",
+            "displayName": "PlayerTrack",
+            "matchTokens": [
+                "PlayerTrack"
+            ],
+            "notes": "Tracking utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/Infiziert90/PlayerTrack",
+            "description": "Tracks player encounters and related metadata.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "plugin_preset_manager",
+            "category": "Utility Bots",
+            "displayName": "Plugin Preset Manager",
+            "matchTokens": [
+                "PluginPresetManager",
+                "Plugin Preset Manager"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. It is useful if you swap between different plugin sets often.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/Brappp/PluginPresetManager",
+            "repoJsonUrl": "https://puni.sh/api/repository/wah"
+        },
+        {
+            "id": "qol_bar",
+            "category": "Utility Bots",
+            "displayName": "QoL Bar",
+            "matchTokens": [
+                "QoL Bar",
+                "QoLBar"
+            ],
+            "notes": "UI helper. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/UnknownX7/QoLBar",
+            "description": "Build custom QoL bars and action surfaces.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "saucy",
+            "category": "Utility Bots",
+            "displayName": "Saucy",
+            "matchTokens": [
+                "Saucy"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/PunishXIV/Saucy",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        },
+        {
+            "id": "select_string",
+            "category": "Utility Bots",
+            "displayName": "SelectString",
+            "matchTokens": [
+                "SelectString"
+            ],
+            "notes": "Menu/input helper. No conflicts identified from the audited feeds.",
+            "description": "Lets you select menu items with 0-9 keys or numpad instead of the mouse.",
+            "repoUrl": "https://github.com/NightmareXIV/SelectString",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "simple_tweaks_plugin",
+            "category": "Utility Bots",
+            "displayName": "Simple Tweaks Plugin",
+            "matchTokens": [
+                "Simple Tweaks Plugin",
+                "SimpleTweaksPlugin"
+            ],
+            "notes": "Broad tweak bundle. Review enabled tweaks so you do not forget what it is changing.",
+            "repoUrl": "https://github.com/Caraxi/SimpleTweaksPlugin",
+            "description": "Large collection of interface and quality-of-life tweaks.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "smartnav",
+            "category": "Utility Bots",
+            "displayName": "SmartNav",
+            "matchTokens": [
+                "SmartNav"
+            ],
+            "notes": "Wiggly TBD plugin.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "",
+            "ruleType": "direct_conflict_red",
+            "relatedIds": [
+                "vnavmesh"
+            ]
+        },
+        {
+            "id": "something_need_doing",
+            "category": "Utility Bots",
+            "displayName": "Something Need Doing",
+            "matchTokens": [
+                "SomethingNeedDoing",
+                "SND"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game unless you want it to hahaha.",
+            "description": "Now for more than crafting!",
+            "repoUrl": "https://github.com/Jaksuhn/SomethingNeedDoing",
+            "repoJsonUrl": "https://puni.sh/api/repository/croizat"
+        },
+        {
+            "id": "splatoon",
+            "category": "Utility Bots",
+            "displayName": "Splatoon",
+            "matchTokens": [
+                "Splatoon"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Just remember it is an always-visible overlay surface rather than a passive manager.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/PunishXIV/Splatoon",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        },
+        {
+            "id": "standalonepluginmanager",
+            "category": "Utility Bots",
+            "displayName": "StandalonePluginManager",
+            "matchTokens": [
+                "StandalonePluginManager"
+            ],
+            "notes": "Safe to keep if you install plugins manually outside normal repo flows.",
+            "repoUrl": "https://github.com/NightmareXIV/StandalonePluginManager",
+            "description": "Simplifies installation and upgrade process for plugins installed manually.",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "target_furniture",
+            "category": "Utility Bots",
+            "displayName": "Target Furniture",
+            "matchTokens": [
+                "Target Furniture",
+                "TargetFurniture"
+            ],
+            "notes": "Housing/targeting utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/InitialDet/TargetFurniture",
+            "description": "Housing helper for targeting furniture and related interactions.",
+            "repoJsonUrl": "https://puni.sh/api/repository/det"
+        },
+        {
+            "id": "teleporter",
+            "category": "Utility Bots",
+            "displayName": "Teleporter",
+            "matchTokens": [
+                "Teleporter",
+                "TeleporterPlugin"
+            ],
+            "notes": "Teleport utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/pohky/TeleporterPlugin",
+            "description": "Teleport helper utility plugin.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "thick_thighs_save_lives",
+            "category": "Utility Bots",
+            "displayName": "Thick Thighs Save Lives",
+            "matchTokens": [
+                "Thick Thighs Save Lives",
+                "TTSL"
+            ],
+            "notes": "Could not verify a concrete feed from the provided repo list. Categorized as utility pending better metadata.",
+            "repoUrl": "https://github.com/McVaxius/TTSL",
+            "description": "placeholder description",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "tracky_track",
+            "category": "Utility Bots",
+            "displayName": "Tracky Track",
+            "matchTokens": [
+                "TrackyTrack",
+                "Tracky Track"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. It does get a bit spicy in terms of storage.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": ""
+        },
+        {
+            "id": "triadbuddy",
+            "category": "Utility Bots",
+            "displayName": "TriadBuddy",
+            "matchTokens": [
+                "TriadBuddy"
+            ],
+            "notes": "Triple Triad helper. Review overlap with Saucy if you automate Gold Saucer content in multiple ways.",
+            "repoUrl": "",
+            "description": "Triple Triad helper / assistant plugin.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "unloaderrorfuckoff",
+            "category": "Utility Bots",
+            "displayName": "UnloadErrorFuckOff",
+            "matchTokens": [
+                "UnloadErrorFuckOff"
+            ],
+            "notes": "Developer-facing helper. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/NightmareXIV/UnloadErrorFuckOff",
+            "description": "Developer helper that clears plugin load/unload errors.",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "venuescope",
+            "category": "Utility Bots",
+            "displayName": "VenueScope",
+            "matchTokens": [
+                "VenueScope"
+            ],
+            "notes": "Community browsing utility. No conflicts identified from the audited feeds.",
+            "description": "Browse FFXIV community events in-game, with filtering by data center, time, and tags.",
+            "repoUrl": "",
+            "repoJsonUrl": "https://puni.sh/api/repository/nala"
+        },
+        {
+            "id": "viwi",
+            "category": "Utility Bots",
+            "displayName": "Vera's Integrated World Improvements",
+            "matchTokens": [
+                "Vera's Integrated World Improvements",
+                "VIWI"
+            ],
+            "notes": "Broad QoL/automation bundle. Review enabled modules so you do not forget what it is changing.",
+            "description": "A collection of plugins-turned-modules, QoL improvements, and Automation features.",
+            "repoUrl": "https://git.carvel.li/liza/KitchenSink",
+            "repoJsonUrl": "https://puni.sh/api/repository/vera"
+        },
+        {
+            "id": "vermaxion",
+            "category": "Utility Bots",
+            "displayName": "VerMaxion",
+            "matchTokens": [
+                "VERMAXION",
+                "VerMaxion"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Automates weekly and daily tasks triggered by AutoRetainer post-processing. Configurable per character: Verminion queue, Cactpot, Chocobo Racing, FC buff refill, and Henchman management.",
+            "repoUrl": "https://github.com/McVaxius/VERMAXION",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "visibility",
+            "category": "Utility Bots",
+            "displayName": "Visibility",
+            "matchTokens": [
+                "Visibility"
+            ],
+            "notes": "Visual filtering utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/SheepGoMeh/VisibilityPlugin",
+            "description": "Visibility/filtering helper for hiding or showing selected world objects/UI elements.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "visland",
+            "category": "Utility Bots",
+            "displayName": "VISLAND",
+            "matchTokens": [
+                "VISLAND",
+                "visland"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Automate Island Sanctuary activities including gathering and workshop assignments.",
+            "repoUrl": "https://github.com/awgil/ffxiv_visland",
+            "repoJsonUrl": "https://puni.sh/api/repository/veyn"
+        },
+        {
+            "id": "vnavmesh",
+            "category": "Utility Bots",
+            "displayName": "VNAVMESH",
+            "matchTokens": [
+                "vnavmesh",
+                "VNAVMESH"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Utility to automatically move the character around in the world, skilfully avoiding any obstacles.",
+            "repoUrl": "",
+            "repoJsonUrl": "https://puni.sh/api/repository/veyn",
+            "ruleType": "direct_conflict_red",
+            "relatedIds": [
+                "smartnav"
+            ]
+        },
+        {
+            "id": "weatherman_extras",
+            "category": "Utility Bots",
+            "displayName": "WeathermanExtras",
+            "matchTokens": [
+                "WExtras",
+                "WeathermanExtras"
+            ],
+            "notes": "Experimental utility. Keep only if you specifically use these features.",
+            "description": "Experimental Weatherman functions.",
+            "repoUrl": "https://github.com/NightmareXIV/WExtras",
+            "repoJsonUrl": "https://github.com/NightmareXIV/MyDalamudPlugins/raw/main/pluginmaster.json"
+        },
+        {
+            "id": "which_patch_was_that",
+            "category": "Utility Bots",
+            "displayName": "Which Patch Was That?",
+            "matchTokens": [
+                "Which Patch Was That?",
+                "WhichPatchWasThat"
+            ],
+            "notes": "Reference utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/kouzukii/ffxiv-itempatch",
+            "description": "Helps identify which patch an item or piece of content came from.",
+            "repoJsonUrl": "official / Dalamud-hosted"
+        },
+        {
+            "id": "xa_hud",
+            "category": "Utility Bots",
+            "displayName": "XA HUD",
+            "matchTokens": [
+                "XAHUD",
+                "XA HUD"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "placeholder description",
+            "repoUrl": "",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "xa_hud_navigator",
+            "category": "Utility Bots",
+            "displayName": "XA HUD Navigator",
+            "matchTokens": [
+                "XA HUD Navigator",
+                "XAHudNavigator"
+            ],
+            "notes": "XA HUD adjunct utility. No conflicts identified from the audited feeds.",
+            "repoUrl": "https://github.com/xa-io/XA-HUD-Navigator",
+            "description": "Navigator/route helper for XA HUD workflows.",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "xa_slave",
+            "category": "Utility Bots",
+            "displayName": "XA Slave",
+            "matchTokens": [
+                "XASlave",
+                "XA Slave"
+            ],
+            "notes": "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.",
+            "description": "Don't manual.",
+            "repoUrl": "",
+            "repoJsonUrl": "https://aethertek.io/x.json"
+        },
+        {
+            "id": "yesalready",
+            "category": "Utility Bots",
+            "displayName": "Yes Already",
+            "matchTokens": [
+                "YesAlready",
+                "Yes Already"
+            ],
+            "notes": "Usually safe to keep. Just remember it automates dialog confirmations if you leave rules enabled.",
+            "description": "placeholder description",
+            "repoUrl": "https://github.com/PunishXIV/YesAlready",
+            "repoJsonUrl": "https://love.puni.sh/ment.json"
+        }
+    ]
 }
-
