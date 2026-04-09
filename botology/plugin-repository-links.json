@@ -1145,17 +1145,6 @@
             "repoJsonUrl": "https://github.com/Zeffuro/MyDalamudPlugins/blob/main/repo.json"
         },
         {
-            "id": "nightmaretools",
-            "category": "Utility Bots",
-            "displayName": "NightmareTools",
-            "matchTokens": [
-                "NightmareTools"
-            ],
-            "notes": "Could not verify a concrete downloadable feed from the provided repo list. Left as utility/tool bundle placeholder.",
-            "repoUrl": "https://www.patreon.com/NightmareXIV",
-            "description": "placeholder description"
-        },
-        {
             "id": "object_explorer",
             "category": "Utility Bots",
             "displayName": "ObjectExplorer",
