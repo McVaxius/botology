@@ -203,7 +203,7 @@
                 "BunnyFarmEureka",
                 "Bunny Farm Eureka"
             ],
-            "notes": "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.",
+            "notes": "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.  A user reported that MOGTOME was causing issues. so please disable that too.",
             "description": "A new BFE shell focused on duty communication first: configured Hydatos/bunny callout presets, quick send buttons, standard Dhog window controls, and DTR visibility.",
             "repoUrl": "https://github.com/McVaxius/BFE",
             "repoJsonUrl": "https://raw.githubusercontent.com/McVaxius/BFE/refs/heads/main/repo.json",
