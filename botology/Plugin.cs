@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
@@ -32,8 +33,10 @@ public sealed class Plugin : IDalamudPlugin
 
     private readonly MainWindow mainWindow;
     private readonly ConfigWindow configWindow;
+    private readonly CatalogEditorWindow catalogEditorWindow;
     private IDtrBarEntry? dtrEntry;
     private DateTime nextAssessmentCheckUtc = DateTime.MinValue;
+    private DateTime nextMasterCatalogCheckUtc = DateTime.MinValue;
     private string lastAssessmentFingerprint = string.Empty;
     private string? pendingBlockingAlertMessage;
     private bool shouldOpenBlockingAlertPopup;
@@ -44,11 +47,14 @@ public sealed class Plugin : IDalamudPlugin
         PluginManagerBridge = new PluginManagerBridge(PluginInterface, CommandManager, Log);
         RepositoryMetadataService = new RepositoryMetadataService(Log);
         RepositoryLinkCatalog.Reload();
+
         mainWindow = new MainWindow(this);
         configWindow = new ConfigWindow(this);
+        catalogEditorWindow = new CatalogEditorWindow(this);
 
         WindowSystem.AddWindow(mainWindow);
         WindowSystem.AddWindow(configWindow);
+        WindowSystem.AddWindow(catalogEditorWindow);
 
         RegisterCommands();
 
@@ -59,6 +65,7 @@ public sealed class Plugin : IDalamudPlugin
 
         SetupDtrBar();
         UpdateDtrBar();
+        RescheduleMasterCatalogCheck();
 
         if (Configuration.OpenMainWindowOnLoad)
             OpenMainUi();
@@ -78,6 +85,7 @@ public sealed class Plugin : IDalamudPlugin
         dtrEntry?.Remove();
 
         RepositoryMetadataService.Dispose();
+        catalogEditorWindow.Dispose();
         configWindow.Dispose();
         mainWindow.Dispose();
     }
@@ -107,6 +115,12 @@ public sealed class Plugin : IDalamudPlugin
         QueueRepositoryMetadataRefresh();
     }
 
+    public void OpenCatalogEditorUi()
+    {
+        ReloadRepositoryLinks(silent: true);
+        catalogEditorWindow.IsOpen = true;
+    }
+
     public void ToggleConfigUi() => configWindow.Toggle();
 
     public void SetPluginEnabled(bool enabled, bool printStatus = false)
@@ -123,17 +137,21 @@ public sealed class Plugin : IDalamudPlugin
     {
         mainWindow.QueueResetToOrigin();
         configWindow.QueueResetToOrigin();
+        catalogEditorWindow.QueueResetToOrigin();
         mainWindow.IsOpen = true;
         configWindow.IsOpen = true;
-        PrintStatus("Queued both Botology windows to reset to 1,1.");
+        catalogEditorWindow.IsOpen = true;
+        PrintStatus("Queued all Botology windows to reset to 1,1.");
     }
 
     public void JumpWindows()
     {
         mainWindow.QueueRandomVisibleJump();
         configWindow.QueueRandomVisibleJump();
+        catalogEditorWindow.QueueRandomVisibleJump();
         mainWindow.IsOpen = true;
         configWindow.IsOpen = true;
+        catalogEditorWindow.IsOpen = true;
         PrintStatus("Queued a random visible jump for the Botology windows.");
     }
 
@@ -169,8 +187,9 @@ public sealed class Plugin : IDalamudPlugin
         lastAssessmentFingerprint = string.Empty;
         nextAssessmentCheckUtc = DateTime.MinValue;
         QueueRepositoryMetadataRefresh();
+
         if (!silent)
-            PrintStatus("Reloaded repository link JSON.");
+            PrintStatus("Reloaded local master cache and overlay files.");
     }
 
     public IReadOnlyList<PluginAssessmentRow> CaptureRows()
@@ -181,12 +200,66 @@ public sealed class Plugin : IDalamudPlugin
             .ToArray();
     }
 
-    public void OpenJsonFolder()
+    public IReadOnlyList<PluginCatalogEntry> CaptureCatalogEntries()
+        => BotologyCatalog.Entries;
+
+    public IReadOnlyList<string> GetKnownCatalogIds()
+        => RepositoryLinkCatalog.GetKnownIds(BotologyCatalog.FallbackEntries);
+
+    public PluginCatalogEntry? GetMasterCatalogEntry(string id)
+        => RepositoryLinkCatalog.GetMasterEntry(id, BotologyCatalog.FallbackEntries);
+
+    public PluginCatalogEntry? GetOverlayCatalogEntry(string id)
+        => RepositoryLinkCatalog.GetOverlayEntry(id, BotologyCatalog.FallbackEntries);
+
+    public CatalogRefreshInfo GetCatalogRefreshInfo()
+        => RepositoryLinkCatalog.GetRefreshInfo();
+
+    public void SaveCatalogEntry(PluginCatalogEntry entry)
     {
-        var manifestPath = RepositoryLinkCatalog.GetManifestPath();
-        if (string.IsNullOrWhiteSpace(manifestPath))
+        RepositoryLinkCatalog.SaveOverlayEntry(entry, BotologyCatalog.FallbackEntries);
+        RepositoryMetadataService.InvalidateRefreshThrottle();
+        lastAssessmentFingerprint = string.Empty;
+        nextAssessmentCheckUtc = DateTime.MinValue;
+        QueueRepositoryMetadataRefresh();
+        PrintStatus($"Saved local overlay row for {entry.DisplayName}.");
+    }
+
+    public bool ReplaceWithMasterData(string id)
+    {
+        var removed = RepositoryLinkCatalog.RemoveOverlayEntry(id, BotologyCatalog.FallbackEntries);
+        if (removed)
         {
-            PrintStatus("Could not locate plugin-repository-links.json.");
+            RepositoryMetadataService.InvalidateRefreshThrottle();
+            lastAssessmentFingerprint = string.Empty;
+            nextAssessmentCheckUtc = DateTime.MinValue;
+            QueueRepositoryMetadataRefresh();
+        }
+
+        return removed;
+    }
+
+    public int DropAllLocalCatalogChanges()
+    {
+        var removedCount = RepositoryLinkCatalog.ClearOverlayEntries(BotologyCatalog.FallbackEntries);
+        if (removedCount > 0)
+        {
+            RepositoryMetadataService.InvalidateRefreshThrottle();
+            lastAssessmentFingerprint = string.Empty;
+            nextAssessmentCheckUtc = DateTime.MinValue;
+            QueueRepositoryMetadataRefresh();
+            PrintStatus($"Dropped {removedCount} local catalog change rows.");
+        }
+
+        return removedCount;
+    }
+
+    public void OpenCatalogFolder()
+    {
+        var folder = RepositoryLinkCatalog.GetCatalogDirectory();
+        if (string.IsNullOrWhiteSpace(folder))
+        {
+            PrintStatus("Could not locate the catalog folder.");
             return;
         }
 
@@ -195,28 +268,42 @@ public sealed class Plugin : IDalamudPlugin
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "explorer.exe",
-                Arguments = $"/select,\"{manifestPath}\"",
+                Arguments = $"\"{folder}\"",
                 UseShellExecute = true,
             });
 
-            PrintStatus("Opened the JSON folder. Share good changes on Discord or GitHub if you want them included.");
-            ShowOperatorToast("Opened plugin-repository-links.json. Share useful updates on Discord or GitHub if you want them included.");
+            PrintStatus("Opened the Botology catalog folder.");
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "[botology] Failed to open JSON folder.");
-            PrintStatus("Could not open the JSON folder.");
+            Log.Warning(ex, "[botology] Failed to open catalog folder.");
+            PrintStatus("Could not open the Botology catalog folder.");
         }
     }
 
-    private IReadOnlyList<PluginAssessmentRow> CaptureBaseRows()
+    public void RefreshMasterCatalog(bool force = false, bool silent = false)
+        => _ = RefreshMasterCatalogAsync(force, silent);
+
+    public void RescheduleMasterCatalogCheck()
     {
-        var ignoredIds = new HashSet<string>(Configuration.IgnoredPluginIds, StringComparer.OrdinalIgnoreCase);
-        return BotologyCatalog.BuildRows(PluginManagerBridge.CaptureSnapshot(), ignoredIds);
+        if (!Configuration.EnablePeriodicMasterCatalogChecks)
+        {
+            nextMasterCatalogCheckUtc = DateTime.MaxValue;
+            return;
+        }
+
+        var intervalMinutes = Math.Max(1, Configuration.MasterCatalogCheckIntervalMinutes);
+        var nextCheck = RepositoryLinkCatalog.GetNextAutomaticCheckUtc(TimeSpan.FromMinutes(intervalMinutes)).UtcDateTime;
+        nextMasterCatalogCheckUtc = nextCheck <= DateTime.UtcNow
+            ? DateTime.UtcNow
+            : nextCheck;
     }
 
-    private void QueueRepositoryMetadataRefresh()
-        => RepositoryMetadataService.QueueRefresh(CaptureBaseRows());
+    public void SetHideUninstalledPlugins(bool hide)
+    {
+        Configuration.HideUninstalledPlugins = hide;
+        Configuration.Save();
+    }
 
     public void SetIgnored(string id, bool ignored)
     {
@@ -224,12 +311,6 @@ public sealed class Plugin : IDalamudPlugin
         if (ignored)
             Configuration.IgnoredPluginIds.Add(id);
 
-        Configuration.Save();
-    }
-
-    public void SetHideUninstalledPlugins(bool hide)
-    {
-        Configuration.HideUninstalledPlugins = hide;
         Configuration.Save();
     }
 
@@ -289,10 +370,40 @@ public sealed class Plugin : IDalamudPlugin
         dtrEntry.Tooltip = new SeString(new TextPayload($"{PluginInfo.DisplayName} {state}. Click to open the manager."));
     }
 
+    private async Task RefreshMasterCatalogAsync(bool force, bool silent)
+    {
+        var result = await RepositoryLinkCatalog.RefreshMasterCatalogAsync(BotologyCatalog.FallbackEntries, force).ConfigureAwait(false);
+        RepositoryMetadataService.InvalidateRefreshThrottle();
+        lastAssessmentFingerprint = string.Empty;
+        nextAssessmentCheckUtc = DateTime.MinValue;
+        QueueRepositoryMetadataRefresh();
+        RescheduleMasterCatalogCheck();
+
+        if (result.Changed && Configuration.ToastOnMasterCatalogChange)
+            ShowOperatorToast("Botology master catalog changed and was refreshed.");
+
+        if (!silent || result.Changed)
+            PrintStatus(result.Message);
+    }
+
+    private IReadOnlyList<PluginAssessmentRow> CaptureBaseRows()
+    {
+        var ignoredIds = new HashSet<string>(Configuration.IgnoredPluginIds, StringComparer.OrdinalIgnoreCase);
+        return BotologyCatalog.BuildRows(PluginManagerBridge.CaptureSnapshot(), ignoredIds);
+    }
+
+    private void QueueRepositoryMetadataRefresh()
+        => RepositoryMetadataService.QueueRefresh(CaptureBaseRows());
+
     private void RegisterCommands()
     {
         var helpMessage =
-            $"Open {PluginInfo.DisplayName}. Use {PluginInfo.Command} config for settings, {PluginInfo.Command} ws to reset window positions, or /botologist j to jump the windows.";
+            "/botology: open or toggle the main window.\n" +
+            "/botology config: open settings.\n" +
+            "/botology ws: reset Botology windows to 1,1.\n" +
+            "/botology j: randomize Botology window positions.\n" +
+            "/botology status: print the current summary to chat.\n" +
+            "/botology on|off: enable or disable the manager.";
 
         CommandManager.AddHandler(PluginInfo.Command, new CommandInfo(OnCommand) { HelpMessage = helpMessage });
         foreach (var alias in PluginInfo.CommandAliases)
@@ -353,12 +464,18 @@ public sealed class Plugin : IDalamudPlugin
     {
         UpdateDtrBar();
 
+        if (Configuration.EnablePeriodicMasterCatalogChecks && DateTime.UtcNow >= nextMasterCatalogCheckUtc)
+        {
+            nextMasterCatalogCheckUtc = DateTime.UtcNow.AddMinutes(Math.Max(1, Configuration.MasterCatalogCheckIntervalMinutes));
+            RefreshMasterCatalog(force: false, silent: true);
+        }
+
         if (DateTime.UtcNow < nextAssessmentCheckUtc)
             return;
 
         nextAssessmentCheckUtc = DateTime.UtcNow.AddSeconds(2);
 
-        if (mainWindow.IsOpen || configWindow.IsOpen)
+        if (mainWindow.IsOpen || configWindow.IsOpen || catalogEditorWindow.IsOpen)
             QueueRepositoryMetadataRefresh();
 
         if (!Configuration.PluginEnabled)

@@ -13,7 +13,6 @@ namespace botology.Windows;
 public sealed class MainWindow : PositionedWindow, IDisposable
 {
     private const string BlockingPopupId = "BotologyBlockingAlert";
-    private const string JsonGuidePopupId = "BotologyJsonGuide";
     private const string ColumnSelectionPopupId = "BotologyColumnSelection";
 
     private readonly Plugin plugin;
@@ -24,6 +23,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     private enum GridColumn
     {
         Category,
+        Source,
         Installed,
         Update,
         Repo,
@@ -43,8 +43,8 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         this.plugin = plugin;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(1180f, 620f),
-            MaximumSize = new Vector2(1800f, 1400f),
+            MinimumSize = new Vector2(1240f, 640f),
+            MaximumSize = new Vector2(1880f, 1400f),
         };
     }
 
@@ -61,6 +61,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         var yellowCount = assessedRows.Count(row => row.Assessment.Severity == AssessmentSeverity.Yellow);
         var redCount = assessedRows.Count(row => row.Assessment.Severity == AssessmentSeverity.Red);
         var visibleColumns = GetVisibleColumns();
+        var refreshInfo = plugin.GetCatalogRefreshInfo();
 
         ImGui.Text($"{PluginInfo.DisplayName} v{version}");
         ImGui.SameLine();
@@ -73,6 +74,15 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         if (ImGui.SmallButton("Settings"))
             plugin.OpenConfigUi();
         ImGui.SameLine();
+        if (ImGui.SmallButton("Reload master now"))
+            plugin.RefreshMasterCatalog(force: true, silent: false);
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Open editor"))
+            plugin.OpenCatalogEditorUi();
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Catalog folder"))
+            plugin.OpenCatalogFolder();
+        ImGui.SameLine();
         if (ImGui.SmallButton("Status to chat"))
             plugin.PrintStatus(BotologyCatalog.BuildAlertSummary(rows));
         ImGui.SameLine();
@@ -84,19 +94,12 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.SameLine();
         if (ImGui.SmallButton("XLLOG"))
             plugin.RunTextCommand("/xllog");
-        ImGui.SameLine();
-        if (ImGui.SmallButton("JSON reload"))
-            plugin.ReloadRepositoryLinks();
-        ImGui.SameLine();
-        if (ImGui.SmallButton("JSON GUIDE"))
-            ImGui.OpenPopup(JsonGuidePopupId);
-        ImGui.SameLine();
-        if (ImGui.SmallButton("JSON FOLDER"))
-            plugin.OpenJsonFolder();
 
         ImGui.Separator();
-        ImGui.TextWrapped(PluginInfo.Description);
-        ImGui.TextWrapped(PluginInfo.DiscordFeedbackNote);
+		//dont need this garbage on main window
+        //ImGui.TextWrapped(PluginInfo.Description);
+        //ImGui.TextWrapped(PluginInfo.DiscordFeedbackNote);
+        ImGui.TextWrapped($"Master checked: {FormatDate(refreshInfo.LastCheckedUtc)} | Master updated: {FormatDate(refreshInfo.LastUpdatedUtc)}");
         ImGui.Text($"Green: {greenCount}  Yellow: {yellowCount}  Red: {redCount}");
 
         var enabled = plugin.Configuration.PluginEnabled;
@@ -109,7 +112,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
 
         ImGui.SameLine();
         var hideUninstalled = plugin.Configuration.HideUninstalledPlugins;
-        if (ImGui.Checkbox("Hide uninstalled Plugins", ref hideUninstalled))
+        if (ImGui.Checkbox("Hide uninstalled plugins", ref hideUninstalled))
             plugin.SetHideUninstalledPlugins(hideUninstalled);
 
         ImGui.SetNextItemWidth(190f);
@@ -122,7 +125,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.InputTextWithHint("##AuthorFilter", "AUTHOR", ref authorFilterText, 128);
 
         ImGui.TextUnformatted("Use the (?) button in Category / Plugin for plugin descriptions.");
-        ImGui.TextUnformatted("Use the (?) button in Ignore / ? for warning-rule details.");
+        ImGui.TextUnformatted("Use the (?) button in Ignore / ? for the current assessment and notes.");
 
         var visibleRows = plugin.Configuration.HideUninstalledPlugins
             ? rows.Where(row => row.IsInstalled).ToList()
@@ -136,7 +139,6 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             ImGui.Separator();
             ImGui.TextWrapped("No plugins match the current category/plugin/author filters.");
             DrawColumnSelectionPopup();
-            DrawJsonGuidePopup();
             DrawBlockingAlertPopup();
             FinalizePendingWindowPlacement();
             return;
@@ -175,7 +177,6 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         }
 
         DrawColumnSelectionPopup();
-        DrawJsonGuidePopup();
         DrawBlockingAlertPopup();
         FinalizePendingWindowPlacement();
     }
@@ -186,6 +187,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         var columns = new System.Collections.Generic.List<GridColumn>
         {
             GridColumn.Category,
+            GridColumn.Source,
         };
 
         if (cfg.ShowInstalledColumn)
@@ -220,7 +222,10 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         switch (column)
         {
             case GridColumn.Category:
-                ImGui.TableSetupColumn("Category / Plugin", ImGuiTableColumnFlags.WidthFixed, 220f);
+                ImGui.TableSetupColumn("Category / Plugin", ImGuiTableColumnFlags.WidthFixed, 260f);
+                break;
+            case GridColumn.Source:
+                ImGui.TableSetupColumn("Source", ImGuiTableColumnFlags.WidthFixed, 120f);
                 break;
             case GridColumn.Installed:
                 ImGui.TableSetupColumn("Installed?", ImGuiTableColumnFlags.WidthFixed, 75f);
@@ -271,6 +276,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                 case GridColumn.Category:
                     DrawCategoryColumn(row);
                     break;
+                case GridColumn.Source:
+                    DrawSourceColumn(row);
+                    break;
                 case GridColumn.Installed:
                     ImGui.TextUnformatted(row.IsInstalled ? "Yes" : "No");
                     break;
@@ -320,6 +328,13 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             ImGui.TextColored(color, row.Entry.DisplayName);
         else
             ImGui.TextUnformatted(row.Entry.DisplayName);
+
+        if (row.HasLocalChanges)
+        {
+            ImGui.SameLine();
+            ImGui.TextColored(new Vector4(1.0f, 0.84f, 0.25f, 1f), "[*]");
+        }
+
         ImGui.SameLine();
         if (ImGui.SmallButton("(?)"))
             ImGui.OpenPopup("PluginDescription");
@@ -332,6 +347,17 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             ImGui.PopTextWrapPos();
             ImGui.EndPopup();
         }
+    }
+
+    private static void DrawSourceColumn(PluginAssessmentRow row)
+    {
+        var color = row.Entry.SourceKind switch
+        {
+            CatalogEntrySourceKind.LocalOverride => new Vector4(1.0f, 0.84f, 0.25f, 1f),
+            CatalogEntrySourceKind.LocalOnly => new Vector4(0.90f, 0.72f, 0.28f, 1f),
+            _ => new Vector4(0.78f, 0.78f, 0.78f, 1f),
+        };
+        ImGui.TextColored(color, row.Entry.SourceLabel);
     }
 
     private void DrawRepoColumn(PluginAssessmentRow row)
@@ -445,14 +471,15 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         }
 
         var color = GetAssessmentColor(row);
+        var label = row.Ignored ? "Blue" : row.Assessment.Severity.ToString();
         var prefix = row.Ignored ? "[Ignored] " : string.Empty;
-        ImGui.TextColored(color, $"{prefix}{row.Assessment.Severity}: {row.Assessment.Summary}");
+        ImGui.TextColored(color, $"{prefix}{label}: {row.Assessment.Summary}");
     }
 
     private static Vector4 GetAssessmentColor(PluginAssessmentRow row)
     {
         if (row.Ignored)
-            return new Vector4(1.0f, 0.84f, 0.25f, 1f);
+            return new Vector4(0.40f, 0.70f, 1.0f, 1f);
 
         return row.Assessment.Severity switch
         {
@@ -475,7 +502,10 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         if (ImGui.BeginPopup("RuleInfo"))
         {
             ImGui.PushTextWrapPos(480f);
-            ImGui.TextWrapped($"{row.Assessment.Severity}: {row.Assessment.Summary}");
+            if (row.Ignored)
+                ImGui.TextWrapped($"Blue: ignored row. Underlying assessment is {row.Assessment.Severity}: {row.Assessment.Summary}");
+            else
+                ImGui.TextWrapped($"{row.Assessment.Severity}: {row.Assessment.Summary}");
             ImGui.Separator();
             ImGui.TextWrapped(row.Assessment.Details);
             ImGui.PopTextWrapPos();
@@ -500,47 +530,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         DrawColumnToggle("Ignore / ?", plugin.Configuration.ShowIgnoreColumn, value => plugin.Configuration.ShowIgnoreColumn = value);
 
         ImGui.Separator();
-        ImGui.TextWrapped("Category / Plugin and Enabled? stay visible so the grid remains operable.");
-        ImGui.EndPopup();
-    }
-
-    private void DrawJsonGuidePopup()
-    {
-        ImGui.SetNextWindowSize(new Vector2(760f, 0f), ImGuiCond.Appearing);
-        if (!ImGui.BeginPopup(JsonGuidePopupId))
-            return;
-
-        var manifestPath = RepositoryLinkCatalog.GetManifestPath() ?? "Unknown";
-
-        ImGui.PushTextWrapPos(720f);
-        ImGui.TextWrapped("plugin-repository-links.json is a human-edited manifest. Botology only reloads it when the plugin/settings window is opened or when you click JSON reload.");
-        ImGui.Separator();
-        ImGui.TextWrapped($"Enabled file: {manifestPath}");
-        ImGui.TextWrapped("Raw GitHub path: https://raw.githubusercontent.com/McVaxius/botology/refs/heads/main/botology/plugin-repository-links.json");
-        ImGui.Separator();
-        ImGui.BulletText("id: stable key used for rule matching and relatedIds references.");
-        ImGui.BulletText("category: visible group heading.");
-        ImGui.BulletText("displayName: row label in the manager.");
-        ImGui.BulletText("matchTokens: names/internal names Botology uses to match installed plugins.");
-        ImGui.BulletText("notes: long warning/help text shown in the rule popup.");
-        ImGui.BulletText("description: plugin summary for the (?) button in Category / Plugin. If missing, Botology tries repo.json and otherwise falls back to placeholder description.");
-        ImGui.BulletText("repoUrl: source repository used by the Repo button and GitHub metadata fallback.");
-        ImGui.BulletText("repoJsonUrl: concrete feed URL used for repo.json scraping. If this is missing and repoUrl points at GitHub, Botology will try the standard raw repo.json path.");
-        ImGui.BulletText("repoJsonUrls: optional array of multiple concrete feed URLs. Botology will scrape all of them, merge the best matching manifest metadata, and [Copy] will copy every listed feed.");
-        ImGui.BulletText("ruleType: optional built-in rule selector.");
-        ImGui.BulletText("relatedIds: optional array of one or more plugin ids used by paired/direct rules, for example [\"bossmod_reborn\"] or [\"gatherbuddy\", \"gatherbuddy_reborn\"].");
-        ImGui.Separator();
-        ImGui.TextWrapped("Available ruleType values:");
-        ImGui.BulletText("autoduty_conflict: row goes red when AutoDuty is enabled.");
-        ImGui.BulletText("paired_conflict_yellow: row goes yellow when any relatedIds entry is enabled.");
-        ImGui.BulletText("paired_conflict_red: row goes red when any relatedIds entry is enabled.");
-        ImGui.BulletText("direct_conflict_red: row goes red when any relatedIds entry is enabled.");
-        ImGui.BulletText("rotation_conflict: row goes yellow when another tracked rotation/bossmod entry is enabled.");
-        ImGui.BulletText("bossmod_pair: row goes red for direct bossmod rivals, otherwise falls back to rotation_conflict.");
-        ImGui.BulletText("loaded_warning_yellow: row goes yellow when the plugin itself is enabled.");
-        ImGui.Separator();
-        ImGui.TextWrapped("Downloads, Last Update Date, DalamudApiLevel, Author, and description fallback are auto-scraped and cached for 24 hours. Those columns are not configured in the JSON file.");
-        ImGui.PopTextWrapPos();
+        ImGui.TextWrapped("Category / Plugin, Source, and Enabled? stay visible so the grid remains operable.");
         ImGui.EndPopup();
     }
 
@@ -614,4 +604,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     private static bool ContainsInvariant(string? haystack, string needle)
         => !string.IsNullOrWhiteSpace(haystack) &&
            haystack.Contains(needle.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatDate(DateTimeOffset? value)
+        => value?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) ?? "Never";
 }

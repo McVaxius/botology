@@ -26,6 +26,8 @@
   <ItemGroup>
     <None Include="botology.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="images\icon.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="images\mainmenu.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="images\column menu.png" CopyToOutputDirectory="PreserveNewest" />
     <None Include="plugin-repository-links.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

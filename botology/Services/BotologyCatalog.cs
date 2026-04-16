@@ -7,57 +7,70 @@ namespace botology.Services;
 
 public static class BotologyCatalog
 {
-    private static readonly IReadOnlyList<PluginCatalogEntry> entries = new[]
+    private static readonly string[] RotationIds =
     {
-        new PluginCatalogEntry("lootgoblin", "DOW/DOM Content Bots", "LootGoblin", new[] { "LootGoblin" }, "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.", RuleType: "autoduty_conflict"),
-        new PluginCatalogEntry("mogtome", "DOW/DOM Content Bots", "MOGTOME", new[] { "MOGTOME" }, "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.", RuleType: "autoduty_conflict"),
-        new PluginCatalogEntry("aurafarmer", "DOW/DOM Content Bots", "AuraFarmer", new[] { "AuraFarmer" }, "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.", RuleType: "autoduty_conflict"),
-        new PluginCatalogEntry("lanparty", "DOW/DOM Content Bots", "LANParty", new[] { "LANParty" }, "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.", RuleType: "autoduty_conflict"),
-        new PluginCatalogEntry("cbt_vfate", "DOW/DOM Content Bots", "CBT (vfate activated)", new[] { "CBT" }, "If you use Twist of Fayte at the same time as CBT vfate there might be issues.", RuleType: "paired_conflict_yellow", RelatedIds: new[] { "twist_of_fayte" }),
-        new PluginCatalogEntry("twist_of_fayte", "DOW/DOM Content Bots", "Twist of Fayte", new[] { "TwistOfFayte", "Twist of Fayte" }, "If you use CBT vfate at the same time as Twist of Fayte there might be issues.", RuleType: "paired_conflict_yellow", RelatedIds: new[] { "cbt_vfate" }),
-        new PluginCatalogEntry("bunny_farm_eureka", "DOW/DOM Content Bots", "Bunny Farm Eureka", new[] { "BunnyFarmEureka", "Bunny Farm Eureka" }, "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.", RuleType: "autoduty_conflict"),
-
-        new PluginCatalogEntry("accountant", "Empire Management", "Accountant", new[] { "Accountant" }, "This plugin is fine to keep if you want to use the Garden tracker. Otherwise Submarine Tracker and AutoRetainer are sufficient to cover retainer and submarine information."),
-        new PluginCatalogEntry("allagan_tools", "Empire Management", "Allagan Tools", new[] { "AllaganTools", "Allagan Tools" }, "This tool offers the same data recording as XA DB and additional tools and guides but will frequently corrupt its own database and is unreliable for long term 100% data mining of a large empire of characters and FCs."),
-        new PluginCatalogEntry("altoholic", "Empire Management", "Altoholic", new[] { "Altoholic" }, "You should use XA DB instead. This plugin will CTD you if you try to browse the sheets tabs. Only use this over XA DB if you like the layout."),
-        new PluginCatalogEntry("autoretainer", "Empire Management", "AutoRetainer", new[] { "AutoRetainer", "Autoretainer" }, "AutoDuty should be disabled or it can cause problems with checking retainers. Solution for now is to have an \"/ad stop\". If VerMaxion is installed we are safe with AutoDuty being enabled."),
-        new PluginCatalogEntry("submarine_tracker", "Empire Management", "Submarine Tracker", new[] { "SubmarineTracker", "Submarine Tracker" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. The folder can get large."),
-        new PluginCatalogEntry("xa_db", "Empire Management", "XA DB", new[] { "XADB", "XA DB" }, "This tool covers all of the data of Allagan Tools and Altoholic. For now it doesn't have auto list via tooltip for hovered item, so keep Allagan Tools if you need that feature."),
-
-        new PluginCatalogEntry("artisan", "DOH/L Content Bots", "Artisan", new[] { "Artisan" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("autohook", "DOH/L Content Bots", "AutoHook", new[] { "AutoHook", "Autohook" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("henchman", "DOH/L Content Bots", "Henchman", new[] { "Henchman" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("gatherbuddy", "DOH/L Content Bots", "GatherBuddy", new[] { "GatherBuddy" }, "Pick one GatherBuddy only.", RuleType: "paired_conflict_red", RelatedIds: new[] { "gatherbuddy_reborn" }),
-        new PluginCatalogEntry("gatherbuddy_reborn", "DOH/L Content Bots", "GatherBuddyReborn", new[] { "GatherBuddyReborn" }, "Pick one GatherBuddy only.", RuleType: "paired_conflict_red", RelatedIds: new[] { "gatherbuddy" }),
-        new PluginCatalogEntry("icecosmic", "DOH/L Content Bots", "ICECOSMIC", new[] { "ICECOSMIC" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("vsatisfy", "DOH/L Content Bots", "vSatisfy", new[] { "vSatisfy", "Vsatisfy" }, "It has a small problem of not auto-deactivating itself if you get stuck in an unfinished cycle, so be sure to hit stop tasks before doing something else."),
-
-        new PluginCatalogEntry("autoduty", "Duty solving", "AutoDuty", new[] { "AutoDuty" }, "Keep this plugin disabled unless you specifically need it on. It interferes with many things without even being activated.", RuleType: "loaded_warning_yellow"),
-        new PluginCatalogEntry("ai_duty_solver", "Duty solving", "AI Duty Solver", new[] { "AIDutySolver", "AI Duty Solver" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-
-        new PluginCatalogEntry("bossmod", "Rotations/AI", "BossMod", new[] { "BossMod" }, "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.", RuleType: "bossmod_pair", RelatedIds: new[] { "bossmod_reborn" }),
-        new PluginCatalogEntry("bossmod_reborn", "Rotations/AI", "BossModReborn", new[] { "BossModReborn" }, "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.", RuleType: "bossmod_pair", RelatedIds: new[] { "bossmod" }),
-        new PluginCatalogEntry("wrath", "Rotations/AI", "Wrath", new[] { "Wrath" }, "Ensure you are only using one rotation plugin at the same time.", RuleType: "rotation_conflict"),
-        new PluginCatalogEntry("rotation_solver_reborn", "Rotations/AI", "RotationSolverReborn", new[] { "RotationSolverReborn", "RotationSolver" }, "Ensure you are only using one rotation plugin at the same time.", RuleType: "rotation_conflict"),
-        new PluginCatalogEntry("ultimate_combo", "Rotations/AI", "UltimateCombo", new[] { "UltimateCombo" }, "Ensure you are only using one rotation plugin at the same time.", RuleType: "rotation_conflict"),
-
-        new PluginCatalogEntry("frenrider", "Utility Bots", "FrenRider", new[] { "FrenRider" }, "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty doesn't even manage normally. This is volatile behaviour.", RuleType: "autoduty_conflict"),
-        new PluginCatalogEntry("hellofellowhumans", "Utility Bots", "HelloFellowHumans", new[] { "HelloFellowHumans" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game unless you want it to hahaha."),
-        new PluginCatalogEntry("vermaxion", "Utility Bots", "VerMaxion", new[] { "VERMAXION", "VerMaxion" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("vnavmesh", "Utility Bots", "VNAVMESH", new[] { "vnavmesh", "VNAVMESH" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game.", RuleType: "direct_conflict_red", RelatedIds: new[] { "smartnav" }),
-        new PluginCatalogEntry("smartnav", "Utility Bots", "SmartNav", new[] { "SmartNav" }, "Wiggly TBD plugin.", RuleType: "direct_conflict_red", RelatedIds: new[] { "vnavmesh" }),
-        new PluginCatalogEntry("visland", "Utility Bots", "VISLAND", new[] { "VISLAND", "visland" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("xa_slave", "Utility Bots", "XA Slave", new[] { "XASlave", "XA Slave" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("xa_hud", "Utility Bots", "XA HUD", new[] { "XAHUD", "XA HUD" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("xa_debug", "Utility Bots", "XA Debug", new[] { "XADebug", "XA Debug" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
-        new PluginCatalogEntry("something_need_doing", "Utility Bots", "Something Need Doing", new[] { "SomethingNeedDoing", "SND" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game unless you want it to hahaha."),
-        new PluginCatalogEntry("tracky_track", "Utility Bots", "Tracky Track", new[] { "TrackyTrack", "Tracky Track" }, "There is no reason to uninstall this plugin unless you want to save space on your HD. It does get a bit spicy in terms of storage."),
-
-        new PluginCatalogEntry("questionable_wiggly", "Quest", "Questionable (wiggly)", new[] { "Questionable", "QuestionableWiggly" }, "These plugins have diverged already.", RuleType: "paired_conflict_red", RelatedIds: new[] { "questionable_punish" }),
-        new PluginCatalogEntry("questionable_punish", "Quest", "Questionable (punish)", new[] { "QuestionablePunish", "QuestionablePunished" }, "These plugins have diverged already.", RuleType: "paired_conflict_red", RelatedIds: new[] { "questionable_wiggly" }),
+        "bossmod",
+        "bossmod_reborn",
+        "wrath",
+        "rotation_solver_reborn",
+        "ultimate_combo",
     };
 
-    public static IReadOnlyList<PluginCatalogEntry> Entries => RepositoryLinkCatalog.GetCatalogEntries(entries);
+    private static readonly IReadOnlyList<PluginCatalogEntry> fallbackEntries = new[]
+    {
+        new PluginCatalogEntry("lootgoblin", "DOW/DOM Content Bots", "LootGoblin", ["LootGoblin"], "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty does not even manage normally. This is volatile behaviour.", RedIds: ["autoduty"]),
+        new PluginCatalogEntry("mogtome", "DOW/DOM Content Bots", "MOGTOME", ["MOGTOME"], "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty does not even manage normally. This is volatile behaviour.", RedIds: ["autoduty"]),
+        new PluginCatalogEntry("aurafarmer", "DOW/DOM Content Bots", "AuraFarmer", ["AuraFarmer"], "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty does not even manage normally. This is volatile behaviour.", RedIds: ["autoduty"]),
+        new PluginCatalogEntry("lanparty", "DOW/DOM Content Bots", "LANParty", ["LANParty"], "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty does not even manage normally. This is volatile behaviour.", RedIds: ["autoduty"]),
+        new PluginCatalogEntry("cbt_vfate", "DOW/DOM Content Bots", "CBT (vfate activated)", ["CBT"], "If you use Twist of Fayte at the same time as CBT vfate there might be issues.", YellowIds: ["twist_of_fayte"]),
+        new PluginCatalogEntry("twist_of_fayte", "DOW/DOM Content Bots", "Twist of Fayte", ["TwistOfFayte", "Twist of Fayte"], "If you use CBT vfate at the same time as Twist of Fayte there might be issues.", YellowIds: ["cbt_vfate"]),
+        new PluginCatalogEntry("bunny_farm_eureka", "DOW/DOM Content Bots", "Bunny Farm Eureka", ["BunnyFarmEureka", "Bunny Farm Eureka"], "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty does not even manage normally. This is volatile behaviour.", RedIds: ["autoduty"]),
+
+        new PluginCatalogEntry("accountant", "Empire Management", "Accountant", ["Accountant"], "This plugin is fine to keep if you want to use the Garden tracker. Otherwise Submarine Tracker and AutoRetainer are sufficient to cover retainer and submarine information.", YellowIds: ["autoretainer", "submarine_tracker"]),
+        new PluginCatalogEntry("allagan_tools", "Empire Management", "Allagan Tools", ["AllaganTools", "Allagan Tools"], "This tool offers the same data recording as XA DB and additional tools and guides but will frequently corrupt its own database and is unreliable for long term 100% data mining of a large empire of characters and FCs.", YellowIds: ["xa_db"]),
+        new PluginCatalogEntry("altoholic", "Empire Management", "Altoholic", ["Altoholic"], "You should use XA DB instead. This plugin will CTD you if you try to browse the sheets tabs. Only use this over XA DB if you like the layout.", YellowIds: ["xa_db"]),
+        new PluginCatalogEntry("autoretainer", "Empire Management", "AutoRetainer", ["AutoRetainer", "Autoretainer"], "AutoDuty should be disabled or it can cause problems with checking retainers. Solution for now is to have an \"/ad stop\". If VerMaxion is installed we are often safe with AutoDuty being enabled.", YellowIds: ["autoduty"], GreenIds: ["vermaxion"]),
+        new PluginCatalogEntry("submarine_tracker", "Empire Management", "Submarine Tracker", ["SubmarineTracker", "Submarine Tracker"], "There is no reason to uninstall this plugin unless you want to save space on your HD. The folder can get large.", YellowIds: ["accountant"]),
+        new PluginCatalogEntry("xa_db", "Empire Management", "XA DB", ["XADB", "XA DB"], "This tool covers all of the data of Allagan Tools and Altoholic. For now it does not have auto list via tooltip for hovered item, so keep Allagan Tools if you need that feature.", YellowIds: ["allagan_tools", "altoholic"]),
+
+        new PluginCatalogEntry("artisan", "DOH/L Content Bots", "Artisan", ["Artisan"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("autohook", "DOH/L Content Bots", "AutoHook", ["AutoHook", "Autohook"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("henchman", "DOH/L Content Bots", "Henchman", ["Henchman"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("gatherbuddy", "DOH/L Content Bots", "GatherBuddy", ["GatherBuddy"], "Pick one GatherBuddy only.", RedIds: ["gatherbuddy_reborn"]),
+        new PluginCatalogEntry("gatherbuddy_reborn", "DOH/L Content Bots", "GatherBuddyReborn", ["GatherBuddyReborn"], "Pick one GatherBuddy only.", RedIds: ["gatherbuddy"]),
+        new PluginCatalogEntry("icecosmic", "DOH/L Content Bots", "ICECOSMIC", ["ICECOSMIC"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("vsatisfy", "DOH/L Content Bots", "vSatisfy", ["vSatisfy", "Vsatisfy"], "It has a small problem of not auto-deactivating itself if you get stuck in an unfinished cycle, so be sure to hit stop tasks before doing something else."),
+
+        new PluginCatalogEntry("autoduty", "Duty solving", "AutoDuty", ["AutoDuty"], "Keep this plugin disabled unless you specifically need it on. It interferes with many things without even being activated.", YellowIds: ["autoduty"]),
+        new PluginCatalogEntry("ai_duty_solver", "Duty solving", "AI Duty Solver", ["AIDutySolver", "AI Duty Solver"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+
+        new PluginCatalogEntry("bossmod", "Rotations/AI", "BossMod", ["BossMod"], "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.", YellowIds: RotationPeers("bossmod", "bossmod_reborn"), RedIds: ["bossmod_reborn"]),
+        new PluginCatalogEntry("bossmod_reborn", "Rotations/AI", "BossModReborn", ["BossModReborn"], "Ensure you are only using one rotation plugin at the same time. Pick one BossMod only.", YellowIds: RotationPeers("bossmod_reborn", "bossmod"), RedIds: ["bossmod"]),
+        new PluginCatalogEntry("wrath", "Rotations/AI", "Wrath", ["Wrath"], "Ensure you are only using one rotation plugin at the same time.", YellowIds: RotationPeers("wrath")),
+        new PluginCatalogEntry("rotation_solver_reborn", "Rotations/AI", "RotationSolverReborn", ["RotationSolverReborn", "RotationSolver"], "Ensure you are only using one rotation plugin at the same time.", YellowIds: RotationPeers("rotation_solver_reborn")),
+        new PluginCatalogEntry("ultimate_combo", "Rotations/AI", "UltimateCombo", ["UltimateCombo"], "Ensure you are only using one rotation plugin at the same time.", YellowIds: RotationPeers("ultimate_combo")),
+
+        new PluginCatalogEntry("frenrider", "Utility Bots", "FrenRider", ["FrenRider"], "AutoDuty will do weird things including leaving duties early, even when not activated intentionally, and in a duty that AutoDuty does not even manage normally. This is volatile behaviour.", RedIds: ["autoduty"]),
+        new PluginCatalogEntry("hellofellowhumans", "Utility Bots", "HelloFellowHumans", ["HelloFellowHumans"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game unless you want it to hahaha."),
+        new PluginCatalogEntry("vermaxion", "Utility Bots", "VerMaxion", ["VERMAXION", "VerMaxion"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("vnavmesh", "Utility Bots", "VNAVMESH", ["vnavmesh", "VNAVMESH"], "Pick one navigation helper only.", RedIds: ["smartnav"]),
+        new PluginCatalogEntry("smartnav", "Utility Bots", "SmartNav", ["SmartNav"], "Pick one navigation helper only.", RedIds: ["vnavmesh"]),
+        new PluginCatalogEntry("visland", "Utility Bots", "VISLAND", ["VISLAND", "visland"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("xa_slave", "Utility Bots", "XA Slave", ["XASlave", "XA Slave"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("xa_hud", "Utility Bots", "XA HUD", ["XAHUD", "XA HUD"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("xa_debug", "Utility Bots", "XA Debug", ["XADebug", "XA Debug"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game."),
+        new PluginCatalogEntry("something_need_doing", "Utility Bots", "Something Need Doing", ["SomethingNeedDoing", "SND"], "There is no reason to uninstall this plugin unless you want to save space on your HD. Its operations are clean and non-interfering with the rest of the game unless you want it to hahaha."),
+        new PluginCatalogEntry("tracky_track", "Utility Bots", "Tracky Track", ["TrackyTrack", "Tracky Track"], "There is no reason to uninstall this plugin unless you want to save space on your HD. It does get a bit spicy in terms of storage."),
+        new PluginCatalogEntry("targetpyon", "Utility Bots", "TargetPyon", ["TargetPyon"], "No Botology rule is configured yet. Treat this as a tracked utility plugin entry until stronger compatibility guidance is added.", RepoUrl: "https://github.com/priprii/FFXIVPlugins", RepoJsonUrl: "https://raw.githubusercontent.com/priprii/FFXIVPlugins/refs/heads/main/repo.json"),
+        new PluginCatalogEntry("pyoncam", "Utility Bots", "PyonCam", ["PyonCam"], "No Botology rule is configured yet. Treat this as a tracked utility plugin entry until stronger compatibility guidance is added.", RepoUrl: "https://github.com/priprii/FFXIVPlugins", RepoJsonUrl: "https://raw.githubusercontent.com/priprii/FFXIVPlugins/refs/heads/main/repo.json"),
+
+        new PluginCatalogEntry("questionable_wiggly", "Quest", "Questionable (wiggly)", ["Questionable", "QuestionableWiggly"], "These plugins have diverged already.", RedIds: ["questionable_punish"]),
+        new PluginCatalogEntry("questionable_punish", "Quest", "Questionable (punish)", ["QuestionablePunish", "QuestionablePunished"], "These plugins have diverged already.", RedIds: ["questionable_wiggly"]),
+    };
+
+    public static IReadOnlyList<PluginCatalogEntry> FallbackEntries => fallbackEntries;
+
+    public static IReadOnlyList<PluginCatalogEntry> Entries => RepositoryLinkCatalog.GetCatalogEntries(fallbackEntries);
 
     public static IReadOnlyList<PluginAssessmentRow> BuildRows(PluginSnapshot snapshot, ISet<string> ignoredIds)
     {
@@ -101,151 +114,41 @@ public static class BotologyCatalog
             var summary = runtimeState == null
                 ? "Not installed."
                 : "Installed but disabled.";
-            return Inactive(entry, summary);
+            return new AssessmentResult(AssessmentSeverity.Green, summary, entry.Notes);
         }
 
-        if (TryEvaluateConfiguredRule(entry, snapshot, entryMap, out var configuredAssessment))
-            return configuredAssessment;
+        var redMatches = GetLoadedEntries(snapshot, entryMap, entry.RedIds);
+        if (redMatches.Count > 0)
+            return new AssessmentResult(AssessmentSeverity.Red, $"{FormatEntryNames(redMatches)} {BeVerb(redMatches.Count)} loaded.", entry.Notes);
 
-        return entry.Id switch
+        var yellowMatches = GetLoadedEntries(snapshot, entryMap, entry.YellowIds);
+        if (yellowMatches.Count > 0)
+            return new AssessmentResult(AssessmentSeverity.Yellow, $"{FormatEntryNames(yellowMatches)} {BeVerb(yellowMatches.Count)} loaded.", entry.Notes);
+
+        if (entry.GreenIds is { Length: > 0 } greenIds)
         {
-            "accountant" => IsLoaded(snapshot, "autoretainer", entryMap) || IsLoaded(snapshot, "submarine_tracker", entryMap)
-                ? Yellow(entry, "AutoRetainer or Submarine Tracker already covers overlapping empire data.")
-                : Green(entry, "No overlapping empire trackers detected."),
+            var missingGreenIds = greenIds
+                .Where(greenId => !snapshot.IsLoaded(ResolveMatchTokens(greenId, entryMap)))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
 
-            "allagan_tools" => IsLoaded(snapshot, "xa_db", entryMap)
-                ? Yellow(entry, "XA DB is enabled and overlaps the same empire data capture.")
-                : Green(entry, "No XA DB overlap detected."),
+            if (missingGreenIds.Length > 0)
+                return new AssessmentResult(AssessmentSeverity.Red, $"Missing required green plugins: {FormatExpectedNames(missingGreenIds, entryMap)}.", entry.Notes);
 
-            "altoholic" => IsLoaded(snapshot, "xa_db", entryMap)
-                ? Yellow(entry, "Altoholic is enabled and XA DB is also present.")
-                : Yellow(entry, "Altoholic is enabled; XA DB is the preferred option."),
-
-            "autoretainer" => IsLoaded(snapshot, "autoduty", entryMap) && IsLoaded(snapshot, "vermaxion", entryMap)
-                ? Green(entry, "AutoDuty is enabled, but VerMaxion is also present for the current safe workaround.")
-                : IsLoaded(snapshot, "autoduty", entryMap)
-                    ? Yellow(entry, "AutoDuty is enabled and may interfere with retainer checks.")
-                    : Green(entry, "No AutoDuty interference detected."),
-
-            "submarine_tracker" => IsLoaded(snapshot, "accountant", entryMap)
-                ? Yellow(entry, "Accountant is enabled and overlaps part of this data surface.")
-                : Green(entry, "No overlapping submarine tracker warning triggered."),
-
-            "xa_db" => IsLoaded(snapshot, "allagan_tools", entryMap) || IsLoaded(snapshot, "altoholic", entryMap)
-                ? Yellow(entry, "Allagan Tools or Altoholic is enabled alongside XA DB.")
-                : Green(entry, "No overlapping empire data plugins detected."),
-
-            _ => Green(entry, "No warning rules triggered."),
-        };
-    }
-
-    private static bool TryEvaluateConfiguredRule(
-        PluginCatalogEntry entry,
-        PluginSnapshot snapshot,
-        IReadOnlyDictionary<string, PluginCatalogEntry> entryMap,
-        out AssessmentResult assessment)
-    {
-        switch (NormalizeRuleType(entry.RuleType))
-        {
-            case "autoduty_conflict":
-                assessment = AutoDutyConflict(entry, snapshot, entryMap);
-                return true;
-
-            case "paired_conflict_yellow":
-                assessment = RelatedConflict(entry, snapshot, entryMap, AssessmentSeverity.Yellow, "No conflicting paired plugin detected.");
-                return true;
-
-            case "paired_conflict_red":
-                assessment = RelatedConflict(entry, snapshot, entryMap, AssessmentSeverity.Red, "No competing paired plugin detected.");
-                return true;
-
-            case "direct_conflict_red":
-                assessment = RelatedConflict(entry, snapshot, entryMap, AssessmentSeverity.Red, "No direct conflict detected.");
-                return true;
-
-            case "rotation_conflict":
-                assessment = RotationEvaluation(entry, snapshot, entryMap);
-                return true;
-
-            case "bossmod_pair":
-                assessment = BossmodEvaluation(entry, snapshot, entryMap);
-                return true;
-
-            case "loaded_warning_yellow":
-                assessment = Yellow(entry, $"{entry.DisplayName} is currently loaded.");
-                return true;
+            return new AssessmentResult(AssessmentSeverity.Green, "Required green plugins are loaded.", entry.Notes);
         }
 
-        assessment = Green(entry, "No warning rules triggered.");
-        return false;
+        return new AssessmentResult(AssessmentSeverity.Green, "No warning rules triggered.", entry.Notes);
     }
 
-    private static AssessmentResult AutoDutyConflict(
-        PluginCatalogEntry entry,
-        PluginSnapshot snapshot,
-        IReadOnlyDictionary<string, PluginCatalogEntry> entryMap)
-    {
-        var loadedEntries = GetLoadedEntries(
-            snapshot,
-            entryMap,
-            entry.RelatedIds is { Length: > 0 } ? entry.RelatedIds : new[] { "autoduty" });
+    private static string[] RotationPeers(string selfId, params string[] explicitRedIds)
+        => RotationIds
+            .Where(id => !id.Equals(selfId, StringComparison.OrdinalIgnoreCase))
+            .Where(id => explicitRedIds.All(redId => !redId.Equals(id, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
 
-        return loadedEntries.Count > 0
-            ? Red(entry, $"{FormatEntryNames(loadedEntries)} {(loadedEntries.Count == 1 ? "is" : "are")} loaded.")
-            : Green(entry, "No AutoDuty conflict detected.");
-    }
-
-    private static AssessmentResult RelatedConflict(
-        PluginCatalogEntry entry,
-        PluginSnapshot snapshot,
-        IReadOnlyDictionary<string, PluginCatalogEntry> entryMap,
-        AssessmentSeverity severity,
-        string noConflictSummary)
-    {
-        var loadedEntries = GetLoadedEntries(snapshot, entryMap, entry.RelatedIds);
-        if (loadedEntries.Count == 0)
-            return Green(entry, noConflictSummary);
-
-        var summary = $"{FormatEntryNames(loadedEntries)} {(loadedEntries.Count == 1 ? "is" : "are")} loaded at the same time.";
-        return severity == AssessmentSeverity.Red
-            ? Red(entry, summary)
-            : Yellow(entry, summary);
-    }
-
-    private static AssessmentResult RotationEvaluation(
-        PluginCatalogEntry entry,
-        PluginSnapshot snapshot,
-        IReadOnlyDictionary<string, PluginCatalogEntry> entryMap)
-    {
-        var otherLoaded = entryMap.Values
-            .Where(candidate =>
-                !candidate.Id.Equals(entry.Id, StringComparison.OrdinalIgnoreCase) &&
-                IsRotationEntry(candidate) &&
-                snapshot.IsLoaded(candidate.MatchTokens))
-            .ToList();
-
-        return otherLoaded.Count > 0
-            ? Yellow(entry, $"{FormatEntryNames(otherLoaded)} {(otherLoaded.Count == 1 ? "is" : "are")} loaded at the same time.")
-            : Green(entry, "No competing rotation plugin detected.");
-    }
-
-    private static AssessmentResult BossmodEvaluation(
-        PluginCatalogEntry entry,
-        PluginSnapshot snapshot,
-        IReadOnlyDictionary<string, PluginCatalogEntry> entryMap)
-    {
-        var loadedRivals = GetLoadedEntries(snapshot, entryMap, entry.RelatedIds);
-        if (loadedRivals.Count > 0)
-            return Red(entry, $"{FormatEntryNames(loadedRivals)} {(loadedRivals.Count == 1 ? "is" : "are")} also loaded.");
-
-        return RotationEvaluation(entry, snapshot, entryMap);
-    }
-
-    private static bool IsLoaded(
-        PluginSnapshot snapshot,
-        string id,
-        IReadOnlyDictionary<string, PluginCatalogEntry> entryMap)
-        => entryMap.TryGetValue(id, out var entry) && snapshot.IsLoaded(entry.MatchTokens);
+    private static string BeVerb(int count)
+        => count == 1 ? "is" : "are";
 
     private static List<PluginCatalogEntry> GetLoadedEntries(
         PluginSnapshot snapshot,
@@ -269,28 +172,14 @@ public static class BotologyCatalog
         return loadedEntries;
     }
 
-    private static bool IsRotationEntry(PluginCatalogEntry entry)
-    {
-        var normalizedRuleType = NormalizeRuleType(entry.RuleType);
-        return normalizedRuleType is "rotation_conflict" or "bossmod_pair" ||
-               entry.Id is "bossmod" or "bossmod_reborn" or "wrath" or "rotation_solver_reborn" or "ultimate_combo";
-    }
-
-    private static string NormalizeRuleType(string? ruleType)
-        => string.IsNullOrWhiteSpace(ruleType) ? string.Empty : ruleType.Trim().ToLowerInvariant();
+    private static string[] ResolveMatchTokens(string id, IReadOnlyDictionary<string, PluginCatalogEntry> entryMap)
+        => entryMap.TryGetValue(id, out var entry)
+            ? entry.MatchTokens
+            : [id];
 
     private static string FormatEntryNames(IReadOnlyList<PluginCatalogEntry> entries)
         => string.Join(", ", entries.Select(entry => entry.DisplayName).Distinct(StringComparer.OrdinalIgnoreCase));
 
-    private static AssessmentResult Inactive(PluginCatalogEntry entry, string summary)
-        => new(AssessmentSeverity.Green, summary, entry.Notes);
-
-    private static AssessmentResult Green(PluginCatalogEntry entry, string summary)
-        => new(AssessmentSeverity.Green, summary, entry.Notes);
-
-    private static AssessmentResult Yellow(PluginCatalogEntry entry, string summary)
-        => new(AssessmentSeverity.Yellow, summary, entry.Notes);
-
-    private static AssessmentResult Red(PluginCatalogEntry entry, string summary)
-        => new(AssessmentSeverity.Red, summary, entry.Notes);
+    private static string FormatExpectedNames(IEnumerable<string> ids, IReadOnlyDictionary<string, PluginCatalogEntry> entryMap)
+        => string.Join(", ", ids.Select(id => entryMap.TryGetValue(id, out var entry) ? entry.DisplayName : id));
 }

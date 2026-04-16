@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
@@ -71,6 +72,13 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
             cfg.Save();
         }
 
+        var masterToastNotifications = cfg.ToastOnMasterCatalogChange;
+        if (ImGui.Checkbox("Toast when master catalog changes", ref masterToastNotifications))
+        {
+            cfg.ToastOnMasterCatalogChange = masterToastNotifications;
+            cfg.Save();
+        }
+
         var popupNotifications = cfg.BlockingPopupNotifications;
         if (ImGui.Checkbox("Popup box that requires OK", ref popupNotifications))
         {
@@ -92,9 +100,38 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
             cfg.Save();
         }
 
+        var periodicChecks = cfg.EnablePeriodicMasterCatalogChecks;
+        if (ImGui.Checkbox("Enable periodic master catalog checks", ref periodicChecks))
+        {
+            cfg.EnablePeriodicMasterCatalogChecks = periodicChecks;
+            cfg.Save();
+            plugin.RescheduleMasterCatalogCheck();
+        }
+
+        var intervalMinutes = Math.Max(1, cfg.MasterCatalogCheckIntervalMinutes);
+        if (ImGui.InputInt("Master catalog check interval (minutes)", ref intervalMinutes))
+        {
+            cfg.MasterCatalogCheckIntervalMinutes = Math.Max(1, intervalMinutes);
+            cfg.Save();
+            plugin.RescheduleMasterCatalogCheck();
+        }
+
+        if (ImGui.SmallButton("Reload master now"))
+            plugin.RefreshMasterCatalog(force: true, silent: false);
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Open catalog editor"))
+            plugin.OpenCatalogEditorUi();
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Open catalog folder"))
+            plugin.OpenCatalogFolder();
+
         ImGui.Separator();
+        var refreshInfo = plugin.GetCatalogRefreshInfo();
         ImGui.TextWrapped("The grid uses live installed, enabled, update-available, and best-effort DTR detection from Dalamud. If a plugin hides its configuration or repo URL, Botology will leave that control blank instead of guessing.");
-        ImGui.TextWrapped("Ignore flags remove rows from alert calculations but keep them visible in the grid.");
+        ImGui.TextWrapped("Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows.");
+        ImGui.TextWrapped($"Master source: {refreshInfo.SourceUrl ?? "Unknown"}");
+        ImGui.TextWrapped($"Last master check: {(refreshInfo.LastCheckedUtc?.ToLocalTime().ToString("g") ?? "Never")}");
+        ImGui.TextWrapped($"Last master update: {(refreshInfo.LastUpdatedUtc?.ToLocalTime().ToString("g") ?? "Never")}");
 
         FinalizePendingWindowPlacement();
     }

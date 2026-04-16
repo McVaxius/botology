@@ -14,9 +14,12 @@ public sealed class Configuration : IPluginConfiguration
     public string DtrIconEnabled { get; set; } = "\uE044";
     public string DtrIconDisabled { get; set; } = "\uE04C";
     public bool ToastNotifications { get; set; } = true;
+    public bool ToastOnMasterCatalogChange { get; set; } = true;
     public bool BlockingPopupNotifications { get; set; } = false;
     public bool OpenWindowOnAssessmentChange { get; set; } = false;
     public bool OpenMainWindowOnLoad { get; set; } = false;
+    public bool EnablePeriodicMasterCatalogChecks { get; set; } = true;
+    public int MasterCatalogCheckIntervalMinutes { get; set; } = 60;
     public bool HideUninstalledPlugins { get; set; } = false;
     public bool ShowInstalledColumn { get; set; } = true;
     public bool ShowUpdateColumn { get; set; } = true;

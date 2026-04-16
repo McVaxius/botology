@@ -12,4 +12,6 @@ public sealed record PluginAssessmentRow(
     public bool IsLoaded => RuntimeState?.IsLoaded == true;
 
     public bool IsAssessable => IsLoaded;
+
+    public bool HasLocalChanges => Entry.HasLocalChanges;
 }
