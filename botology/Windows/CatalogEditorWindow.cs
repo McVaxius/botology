@@ -62,7 +62,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         if (ImGui.SmallButton("Reload master now"))
             plugin.RefreshMasterCatalog(force: true, silent: false);
         ImGui.SameLine();
-        if (ImGui.SmallButton("Open overlay folder"))
+        if (ImGui.SmallButton("OPEN DATA FOLDER"))
             plugin.OpenCatalogFolder();
         ImGui.SameLine();
         if (ImGui.SmallButton("New local entry"))
@@ -78,6 +78,22 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             draft = null;
             selectedId = null;
         }
+        ImGui.SameLine();
+        ImGui.BeginDisabled(localChangeCount == 0 || !ctrlHeld);
+        var prepareUploadClicked = ImGui.SmallButton("PREPARE UPLOAD");
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            DrawWrappedTooltip(BuildPrepareUploadTooltip(localChangeCount, ctrlHeld));
+        if (prepareUploadClicked)
+            plugin.PrepareCatalogUploadPackage();
+        ImGui.SameLine();
+        ImGui.BeginDisabled(!ctrlHeld);
+        var inspectScriptClicked = ImGui.SmallButton("INSPECT SCRIPT");
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            DrawWrappedTooltip(BuildInspectScriptTooltip(ctrlHeld));
+        if (inspectScriptClicked)
+            plugin.OpenCatalogScriptFolder();
 
         ImGui.Separator();
         ImGui.SetNextItemWidth(220f);
@@ -200,7 +216,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         ImGui.BeginDisabled(!draft.EditingEnabled);
 
         if (draft.IsNewLocal)
-            DrawNewEntryIdentityEditor(draft);
+            DrawNewEntryIdentityEditor(entries, draft);
         else
             DrawReadOnlyText("Id", draft.Id);
 
@@ -327,13 +343,26 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         selectedId = null;
     }
 
-    private void DrawNewEntryIdentityEditor(CatalogEntryDraft entryDraft)
+    private void DrawNewEntryIdentityEditor(IReadOnlyList<PluginCatalogEntry> entries, CatalogEntryDraft entryDraft)
     {
         ImGui.TextUnformatted("Plugin shortname");
         ImGui.InputTextWithHint("##NewEntryShortname", "The shortname shown in Dalamud", ref entryDraft.NewEntryShortname, 128);
         ImGui.TextUnformatted("Optional id suffix");
         ImGui.InputTextWithHint("##NewEntryVariantSuffix", "Leave blank unless multiple plugins share that shortname", ref entryDraft.VariantSuffix, 128);
-        DrawReadOnlyText("Effective id", entryDraft.GetEffectiveId());
+        var effectiveId = entryDraft.GetEffectiveId();
+        DrawReadOnlyText("Effective id", effectiveId);
+
+        if (string.IsNullOrWhiteSpace(effectiveId))
+            return;
+
+        var existingEntry = entries.FirstOrDefault(entry => entry.Id.Equals(effectiveId, StringComparison.OrdinalIgnoreCase));
+        if (existingEntry == null)
+            return;
+
+        var warningText = existingEntry.SourceKind == CatalogEntrySourceKind.LocalOnly
+            ? "That combination of name and suffix already exists in local data. Saving will update that local row."
+            : "That combination of name and suffix already exists and this will become a local override.";
+        ImGui.TextColored(new Vector4(1.0f, 0.35f, 0.35f, 1.0f), warningText);
     }
 
     private void DrawMultilineText(string label, ref string value, float height)
@@ -537,6 +566,21 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             ? $"CTRL is held. Clicking now deletes all {localChangeCount} local override/local-only rows and falls back to master."
             : $"Hold CTRL to delete all {localChangeCount} local override/local-only rows and fall back to master.";
     }
+
+    private static string BuildPrepareUploadTooltip(int localChangeCount, bool ctrlHeld)
+    {
+        if (localChangeCount == 0)
+            return "There are no local catalog changes to prepare for upload.";
+
+        return ctrlHeld
+            ? "CTRL is held. Clicking now exports master.json, local.json, and plugin-repository-links.json into today's upload-prep folder, launches the Python review script, and opens the folder in Explorer. Use the command window to interactively approve or deny each changed local row. This does not upload anything by itself."
+            : "Requires Python. Hold CTRL to export today's upload-prep folder and start the interactive approve/deny review script. This does not upload anything by itself.";
+    }
+
+    private static string BuildInspectScriptTooltip(bool ctrlHeld)
+        => ctrlHeld
+            ? "CTRL is held. Clicking now opens the folder containing review_catalog.py."
+            : "CTRL-click to see the folder containing review_catalog.py if you are curious.";
 
     private static string? ValidateDraft(CatalogEntryDraft entryDraft)
     {

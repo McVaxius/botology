@@ -6,9 +6,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>0.0.0.15</Version>
-    <FileVersion>0.0.0.15</FileVersion>
-    <AssemblyVersion>0.0.0.15</AssemblyVersion>
+    <Version>0.0.0.16</Version>
+    <FileVersion>0.0.0.16</FileVersion>
+    <AssemblyVersion>0.0.0.16</AssemblyVersion>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
     <RootNamespace>botology</RootNamespace>
@@ -29,5 +29,8 @@
     <None Include="images\mainmenu.png" CopyToOutputDirectory="PreserveNewest" />
     <None Include="images\column menu.png" CopyToOutputDirectory="PreserveNewest" />
     <None Include="plugin-repository-links.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\tools\review_catalog.py" LogicalName="botology.review_catalog.py" />
   </ItemGroup>
 </Project>

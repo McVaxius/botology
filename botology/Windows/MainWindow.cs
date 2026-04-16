@@ -77,10 +77,10 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         if (ImGui.SmallButton("Reload master now"))
             plugin.RefreshMasterCatalog(force: true, silent: false);
         ImGui.SameLine();
-        if (ImGui.SmallButton("Open editor"))
+        if (ImGui.SmallButton("OPEN CATALOG EDITOR"))
             plugin.OpenCatalogEditorUi();
         ImGui.SameLine();
-        if (ImGui.SmallButton("Catalog folder"))
+        if (ImGui.SmallButton("DATA folder"))
             plugin.OpenCatalogFolder();
         ImGui.SameLine();
         if (ImGui.SmallButton("Status to chat"))

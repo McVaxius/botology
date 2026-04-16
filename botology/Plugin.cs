@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Dtr;
@@ -18,6 +21,8 @@ namespace botology;
 
 public sealed class Plugin : IDalamudPlugin
 {
+    private const string ReviewScriptResourceName = "botology.review_catalog.py";
+
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
@@ -203,6 +208,12 @@ public sealed class Plugin : IDalamudPlugin
     public IReadOnlyList<PluginCatalogEntry> CaptureCatalogEntries()
         => BotologyCatalog.Entries;
 
+    public IReadOnlyList<PluginCatalogEntry> CaptureMasterCatalogEntries()
+        => RepositoryLinkCatalog.GetMasterEntries(BotologyCatalog.FallbackEntries);
+
+    public IReadOnlyList<PluginCatalogEntry> CaptureOverlayCatalogEntries()
+        => RepositoryLinkCatalog.GetOverlayEntries(BotologyCatalog.FallbackEntries);
+
     public IReadOnlyList<string> GetKnownCatalogIds()
         => RepositoryLinkCatalog.GetKnownIds(BotologyCatalog.FallbackEntries);
 
@@ -254,6 +265,80 @@ public sealed class Plugin : IDalamudPlugin
         return removedCount;
     }
 
+    public bool PrepareCatalogUploadPackage()
+    {
+        var overlayEntries = CaptureOverlayCatalogEntries();
+        if (overlayEntries.Count == 0)
+        {
+            PrintStatus("There are no local catalog changes to prepare for interactive review.");
+            return false;
+        }
+
+        try
+        {
+            var scriptPath = EnsureReviewScriptInstalled();
+            var refreshInfo = GetCatalogRefreshInfo();
+            var outputDirectory = Path.Combine(RepositoryLinkCatalog.GetCatalogDirectory(), "upload-prep", DateTime.Now.ToString("yyyy-MM-dd"));
+            Directory.CreateDirectory(outputDirectory);
+
+            var masterPath = Path.Combine(outputDirectory, "master.json");
+            var localPath = Path.Combine(outputDirectory, "local.json");
+            var uploadPath = Path.Combine(outputDirectory, "plugin-repository-links.json");
+            var reportPath = Path.Combine(outputDirectory, "review-report.json");
+
+            RepositoryLinkCatalog.ExportCatalogManifest(masterPath, CaptureMasterCatalogEntries(), writeToEntriesArray: false, sourceUrl: refreshInfo.SourceUrl);
+            RepositoryLinkCatalog.ExportCatalogManifest(localPath, overlayEntries, writeToEntriesArray: true);
+            RepositoryLinkCatalog.ExportCatalogManifest(uploadPath, CaptureCatalogEntries(), writeToEntriesArray: false, sourceUrl: refreshInfo.SourceUrl);
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/k py \"{scriptPath}\" \"{masterPath}\" \"{localPath}\" --output \"{reportPath}\"",
+                WorkingDirectory = outputDirectory,
+                UseShellExecute = true,
+            });
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"\"{outputDirectory}\"",
+                UseShellExecute = true,
+            });
+
+            PrintStatus($"Prepared local upload-prep package in {outputDirectory}. No upload was sent; use the command window to approve or deny each changed row.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[botology] Failed to prepare the catalog upload package.");
+            PrintStatus($"Could not prepare the catalog upload package: {ex.Message}");
+            return false;
+        }
+    }
+
+    public bool OpenCatalogScriptFolder()
+    {
+        try
+        {
+            var scriptPath = EnsureReviewScriptInstalled();
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{scriptPath}\"",
+                UseShellExecute = true,
+            });
+
+            PrintStatus("Opened the folder containing review_catalog.py.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[botology] Failed to open the review script folder.");
+            PrintStatus($"Could not open the review script folder: {ex.Message}");
+            return false;
+        }
+    }
+
     public void OpenCatalogFolder()
     {
         var folder = RepositoryLinkCatalog.GetCatalogDirectory();
@@ -279,6 +364,23 @@ public sealed class Plugin : IDalamudPlugin
             Log.Warning(ex, "[botology] Failed to open catalog folder.");
             PrintStatus("Could not open the Botology catalog folder.");
         }
+    }
+
+    private string EnsureReviewScriptInstalled()
+    {
+        var toolsDirectory = Path.Combine(RepositoryLinkCatalog.GetCatalogDirectory(), "tools");
+        Directory.CreateDirectory(toolsDirectory);
+
+        var scriptPath = Path.Combine(toolsDirectory, "review_catalog.py");
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ReviewScriptResourceName)
+            ?? throw new InvalidOperationException($"Embedded resource '{ReviewScriptResourceName}' was not found.");
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: false);
+        var scriptContents = reader.ReadToEnd();
+
+        if (!File.Exists(scriptPath) || !string.Equals(File.ReadAllText(scriptPath), scriptContents, StringComparison.Ordinal))
+            File.WriteAllText(scriptPath, scriptContents, Encoding.UTF8);
+
+        return scriptPath;
     }
 
     public void RefreshMasterCatalog(bool force = false, bool silent = false)

@@ -28,14 +28,32 @@ LEGACY_ENTRY_FIELDS = {"ruleType", "relatedIds"}
 REQUIRED_FIELDS = {"id", "displayName", "matchTokens"}
 LIST_FIELDS = {"matchTokens", "repoJsonUrls", "green", "yellow", "red"}
 TEXT_FIELDS = {"id", "category", "displayName", "notes", "repoUrl", "repoJsonUrl", "description"}
+FIELD_ALIASES = {
+    "id": "id",
+    "category": "category",
+    "displayname": "displayName",
+    "matchtokens": "matchTokens",
+    "notes": "notes",
+    "repourl": "repoUrl",
+    "repojsonurl": "repoJsonUrl",
+    "repojsonurls": "repoJsonUrls",
+    "description": "description",
+    "green": "green",
+    "yellow": "yellow",
+    "red": "red",
+    "ruletype": "ruleType",
+    "relatedids": "relatedIds",
+}
 
 
 @dataclass
 class EntryReview:
     entry_id: str
-    status: str
+    row_kind: str
+    recommendation: str
     reasons: list[str]
     changed_fields: list[str]
+    decision: str | None = None
 
 
 def load_manifest(path: pathlib.Path) -> list[dict[str, Any]]:
@@ -43,10 +61,11 @@ def load_manifest(path: pathlib.Path) -> list[dict[str, Any]]:
     if isinstance(raw, list):
         entries = raw
     elif isinstance(raw, dict):
-        if isinstance(raw.get("entries"), list):
-            entries = raw["entries"]
-        elif isinstance(raw.get("plugins"), list):
-            entries = raw["plugins"]
+        raw_lower = {str(key).lower(): value for key, value in raw.items()}
+        if isinstance(raw_lower.get("entries"), list):
+            entries = raw_lower["entries"]
+        elif isinstance(raw_lower.get("plugins"), list):
+            entries = raw_lower["plugins"]
         else:
             raise ValueError(f"{path} does not contain an 'entries' or 'plugins' array.")
     else:
@@ -55,7 +74,16 @@ def load_manifest(path: pathlib.Path) -> list[dict[str, Any]]:
     if not all(isinstance(entry, dict) for entry in entries):
         raise ValueError(f"{path} contains non-object catalog rows.")
 
-    return entries
+    return [normalize_entry_keys(entry) for entry in entries]
+
+
+def normalize_entry_keys(entry: dict[str, Any]) -> dict[str, Any]:
+    normalized: dict[str, Any] = {}
+    for key, value in entry.items():
+        raw_key = str(key).strip()
+        canonical_key = FIELD_ALIASES.get(raw_key.lower(), raw_key)
+        normalized[canonical_key] = value
+    return normalized
 
 
 def normalize_text(value: Any) -> str:
@@ -146,14 +174,14 @@ def validate_entry(entry: dict[str, Any]) -> list[str]:
 
     for field in REQUIRED_FIELDS:
         if not str(entry.get(field, "")).strip():
-            reasons.append(f"Missing required field: {field}")
+            reasons.append(f"Missing required field: {field_label(field)}")
 
     for field in LIST_FIELDS:
         value = entry.get(field)
         if value is None:
             continue
         if not isinstance(value, list):
-            reasons.append(f"Field '{field}' must be an array")
+            reasons.append(f"Field '{field_label(field)}' must be an array")
 
     if entry.get("relatedIds") is not None and not isinstance(entry.get("relatedIds"), list):
         reasons.append("Field 'relatedIds' must be an array")
@@ -163,7 +191,7 @@ def validate_entry(entry: dict[str, Any]) -> list[str]:
         if value is None:
             continue
         if not isinstance(value, str):
-            reasons.append(f"Field '{field}' must be a string")
+            reasons.append(f"Field '{field_label(field)}' must be a string")
 
     if entry.get("ruleType") is not None and not isinstance(entry.get("ruleType"), str):
         reasons.append("Field 'ruleType' must be a string")
@@ -190,8 +218,12 @@ def compare_entries(master: dict[str, Any], submission: dict[str, Any]) -> list[
     changed_fields: list[str] = []
     for field in sorted(ALLOWED_FIELDS):
         if submission[field] != master[field]:
-            changed_fields.append(field)
+            changed_fields.append(field_label(field))
     return changed_fields
+
+
+def field_label(field: str) -> str:
+    return field
 
 
 def review_submission(master_entries: list[dict[str, Any]], submission_entries: list[dict[str, Any]]) -> list[EntryReview]:
@@ -213,27 +245,108 @@ def review_submission(master_entries: list[dict[str, Any]], submission_entries: 
         if not reasons:
             master_entry = master_map.get(entry_id)
             if master_entry is None:
-                reviews.append(EntryReview(raw_id, "APPROVE", ["Clean additive row"], []))
+                reviews.append(EntryReview(raw_id, "additive row", "APPROVE", ["Schema-clean additive row"], []))
                 continue
 
             changed_fields = compare_entries(master_entry, normalized_entry)
             if not changed_fields:
                 continue
 
-            reviews.append(EntryReview(raw_id, "REVIEW", ["Clean override to existing row"], changed_fields))
+            reviews.append(EntryReview(raw_id, "override row", "APPROVE", ["Schema-clean override to existing row"], changed_fields))
             continue
 
-        reviews.append(EntryReview(raw_id, "DENY", reasons, changed_fields))
+        reviews.append(EntryReview(raw_id, "invalid row", "DENY", reasons, changed_fields))
 
     return reviews
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Review a Botology catalog submission against an approved master catalog.")
+    parser = argparse.ArgumentParser(
+        description="Run an interactive local Botology catalog review against an approved master catalog.",
+    )
     parser.add_argument("master_catalog", type=pathlib.Path, help="Path to the approved master catalog JSON")
-    parser.add_argument("submission", type=pathlib.Path, help="Path to the submission JSON to review")
+    parser.add_argument("submission", type=pathlib.Path, help="Path to the local overlay/submission JSON to review")
     parser.add_argument("--output", type=pathlib.Path, help="Optional path for a machine-readable review report JSON")
     return parser.parse_args()
+
+
+def build_report(reviews: list[EntryReview], skipped_count: int, completed: bool) -> dict[str, Any]:
+    approved_count = sum(review.decision == "APPROVE" for review in reviews)
+    denied_count = sum(review.decision == "DENY" for review in reviews)
+    unreviewed_count = sum(review.decision is None for review in reviews)
+    recommendation_approve_count = sum(review.recommendation == "APPROVE" for review in reviews)
+    recommendation_deny_count = sum(review.recommendation == "DENY" for review in reviews)
+    return {
+        "summary": {
+            "entries_reviewed": len(reviews),
+            "approved": approved_count,
+            "denied": denied_count,
+            "unreviewed": unreviewed_count,
+            "recommendation_approve": recommendation_approve_count,
+            "recommendation_deny": recommendation_deny_count,
+            "skipped_identical": skipped_count,
+            "completed": completed,
+        },
+        "reviews": [asdict(review) for review in reviews],
+    }
+
+
+def write_report(path: pathlib.Path | None, reviews: list[EntryReview], skipped_count: int, completed: bool) -> None:
+    if path is None:
+        return
+
+    report = build_report(reviews, skipped_count, completed)
+    path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+
+def print_review_header(reviews: list[EntryReview], skipped_count: int) -> None:
+    print("BOTOLOGY LOCAL REVIEW")
+    print("Nothing was uploaded automatically.")
+    print("Review the changed local rows below and choose APPROVE or DENY for each one.")
+    print("Suggested decision: APPROVE means the row is structurally clean.")
+    print("Suggested decision: DENY means validation problems were detected.")
+    print(f"Changed local rows queued for review: {len(reviews)}")
+    print(f"SKIPPED identical rows: {skipped_count}")
+    print("")
+
+
+def print_review_entry(review: EntryReview, index: int, total: int) -> None:
+    print("=" * 72)
+    print(f"[{index}/{total}] {review.entry_id}")
+    print(f"Row kind: {review.row_kind}")
+    print(f"Suggested decision: {review.recommendation}")
+    for reason in review.reasons:
+        print(f"  - {reason}")
+    if review.changed_fields:
+        print(f"  - Changed fields: {', '.join(review.changed_fields)}")
+    print("")
+
+
+def prompt_for_decision() -> str | None:
+    while True:
+        response = input("Decision [a]pprove / approve [aa]ll / [d]eny / [q]uit: ").strip().lower()
+        if response in {"a", "approve"}:
+            return "APPROVE"
+        if response in {"aa", "approveall", "approve_all", "all"}:
+            return "APPROVE_ALL"
+        if response in {"d", "deny"}:
+            return "DENY"
+        if response in {"q", "quit"}:
+            return None
+        print("Please enter 'a', 'aa', 'd', or 'q'.")
+
+
+def print_decision_summary(reviews: list[EntryReview], skipped_count: int, completed: bool) -> None:
+    approved_count = sum(review.decision == "APPROVE" for review in reviews)
+    denied_count = sum(review.decision == "DENY" for review in reviews)
+    unreviewed_count = sum(review.decision is None for review in reviews)
+    print("")
+    print("Decision summary")
+    print(f"APPROVE: {approved_count}  DENY: {denied_count}  UNREVIEWED: {unreviewed_count}")
+    print(f"SKIPPED identical rows: {skipped_count}")
+    print("Review completed." if completed else "Review stopped early.")
+    print("Next step: inspect plugin-repository-links.json and review-report.json manually.")
+    print("The command window stays open so you can run additional Python commands here if you want.")
 
 
 def main() -> int:
@@ -247,38 +360,43 @@ def main() -> int:
         return 1
 
     reviews = review_submission(master_entries, submission_entries)
-
-    approve_count = sum(review.status == "APPROVE" for review in reviews)
-    deny_count = sum(review.status == "DENY" for review in reviews)
-    review_count = sum(review.status == "REVIEW" for review in reviews)
     skipped_count = len(submission_entries) - len(reviews)
+    print_review_header(reviews, skipped_count)
 
-    print(f"Submission review: {len(reviews)} entries")
-    print(f"APPROVE: {approve_count}  REVIEW: {review_count}  DENY: {deny_count}")
-    print(f"SKIPPED identical rows: {skipped_count}")
-    print("")
+    if not reviews:
+        write_report(args.output, reviews, skipped_count, completed=True)
+        print("No changed local rows need interactive review.")
+        print("The command window stays open so you can run additional Python commands here if you want.")
+        return 0
 
-    for review in reviews:
-        print(f"{review.status}: {review.entry_id}")
-        for reason in review.reasons:
-            print(f"  - {reason}")
-        if review.changed_fields:
-            print(f"  - Changed fields: {', '.join(review.changed_fields)}")
+    for index, review in enumerate(reviews, start=1):
+        print_review_entry(review, index, len(reviews))
+        try:
+            decision = prompt_for_decision()
+        except EOFError:
+            decision = None
+
+        if decision is None:
+            write_report(args.output, reviews, skipped_count, completed=False)
+            print_decision_summary(reviews, skipped_count, completed=False)
+            return 1
+
+        if decision == "APPROVE_ALL":
+            review.decision = "APPROVE"
+            for remaining_review in reviews[index:]:
+                remaining_review.decision = "APPROVE"
+            write_report(args.output, reviews, skipped_count, completed=True)
+            print("")
+            print(f"Approved the current row and all {len(reviews) - index} remaining rows.")
+            print_decision_summary(reviews, skipped_count, completed=True)
+            return 0
+
+        review.decision = decision
+        write_report(args.output, reviews, skipped_count, completed=False)
         print("")
 
-    if args.output:
-        report = {
-            "summary": {
-                "entries": len(reviews),
-                "approve": approve_count,
-                "review": review_count,
-                "deny": deny_count,
-                "skipped_identical": skipped_count,
-            },
-            "reviews": [asdict(review) for review in reviews],
-        }
-        args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")
-
+    write_report(args.output, reviews, skipped_count, completed=True)
+    print_decision_summary(reviews, skipped_count, completed=True)
     return 0
 
 

@@ -189,6 +189,29 @@ public static class RepositoryLinkCatalog
         }
     }
 
+    public static void ExportCatalogManifest(string path, IEnumerable<PluginCatalogEntry> entries, bool writeToEntriesArray, string? sourceUrl = null)
+    {
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
+
+        var storedEntries = entries
+            .Select(ToStoredEntry)
+            .OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var manifest = new CatalogManifest
+        {
+            SchemaVersion = 3,
+            SourceUrl = sourceUrl,
+            Plugins = writeToEntriesArray ? [] : storedEntries,
+            Entries = writeToEntriesArray ? storedEntries : [],
+        };
+
+        File.WriteAllText(path, JsonSerializer.Serialize(manifest, JsonOptions));
+    }
+
     public static async Task<MasterCatalogRefreshResult> RefreshMasterCatalogAsync(
         IReadOnlyList<PluginCatalogEntry> fallbackEntries,
         bool force = false)

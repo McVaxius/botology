@@ -119,10 +119,10 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         if (ImGui.SmallButton("Reload master now"))
             plugin.RefreshMasterCatalog(force: true, silent: false);
         ImGui.SameLine();
-        if (ImGui.SmallButton("Open catalog editor"))
+        if (ImGui.SmallButton("Open DATA editor"))
             plugin.OpenCatalogEditorUi();
         ImGui.SameLine();
-        if (ImGui.SmallButton("Open catalog folder"))
+        if (ImGui.SmallButton("Open DATA folder"))
             plugin.OpenCatalogFolder();
 
         ImGui.Separator();
