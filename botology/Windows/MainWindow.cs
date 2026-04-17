@@ -132,8 +132,8 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.SetNextItemWidth(180f);
         ImGui.InputTextWithHint("##AuthorFilter", "AUTHOR", ref authorFilterText, 128);
 
-        ImGui.TextUnformatted("Use the (?) button in Category / Plugin for plugin descriptions.");
-        ImGui.TextUnformatted("Use the (?) button in Ignore / ? for the current assessment and notes.");
+        //ImGui.TextUnformatted("Use the (?) button in Category / Plugin for plugin descriptions.");
+        //ImGui.TextUnformatted("Use the (?) button in Ignore / ? for the current assessment and notes.");
 
         var visibleRows = plugin.Configuration.HideUninstalledPlugins
             ? rows.Where(row => row.IsInstalled).ToList()

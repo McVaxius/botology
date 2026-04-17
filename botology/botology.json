@@ -5,7 +5,7 @@
   "Punchline": "Compatibility manager for semi-passive plugins and bot overlap warnings.",
   "Description": "Let's face it, you are a Botologist now, you need proper analysis of all of your tools so they work and play nice together.",
   "InternalName": "botology",
-  "AssemblyVersion": "0.1.0.0",
+  "AssemblyVersion": "0.1.0.1",
   "ApplicableVersion": "any",
   "RepoUrl": "https://github.com/McVaxius/botology",
   "DalamudApiLevel": 14,
