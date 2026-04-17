@@ -26,6 +26,7 @@ public sealed class Configuration : IPluginConfiguration
     public bool ShowRepoColumn { get; set; } = true;
     public bool ShowDtrColumn { get; set; } = true;
     public bool ShowNotesColumn { get; set; } = true;
+    public bool ShowDetailedNotes { get; set; } = true;
     public bool ShowIgnoreColumn { get; set; } = true;
     public bool ShowDownloadsColumn { get; set; } = false;
     public bool ShowLastUpdateColumn { get; set; } = false;

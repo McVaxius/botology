@@ -115,6 +115,14 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         if (ImGui.Checkbox("Hide uninstalled plugins", ref hideUninstalled))
             plugin.SetHideUninstalledPlugins(hideUninstalled);
 
+        ImGui.SameLine();
+        var showDetailedNotes = plugin.Configuration.ShowDetailedNotes;
+        if (ImGui.Checkbox("Detailed Notes", ref showDetailedNotes))
+        {
+            plugin.Configuration.ShowDetailedNotes = showDetailedNotes;
+            plugin.Configuration.Save();
+        }
+
         ImGui.SetNextItemWidth(190f);
         ImGui.InputTextWithHint("##CategoryFilter", "CATEGORY", ref categoryFilterText, 128);
         ImGui.SameLine();
@@ -310,7 +318,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                     DrawAuthorColumn(row);
                     break;
                 case GridColumn.Notes:
-                    DrawNotesColumn(row);
+                    DrawNotesColumn(row, plugin.Configuration.ShowDetailedNotes);
                     break;
                 case GridColumn.Ignore:
                     DrawIgnoreColumn(row);
@@ -462,7 +470,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.TextUnformatted(string.IsNullOrWhiteSpace(author) ? "--" : author);
     }
 
-    private static void DrawNotesColumn(PluginAssessmentRow row)
+    private static void DrawNotesColumn(PluginAssessmentRow row, bool showDetailedNotes)
     {
         if (!row.IsAssessable)
         {
@@ -474,6 +482,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         var label = row.Ignored ? "Blue" : row.Assessment.Severity.ToString();
         var prefix = row.Ignored ? "[Ignored] " : string.Empty;
         ImGui.TextColored(color, $"{prefix}{label}: {row.Assessment.Summary}");
+
+        if (showDetailedNotes && !string.IsNullOrWhiteSpace(row.Assessment.Details))
+            ImGui.TextWrapped(row.Assessment.Details);
     }
 
     private static Vector4 GetAssessmentColor(PluginAssessmentRow row)

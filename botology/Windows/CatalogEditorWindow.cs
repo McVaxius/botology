@@ -222,18 +222,19 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         ImGui.InputText("Category", ref draft.Category, 128);
         ImGui.InputText("Display name", ref draft.DisplayName, 128);
-        DrawMultilineText("Notes", ref draft.Notes, 100f);
+        DrawNotesEditor();
         DrawMultilineText("Description", ref draft.Description, 100f);
         ImGui.InputText("Repo URL", ref draft.RepoUrl, 512);
         ImGui.InputText("Repo JSON URL", ref draft.RepoJsonUrl, 512);
         DrawRelationEditor(entries, "Green plugins", RelationTarget.Green);
         DrawRelationEditor(entries, "Yellow plugins", RelationTarget.Yellow);
         DrawRelationEditor(entries, "Red plugins", RelationTarget.Red);
+        DrawRulePreview(entries);
 
         ImGui.EndDisabled();
 
         ImGui.Separator();
-        ImGui.TextWrapped("Rules only compare against other plugin shortnames. Red beats yellow, yellow beats green, and a row that lists required green plugins turns red if any of them are missing.");
+        ImGui.TextWrapped("Rules compare against plugin shortnames, including this row if you select it. Red beats yellow, yellow beats green, and a row that lists required green plugins turns red if any of them are missing.");
         if (draft.IsNewLocal)
             ImGui.TextWrapped("New rows use the plugin shortname as the runtime match token automatically.");
         else if (!draft.EditingEnabled && draft.ExistsInMaster)
@@ -371,10 +372,24 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         ImGui.InputTextMultiline($"##{label.Replace(' ', '_')}", ref value, 4096, new Vector2(-1f, height));
     }
 
+    private void DrawNotesEditor()
+    {
+        if (draft == null)
+            return;
+
+        ImGui.TextUnformatted("Notes");
+        ImGui.TextWrapped("Notes are the operator-facing explanation shown with the current rule result. The Green / Yellow / Red plugin lists decide the color; use Notes to explain why the row should end up in that state.");
+        ImGui.InputTextMultiline("##Notes", ref draft.Notes, 4096, new Vector2(-1f, 100f));
+    }
+
     private void DrawRelationEditor(IReadOnlyList<PluginCatalogEntry> entries, string label, RelationTarget relationTarget)
     {
         if (draft == null)
             return;
+
+        var relationEntries = GetRelationPickerEntries(entries)
+            .OrderBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
         ImGui.TextUnformatted(label);
         ImGui.SetNextItemWidth(-1f);
@@ -393,8 +408,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             ImGui.InputTextWithHint($"##{label.Replace(' ', '_')}_DisplayName", "DISPLAY NAME", ref relationDisplayNameFilterText, 128);
             if (ImGui.BeginChild($"##{label.Replace(' ', '_')}_PickerList", new Vector2(0f, 220f), true))
             {
-                var currentId = draft.GetEffectiveId();
-                foreach (var entry in entries.OrderBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase))
+                foreach (var entry in relationEntries)
                 {
                     if (!string.IsNullOrWhiteSpace(relationShortnameFilterText) &&
                         !entry.Id.Contains(relationShortnameFilterText, StringComparison.OrdinalIgnoreCase))
@@ -404,12 +418,6 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
                     if (!string.IsNullOrWhiteSpace(relationDisplayNameFilterText) &&
                         !entry.DisplayName.Contains(relationDisplayNameFilterText, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(currentId) &&
-                        entry.Id.Equals(currentId, StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -441,7 +449,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                     RemoveRelationId(relationTarget, id);
 
                 ImGui.SameLine();
-                var relatedEntry = entries.FirstOrDefault(entry => entry.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+                var relatedEntry = relationEntries.FirstOrDefault(entry => entry.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
                 var displayText = relatedEntry == null || relatedEntry.DisplayName.Equals(id, StringComparison.OrdinalIgnoreCase)
                     ? id
                     : $"{id} - {relatedEntry.DisplayName}";
@@ -449,6 +457,73 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             }
         }
         ImGui.EndChild();
+    }
+
+    private IEnumerable<PluginCatalogEntry> GetRelationPickerEntries(IReadOnlyList<PluginCatalogEntry> entries)
+    {
+        if (draft == null)
+            return entries;
+
+        var currentId = draft.GetEffectiveId();
+        if (string.IsNullOrWhiteSpace(currentId) ||
+            entries.Any(entry => entry.Id.Equals(currentId, StringComparison.OrdinalIgnoreCase)))
+        {
+            return entries;
+        }
+
+        var draftDisplayName = string.IsNullOrWhiteSpace(draft.DisplayName) ? currentId : draft.DisplayName.Trim();
+        var draftCategory = string.IsNullOrWhiteSpace(draft.Category) ? "Uncategorized" : draft.Category.Trim();
+        var draftNotes = string.IsNullOrWhiteSpace(draft.Notes) ? "No notes configured." : draft.Notes.Trim();
+
+        return entries.Concat(
+        [
+            new PluginCatalogEntry(
+                currentId,
+                draftCategory,
+                draftDisplayName,
+                draft.GetNormalizedMatchTokens(),
+                draftNotes,
+                SourceKind: draft.ExistsInMaster ? CatalogEntrySourceKind.LocalOverride : CatalogEntrySourceKind.LocalOnly,
+                HasLocalChanges: true),
+        ]);
+    }
+
+    private void DrawRulePreview(IReadOnlyList<PluginCatalogEntry> entries)
+    {
+        if (draft == null)
+            return;
+
+        var relationEntries = GetRelationPickerEntries(entries).ToArray();
+        var greenIds = GetRelationIds(RelationTarget.Green);
+        var yellowIds = GetRelationIds(RelationTarget.Yellow);
+        var redIds = GetRelationIds(RelationTarget.Red);
+
+        ImGui.Separator();
+        ImGui.TextUnformatted("Rule preview");
+
+        if (greenIds.Length == 0 && yellowIds.Length == 0 && redIds.Length == 0)
+        {
+            ImGui.TextDisabled("No green / yellow / red rules configured yet.");
+            return;
+        }
+
+        if (redIds.Length > 0)
+            ImGui.TextColored(new Vector4(1f, 0.35f, 0.35f, 1f), $"Red when loaded: {FormatRelationNames(redIds, relationEntries)}");
+
+        if (yellowIds.Length > 0)
+            ImGui.TextColored(new Vector4(1f, 0.86f, 0.35f, 1f), $"Yellow when loaded: {FormatRelationNames(yellowIds, relationEntries)}");
+
+        if (greenIds.Length > 0)
+        {
+            var formattedNames = FormatRelationNames(greenIds, relationEntries);
+            ImGui.TextColored(new Vector4(1f, 0.35f, 0.35f, 1f), $"Red when required green plugins are missing: {formattedNames}");
+            ImGui.TextColored(new Vector4(0.45f, 0.95f, 0.45f, 1f), $"Green when required green plugins are loaded: {formattedNames}");
+        }
+
+        var notesPreview = string.IsNullOrWhiteSpace(draft.Notes)
+            ? "No notes configured."
+            : draft.Notes.Trim();
+        ImGui.TextWrapped($"Notes shown with this row: {notesPreview}");
     }
 
     private void AppendRelationId(RelationTarget relationTarget, string id)
@@ -642,6 +717,23 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
     private static string NormalizeText(string? value)
         => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+
+    private static string FormatRelationNames(IEnumerable<string> ids, IEnumerable<PluginCatalogEntry> entries)
+    {
+        var entryMap = entries.ToDictionary(entry => entry.Id, StringComparer.OrdinalIgnoreCase);
+        return string.Join(", ", ids
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(id =>
+            {
+                if (!entryMap.TryGetValue(id, out var entry) ||
+                    entry.DisplayName.Equals(id, StringComparison.OrdinalIgnoreCase))
+                {
+                    return id;
+                }
+
+                return $"{entry.DisplayName} ({id})";
+            }));
+    }
 
     private static string[] ParseListText(string rawText)
         => rawText.Split(['\r', '\n', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
