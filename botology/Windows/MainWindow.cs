@@ -236,16 +236,16 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                 ImGui.TableSetupColumn("Source", ImGuiTableColumnFlags.WidthFixed, 120f);
                 break;
             case GridColumn.Installed:
-                ImGui.TableSetupColumn("Installed?", ImGuiTableColumnFlags.WidthFixed, 75f);
+                ImGui.TableSetupColumn("Installed", ImGuiTableColumnFlags.WidthFixed, 75f);
                 break;
             case GridColumn.Update:
-                ImGui.TableSetupColumn("Update?", ImGuiTableColumnFlags.WidthFixed, 70f);
+                ImGui.TableSetupColumn("Update", ImGuiTableColumnFlags.WidthFixed, 70f);
                 break;
             case GridColumn.Repo:
                 ImGui.TableSetupColumn("Repo", ImGuiTableColumnFlags.WidthFixed, 120f);
                 break;
             case GridColumn.Enabled:
-                ImGui.TableSetupColumn("Enabled?", ImGuiTableColumnFlags.WidthFixed, 130f);
+                ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed, 130f);
                 break;
             case GridColumn.Dtr:
                 ImGui.TableSetupColumn("DTR", ImGuiTableColumnFlags.WidthFixed, 80f);
@@ -266,7 +266,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                 ImGui.TableSetupColumn("Notes / Warnings", ImGuiTableColumnFlags.WidthStretch, 0f);
                 break;
             case GridColumn.Ignore:
-                ImGui.TableSetupColumn("Ignore / ?", ImGuiTableColumnFlags.WidthFixed, 110f);
+                ImGui.TableSetupColumn("Ignore", ImGuiTableColumnFlags.WidthFixed, 110f);
                 break;
         }
     }

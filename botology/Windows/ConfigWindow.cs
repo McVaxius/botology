@@ -129,7 +129,8 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         var refreshInfo = plugin.GetCatalogRefreshInfo();
         ImGui.TextWrapped("The grid uses live installed, enabled, update-available, and best-effort DTR detection from Dalamud. If a plugin hides its configuration or repo URL, Botology will leave that control blank instead of guessing.");
         ImGui.TextWrapped("Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows.");
-        ImGui.TextWrapped($"Master source: {refreshInfo.SourceUrl ?? "Unknown"}");
+        ImGui.TextWrapped("Special thanks to Canto who cooked most of the initial dataset and proposed categorizations. ");
+        //ImGui.TextWrapped($"Master source: {refreshInfo.SourceUrl ?? "Unknown"}");
         ImGui.TextWrapped($"Last master check: {(refreshInfo.LastCheckedUtc?.ToLocalTime().ToString("g") ?? "Never")}");
         ImGui.TextWrapped($"Last master update: {(refreshInfo.LastUpdatedUtc?.ToLocalTime().ToString("g") ?? "Never")}");
 
