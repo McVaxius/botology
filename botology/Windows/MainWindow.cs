@@ -71,6 +71,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         if (ImGui.SmallButton("Discord"))
             plugin.OpenUrl(PluginInfo.DiscordUrl);
         ImGui.SameLine();
+        if (ImGui.SmallButton("AETHERFEED"))
+            plugin.OpenUrl(PluginInfo.AetherfeedUrl);
+        ImGui.SameLine();
         if (ImGui.SmallButton("Settings"))
             plugin.OpenConfigUi();
         ImGui.SameLine();
@@ -274,6 +277,13 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     private void DrawPluginRow(PluginAssessmentRow row, GridColumn[] columns)
     {
         ImGui.TableNextRow();
+        if (row.IsUnavailableForCurrentPatch)
+        {
+            var bg = ImGui.ColorConvertFloat4ToU32(new Vector4(0.24f, 0.24f, 0.24f, 0.38f));
+            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg0, bg);
+            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, bg);
+        }
+
         ImGui.PushID(row.Entry.Id);
 
         for (var columnIndex = 0; columnIndex < columns.Length; columnIndex++)
@@ -331,8 +341,10 @@ public sealed class MainWindow : PositionedWindow, IDisposable
 
     private static void DrawCategoryColumn(PluginAssessmentRow row)
     {
-        var color = GetAssessmentColor(row);
-        if (row.IsAssessable)
+        var color = row.IsUnavailableForCurrentPatch
+            ? new Vector4(0.58f, 0.58f, 0.58f, 1f)
+            : GetAssessmentColor(row);
+        if (row.IsAssessable || row.IsUnavailableForCurrentPatch)
             ImGui.TextColored(color, row.Entry.DisplayName);
         else
             ImGui.TextUnformatted(row.Entry.DisplayName);
@@ -474,6 +486,12 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     {
         if (!row.IsAssessable)
         {
+            if (row.IsUnavailableForCurrentPatch)
+            {
+                ImGui.TextColored(new Vector4(0.58f, 0.58f, 0.58f, 1f), row.Assessment.Summary);
+                return;
+            }
+
             ImGui.TextUnformatted("--");
             return;
         }

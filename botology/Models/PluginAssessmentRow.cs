@@ -7,6 +7,8 @@ public sealed record PluginAssessmentRow(
     bool Ignored,
     PluginRepositoryMetadata? Metadata = null)
 {
+    public const int CurrentDalamudApiLevel = 15;
+
     public bool IsInstalled => RuntimeState != null;
 
     public bool IsLoaded => RuntimeState?.IsLoaded == true;
@@ -14,4 +16,7 @@ public sealed record PluginAssessmentRow(
     public bool IsAssessable => IsLoaded;
 
     public bool HasLocalChanges => Entry.HasLocalChanges;
+
+    public bool IsUnavailableForCurrentPatch
+        => Metadata?.DalamudApiLevel is int apiLevel && apiLevel < CurrentDalamudApiLevel;
 }

@@ -201,7 +201,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         var rows = CaptureBaseRows();
         return rows
-            .Select(row => row with { Metadata = RepositoryMetadataService.GetCachedMetadata(row) })
+            .Select(row => ApplyPatchCompatibilityAssessment(row with { Metadata = RepositoryMetadataService.GetCachedMetadata(row) }))
             .ToArray();
     }
 
@@ -492,6 +492,26 @@ public sealed class Plugin : IDalamudPlugin
     {
         var ignoredIds = new HashSet<string>(Configuration.IgnoredPluginIds, StringComparer.OrdinalIgnoreCase);
         return BotologyCatalog.BuildRows(PluginManagerBridge.CaptureSnapshot(), ignoredIds);
+    }
+
+    private static PluginAssessmentRow ApplyPatchCompatibilityAssessment(PluginAssessmentRow row)
+    {
+        if (!row.IsUnavailableForCurrentPatch)
+            return row;
+
+        var patchMessage =
+            $"Unavailable for current Dalamud API {PluginAssessmentRow.CurrentDalamudApiLevel} (manifest API {row.Metadata!.DalamudApiLevel}).";
+        var severity = row.Assessment.Severity == AssessmentSeverity.Green
+            ? AssessmentSeverity.Yellow
+            : row.Assessment.Severity;
+        var summary = row.Assessment.Severity == AssessmentSeverity.Green
+            ? patchMessage
+            : $"{patchMessage} {row.Assessment.Summary}";
+        var details = string.IsNullOrWhiteSpace(row.Assessment.Details)
+            ? patchMessage
+            : $"{patchMessage}{Environment.NewLine}{Environment.NewLine}{row.Assessment.Details}";
+
+        return row with { Assessment = new AssessmentResult(severity, summary, details) };
     }
 
     private void QueueRepositoryMetadataRefresh()
