@@ -33,11 +33,13 @@ public sealed class Plugin : IDalamudPlugin
 
     public Configuration Configuration { get; }
     public PluginManagerBridge PluginManagerBridge { get; }
+    public DtrVisibilityBridge DtrVisibilityBridge { get; }
     public RepositoryMetadataService RepositoryMetadataService { get; }
     public WindowSystem WindowSystem { get; } = new(PluginInfo.InternalName);
 
     private readonly MainWindow mainWindow;
     private readonly ConfigWindow configWindow;
+    private readonly DtrManagerWindow dtrManagerWindow;
     private readonly CatalogEditorWindow catalogEditorWindow;
     private IDtrBarEntry? dtrEntry;
     private DateTime nextAssessmentCheckUtc = DateTime.MinValue;
@@ -50,15 +52,18 @@ public sealed class Plugin : IDalamudPlugin
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         PluginManagerBridge = new PluginManagerBridge(PluginInterface, CommandManager, Log);
+        DtrVisibilityBridge = new DtrVisibilityBridge(PluginInterface, DtrBar, Log);
         RepositoryMetadataService = new RepositoryMetadataService(Log);
         RepositoryLinkCatalog.Reload();
 
         mainWindow = new MainWindow(this);
         configWindow = new ConfigWindow(this);
+        dtrManagerWindow = new DtrManagerWindow(this);
         catalogEditorWindow = new CatalogEditorWindow(this);
 
         WindowSystem.AddWindow(mainWindow);
         WindowSystem.AddWindow(configWindow);
+        WindowSystem.AddWindow(dtrManagerWindow);
         WindowSystem.AddWindow(catalogEditorWindow);
 
         RegisterCommands();
@@ -91,6 +96,7 @@ public sealed class Plugin : IDalamudPlugin
 
         RepositoryMetadataService.Dispose();
         catalogEditorWindow.Dispose();
+        dtrManagerWindow.Dispose();
         configWindow.Dispose();
         mainWindow.Dispose();
     }
@@ -118,6 +124,11 @@ public sealed class Plugin : IDalamudPlugin
         ReloadRepositoryLinks(silent: true);
         configWindow.IsOpen = true;
         QueueRepositoryMetadataRefresh();
+    }
+
+    public void OpenDtrManagerUi()
+    {
+        dtrManagerWindow.IsOpen = true;
     }
 
     public void OpenCatalogEditorUi()
@@ -407,6 +418,13 @@ public sealed class Plugin : IDalamudPlugin
         Configuration.Save();
     }
 
+    public void SetGlobalDtrControlsEnabled(bool enabled)
+    {
+        Configuration.EnableGlobalDtrControls = enabled;
+        Configuration.Save();
+        PrintStatus("Global DTR controls are always available.");
+    }
+
     public void SetIgnored(string id, bool ignored)
     {
         Configuration.IgnoredPluginIds.RemoveAll(existing => existing.Equals(id, StringComparison.OrdinalIgnoreCase));
@@ -427,6 +445,49 @@ public sealed class Plugin : IDalamudPlugin
 
         PrintStatus($"{runtimeState.DisplayName} {(targetState ? "enabled" : "disabled")}.");
         nextAssessmentCheckUtc = DateTime.MinValue;
+    }
+
+    public IReadOnlyList<DtrEntrySnapshot> CaptureDtrEntries()
+        => DtrVisibilityBridge.CaptureEntries();
+
+    public bool TryGetGlobalDtrEntry(PluginAssessmentRow row, out DtrEntrySnapshot? entry)
+    {
+        entry = null;
+        if (row.RuntimeState == null)
+            return false;
+
+        entry = DtrVisibilityBridge.FindBestMatch(row.RuntimeState, row.Entry);
+        return entry != null;
+    }
+
+    public void SetGlobalDtrEntryVisible(string title, bool visible)
+    {
+        if (!DtrVisibilityBridge.TrySetUserVisible(title, visible, out var message))
+        {
+            PrintStatus(message);
+            return;
+        }
+
+        PrintStatus(message);
+    }
+
+    public void MoveGlobalDtrEntry(string title, int delta)
+    {
+        if (!DtrVisibilityBridge.TryMove(title, delta, out var message))
+        {
+            PrintStatus(message);
+            return;
+        }
+
+        PrintStatus(message);
+    }
+
+    public void OpenServerInfoBarSettings(string? searchText = null)
+    {
+        if (DtrVisibilityBridge.TryOpenServerInfoBarSettings(searchText, out _))
+            return;
+
+        RunTextCommand("/xlsettings");
     }
 
     public void ToggleTrackedPluginDtr(PluginRuntimeState runtimeState, bool enabled)
@@ -522,6 +583,7 @@ public sealed class Plugin : IDalamudPlugin
         var helpMessage =
             "/botology: open or toggle the main window.\n" +
             "/botology config: open settings.\n" +
+            "/botology dtr: open global DTR manager.\n" +
             "/botology ws: reset Botology windows to 1,1.\n" +
             "/botology j: randomize Botology window positions.\n" +
             "/botology status: print the current summary to chat.\n" +
@@ -567,6 +629,13 @@ public sealed class Plugin : IDalamudPlugin
             return;
         }
 
+        if (trimmed.Equals("dtr", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("dtr ", StringComparison.OrdinalIgnoreCase))
+        {
+            HandleDtrCommand(trimmed.Length == 3 ? string.Empty : trimmed[4..]);
+            return;
+        }
+
         if (trimmed.Equals("ws", StringComparison.OrdinalIgnoreCase))
         {
             ResetWindowPositions();
@@ -580,6 +649,75 @@ public sealed class Plugin : IDalamudPlugin
         }
 
         ToggleMainUi();
+    }
+
+    private void HandleDtrCommand(string arguments)
+    {
+        var trimmed = arguments.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            OpenDtrManagerUi();
+            return;
+        }
+
+        var splitIndex = trimmed.IndexOf(' ');
+        var verb = splitIndex < 0 ? trimmed : trimmed[..splitIndex];
+        var rest = splitIndex < 0 ? string.Empty : trimmed[(splitIndex + 1)..].Trim();
+
+        switch (verb.ToLowerInvariant())
+        {
+            case "list":
+                PrintDtrListToChat();
+                return;
+            case "settings":
+            case "xlsettings":
+                OpenServerInfoBarSettings();
+                return;
+            case "enable":
+            case "on":
+                PrintStatus("Global DTR controls are always available.");
+                OpenDtrManagerUi();
+                return;
+            case "disable":
+            case "off":
+                PrintStatus("Global DTR controls are always available.");
+                return;
+            case "hide":
+                SetGlobalDtrEntryVisible(rest, false);
+                return;
+            case "show":
+                SetGlobalDtrEntryVisible(rest, true);
+                return;
+            case "toggle":
+                if (DtrVisibilityBridge.TryToggleUserVisible(rest, out var toggleMessage))
+                    PrintStatus(toggleMessage);
+                else
+                    PrintStatus(toggleMessage);
+                return;
+            case "up":
+                MoveGlobalDtrEntry(rest, -1);
+                return;
+            case "down":
+                MoveGlobalDtrEntry(rest, 1);
+                return;
+            default:
+                OpenDtrManagerUi();
+                PrintStatus("DTR command usage: /botology dtr list|hide <title>|show <title>|toggle <title>|up <title>|down <title>|settings.");
+                return;
+        }
+    }
+
+    private void PrintDtrListToChat()
+    {
+        var entries = CaptureDtrEntries();
+        if (entries.Count == 0)
+        {
+            PrintStatus("No live DTR entries.");
+            return;
+        }
+
+        foreach (var entry in entries)
+            PrintStatus($"{entry.Order + 1}. {entry.Title}: {entry.StateLabel}");
     }
 
     private void OnFrameworkUpdate(IFramework framework)

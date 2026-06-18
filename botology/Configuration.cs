@@ -19,6 +19,7 @@ public sealed class Configuration : IPluginConfiguration
     public bool OpenWindowOnAssessmentChange { get; set; } = false;
     public bool OpenMainWindowOnLoad { get; set; } = false;
     public bool EnablePeriodicMasterCatalogChecks { get; set; } = true;
+    public bool EnableGlobalDtrControls { get; set; } = false;
     public int MasterCatalogCheckIntervalMinutes { get; set; } = 60;
     public bool HideUninstalledPlugins { get; set; } = false;
     public bool ShowInstalledColumn { get; set; } = true;

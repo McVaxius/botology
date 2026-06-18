@@ -65,6 +65,12 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
             plugin.UpdateDtrBar();
         }
 
+        if (ImGui.SmallButton("DTR manager"))
+            plugin.OpenDtrManagerUi();
+        ImGui.SameLine();
+        if (ImGui.SmallButton("XLSettings Server Info Bar"))
+            plugin.OpenServerInfoBarSettings();
+
         var toastNotifications = cfg.ToastNotifications;
         if (ImGui.Checkbox("Toast warnings on changes", ref toastNotifications))
         {
@@ -127,7 +133,7 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
 
         ImGui.Separator();
         var refreshInfo = plugin.GetCatalogRefreshInfo();
-        ImGui.TextWrapped("The grid uses live installed, enabled, update-available, and best-effort DTR detection from Dalamud. If a plugin hides its configuration or repo URL, Botology will leave that control blank instead of guessing.");
+        ImGui.TextWrapped("The grid uses live installed, enabled, update-available, and DTR detection from Dalamud. Direct plugin DTR config is used first; live DTR entries use the same Server Info Bar visibility data as XLSettings.");
         ImGui.TextWrapped("Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows.");
         ImGui.TextWrapped("Special thanks to Canto who cooked most of the initial dataset and proposed categorizations. ");
         //ImGui.TextWrapped($"Master source: {refreshInfo.SourceUrl ?? "Unknown"}");

@@ -77,6 +77,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         if (ImGui.SmallButton("Settings"))
             plugin.OpenConfigUi();
         ImGui.SameLine();
+        if (ImGui.SmallButton("DTR"))
+            plugin.OpenDtrManagerUi();
+        ImGui.SameLine();
         if (ImGui.SmallButton("Reload master now"))
             plugin.RefreshMasterCatalog(force: true, silent: false);
         ImGui.SameLine();
@@ -251,7 +254,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                 ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed, 130f);
                 break;
             case GridColumn.Dtr:
-                ImGui.TableSetupColumn("DTR", ImGuiTableColumnFlags.WidthFixed, 80f);
+                ImGui.TableSetupColumn("DTR", ImGuiTableColumnFlags.WidthFixed, 90f);
                 break;
             case GridColumn.Downloads:
                 ImGui.TableSetupColumn("Downloads", ImGuiTableColumnFlags.WidthFixed, 110f);
@@ -440,16 +443,33 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             var dtrEnabled = row.RuntimeState.DtrBarEnabled.Value;
             if (ImGui.Checkbox("##DtrEnabled", ref dtrEnabled))
                 plugin.ToggleTrackedPluginDtr(row.RuntimeState, dtrEnabled);
+
+            return;
         }
-        else if (row.RuntimeState != null)
-        {
-            if (ImGui.SmallButton("XLSET"))
-                plugin.RunTextCommand("/xlsettings");
-        }
-        else
+
+        if (row.RuntimeState == null)
         {
             ImGui.TextUnformatted("--");
+            return;
         }
+
+        if (plugin.TryGetGlobalDtrEntry(row, out var globalDtrEntry) && globalDtrEntry != null)
+        {
+            var userVisible = globalDtrEntry.UserVisible;
+            if (ImGui.Checkbox("##GlobalDtrEnabled", ref userVisible))
+                plugin.SetGlobalDtrEntryVisible(globalDtrEntry.Title, userVisible);
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip(globalDtrEntry.PluginShown
+                    ? $"Global DTR: {globalDtrEntry.Title} ({globalDtrEntry.StateLabel})"
+                    : $"Global DTR: {globalDtrEntry.Title} ({globalDtrEntry.StateLabel}; plugin sets Shown=false)");
+
+            return;
+        }
+
+        if (ImGui.SmallButton("XLSET"))
+            plugin.OpenServerInfoBarSettings(row.RuntimeState.DisplayName);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip($"Open XLSettings Server Info Bar for {row.RuntimeState.DisplayName}.");
     }
 
     private static void DrawDownloadsColumn(PluginAssessmentRow row)
