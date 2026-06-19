@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -55,6 +56,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     public override void Draw()
     {
         var rows = plugin.CaptureRows();
+        var dtrEntries = plugin.CaptureDtrEntries();
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
         var assessedRows = rows.Where(row => row.IsAssessable && !row.Ignored).ToList();
         var greenCount = assessedRows.Count(row => row.Assessment.Severity == AssessmentSeverity.Green);
@@ -63,95 +65,22 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         var visibleColumns = GetVisibleColumns();
         var refreshInfo = plugin.GetCatalogRefreshInfo();
 
-        ImGui.Text($"{PluginInfo.DisplayName} v{version}");
-        ImGui.SameLine();
-        if (ImGui.SmallButton("Ko-fi"))
-            plugin.OpenUrl(PluginInfo.SupportUrl);
-        ImGui.SameLine();
-        if (ImGui.SmallButton("Discord"))
-            plugin.OpenUrl(PluginInfo.DiscordUrl);
-        ImGui.SameLine();
-        if (ImGui.SmallButton("AETHERFEED"))
-            plugin.OpenUrl(PluginInfo.AetherfeedUrl);
-        ImGui.SameLine();
-        if (ImGui.SmallButton("Settings"))
-            plugin.OpenConfigUi();
-        ImGui.SameLine();
-        if (ImGui.SmallButton("DTR"))
-            plugin.OpenDtrManagerUi();
-        ImGui.SameLine();
-        if (ImGui.SmallButton("Reload master now"))
-            plugin.RefreshMasterCatalog(force: true, silent: false);
-        ImGui.SameLine();
-        if (ImGui.SmallButton("OPEN CATALOG EDITOR"))
-            plugin.OpenCatalogEditorUi();
-        ImGui.SameLine();
-        if (ImGui.SmallButton("DATA folder"))
-            plugin.OpenCatalogFolder();
-        ImGui.SameLine();
-        if (ImGui.SmallButton("Status to chat"))
-            plugin.PrintStatus(BotologyCatalog.BuildAlertSummary(rows));
-        ImGui.SameLine();
-        if (ImGui.SmallButton("XLSETTINGS"))
-            plugin.RunTextCommand("/xlsettings");
-        ImGui.SameLine();
-        if (ImGui.SmallButton("XLPLUGINS"))
-            plugin.RunTextCommand("/xlplugins");
-        ImGui.SameLine();
-        if (ImGui.SmallButton("XLLOG"))
-            plugin.RunTextCommand("/xllog");
+        var visibleRows = GetVisibleRows(rows, dtrEntries);
 
+        DrawStatusRow(version, refreshInfo, greenCount, yellowCount, redCount, visibleRows.Count);
+        DrawActionsRow(rows);
+        DrawFilterRow();
+        DrawSearchRow();
         ImGui.Separator();
-		//dont need this garbage on main window
-        //ImGui.TextWrapped(PluginInfo.Description);
-        //ImGui.TextWrapped(PluginInfo.DiscordFeedbackNote);
-        ImGui.TextWrapped($"Master checked: {FormatDate(refreshInfo.LastCheckedUtc)} | Master updated: {FormatDate(refreshInfo.LastUpdatedUtc)}");
-        ImGui.Text($"Green: {greenCount}  Yellow: {yellowCount}  Red: {redCount}");
-
-        var enabled = plugin.Configuration.PluginEnabled;
-        if (ImGui.Checkbox("Manager enabled", ref enabled))
-            plugin.SetPluginEnabled(enabled, printStatus: true);
-
-        ImGui.SameLine();
-        if (ImGui.SmallButton("COLUMN SELECTION"))
-            ImGui.OpenPopup(ColumnSelectionPopupId);
-
-        ImGui.SameLine();
-        var hideUninstalled = plugin.Configuration.HideUninstalledPlugins;
-        if (ImGui.Checkbox("Hide uninstalled plugins", ref hideUninstalled))
-            plugin.SetHideUninstalledPlugins(hideUninstalled);
-
-        ImGui.SameLine();
-        var showDetailedNotes = plugin.Configuration.ShowDetailedNotes;
-        if (ImGui.Checkbox("Detailed Notes", ref showDetailedNotes))
-        {
-            plugin.Configuration.ShowDetailedNotes = showDetailedNotes;
-            plugin.Configuration.Save();
-        }
-
-        ImGui.SetNextItemWidth(190f);
-        ImGui.InputTextWithHint("##CategoryFilter", "CATEGORY", ref categoryFilterText, 128);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(220f);
-        ImGui.InputTextWithHint("##PluginNameFilter", "PLUGIN NAME", ref pluginNameFilterText, 128);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(180f);
-        ImGui.InputTextWithHint("##AuthorFilter", "AUTHOR", ref authorFilterText, 128);
 
         //ImGui.TextUnformatted("Use the (?) button in Category / Plugin for plugin descriptions.");
         //ImGui.TextUnformatted("Use the (?) button in Ignore / ? for the current assessment and notes.");
 
-        var visibleRows = plugin.Configuration.HideUninstalledPlugins
-            ? rows.Where(row => row.IsInstalled).ToList()
-            : rows;
-        visibleRows = visibleRows
-            .Where(MatchesFilters)
-            .ToList();
+        visibleRows = GetVisibleRows(rows, dtrEntries);
 
         if (visibleRows.Count == 0)
         {
-            ImGui.Separator();
-            ImGui.TextWrapped("No plugins match the current category/plugin/author filters.");
+            ImGui.TextWrapped("No plugins match the current filters.");
             DrawColumnSelectionPopup();
             DrawBlockingAlertPopup();
             FinalizePendingWindowPlacement();
@@ -184,7 +113,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                     ImGui.TextColored(new Vector4(1.0f, 0.9f, 0.55f, 1.0f), currentCategory.ToUpperInvariant());
                 }
 
-                DrawPluginRow(row, visibleColumns);
+                DrawPluginRow(row, visibleColumns, dtrEntries);
             }
 
             ImGui.EndTable();
@@ -193,6 +122,126 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         DrawColumnSelectionPopup();
         DrawBlockingAlertPopup();
         FinalizePendingWindowPlacement();
+    }
+
+    private static void DrawStatusRow(
+        string version,
+        CatalogRefreshInfo refreshInfo,
+        int greenCount,
+        int yellowCount,
+        int redCount,
+        int visibleCount)
+    {
+        ImGui.TextUnformatted($"{PluginInfo.DisplayName} v{version}");
+        ImGui.SameLine();
+        ImGui.TextUnformatted($"Master checked: {FormatDate(refreshInfo.LastCheckedUtc)}");
+        ImGui.SameLine();
+        ImGui.TextUnformatted($"Master updated: {FormatDate(refreshInfo.LastUpdatedUtc)}");
+        ImGui.SameLine();
+        ImGui.TextUnformatted($"Green: {greenCount}  Yellow: {yellowCount}  Red: {redCount}  Visible: {visibleCount}");
+    }
+
+    private void DrawActionsRow(IReadOnlyList<PluginAssessmentRow> rows)
+    {
+        if (ImGui.SmallButton("Ko-fi"))
+            plugin.OpenUrl(PluginInfo.SupportUrl);
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Discord"))
+            plugin.OpenUrl(PluginInfo.DiscordUrl);
+        ImGui.SameLine();
+        if (ImGui.SmallButton("AETHERFEED"))
+            plugin.OpenUrl(PluginInfo.AetherfeedUrl);
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Settings"))
+            plugin.OpenConfigUi();
+        ImGui.SameLine();
+        if (ImGui.SmallButton("DTR"))
+            plugin.OpenDtrManagerUi();
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Catalog"))
+            plugin.OpenCatalogEditorUi();
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Data"))
+            plugin.OpenCatalogFolder();
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Reload"))
+            plugin.RefreshMasterCatalog(force: true, silent: false);
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Status"))
+            plugin.PrintStatus(BotologyCatalog.BuildAlertSummary(rows));
+        ImGui.SameLine();
+        if (ImGui.SmallButton("XLSETTINGS"))
+            plugin.RunTextCommand("/xlsettings");
+        ImGui.SameLine();
+        if (ImGui.SmallButton("XLPLUGINS"))
+            plugin.RunTextCommand("/xlplugins");
+        ImGui.SameLine();
+        if (ImGui.SmallButton("XLLOG"))
+            plugin.RunTextCommand("/xllog");
+    }
+
+    private void DrawFilterRow()
+    {
+        var enabled = plugin.Configuration.PluginEnabled;
+        if (ImGui.Checkbox("Manager enabled", ref enabled))
+            plugin.SetPluginEnabled(enabled, printStatus: true);
+
+        ImGui.SameLine();
+        var hideUninstalled = plugin.Configuration.HideUninstalledPlugins;
+        if (ImGui.Checkbox("Hide uninstalled", ref hideUninstalled))
+            plugin.SetHideUninstalledPlugins(hideUninstalled);
+
+        ImGui.SameLine();
+        DrawSavedCheckbox("Detailed Notes", plugin.Configuration.ShowDetailedNotes, value => plugin.Configuration.ShowDetailedNotes = value);
+
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Columns"))
+            ImGui.OpenPopup(ColumnSelectionPopupId);
+
+        ImGui.SameLine();
+        DrawSavedCheckbox("Green", plugin.Configuration.ShowOnlyGreenPlugins, value => plugin.Configuration.ShowOnlyGreenPlugins = value);
+        ImGui.SameLine();
+        DrawSavedCheckbox("Yellow", plugin.Configuration.ShowOnlyYellowPlugins, value => plugin.Configuration.ShowOnlyYellowPlugins = value);
+        ImGui.SameLine();
+        DrawSavedCheckbox("Red", plugin.Configuration.ShowOnlyRedPlugins, value => plugin.Configuration.ShowOnlyRedPlugins = value);
+        ImGui.SameLine();
+        DrawSavedCheckbox("Has DTR entry", plugin.Configuration.ShowOnlyPluginsWithDtrEntry, value => plugin.Configuration.ShowOnlyPluginsWithDtrEntry = value);
+    }
+
+    private void DrawSearchRow()
+    {
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Category");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(190f);
+        ImGui.InputTextWithHint("##CategoryFilter", "Category", ref categoryFilterText, 128);
+
+        ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Plugin Name");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(220f);
+        ImGui.InputTextWithHint("##PluginNameFilter", "Plugin Name", ref pluginNameFilterText, 128);
+
+        ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Author");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(180f);
+        ImGui.InputTextWithHint("##AuthorFilter", "Author", ref authorFilterText, 128);
+    }
+
+    private IReadOnlyList<PluginAssessmentRow> GetVisibleRows(
+        IReadOnlyList<PluginAssessmentRow> rows,
+        IReadOnlyList<DtrEntrySnapshot> dtrEntries)
+    {
+        var visibleRows = plugin.Configuration.HideUninstalledPlugins
+            ? rows.Where(row => row.IsInstalled)
+            : rows;
+
+        return visibleRows
+            .Where(row => MatchesFilters(row, dtrEntries))
+            .ToList();
     }
 
     private GridColumn[] GetVisibleColumns()
@@ -277,7 +326,10 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         }
     }
 
-    private void DrawPluginRow(PluginAssessmentRow row, GridColumn[] columns)
+    private void DrawPluginRow(
+        PluginAssessmentRow row,
+        GridColumn[] columns,
+        IReadOnlyList<DtrEntrySnapshot> dtrEntries)
     {
         ImGui.TableNextRow();
         if (row.IsUnavailableForCurrentPatch)
@@ -316,7 +368,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                     DrawEnabledColumn(row);
                     break;
                 case GridColumn.Dtr:
-                    DrawDtrColumn(row);
+                    DrawDtrColumn(row, dtrEntries);
                     break;
                 case GridColumn.Downloads:
                     DrawDownloadsColumn(row);
@@ -436,11 +488,11 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             plugin.ToggleTrackedPlugin(row.RuntimeState);
     }
 
-    private void DrawDtrColumn(PluginAssessmentRow row)
+    private void DrawDtrColumn(PluginAssessmentRow row, IReadOnlyList<DtrEntrySnapshot> dtrEntries)
     {
-        if (row.RuntimeState?.CanToggleDtr == true && row.RuntimeState.DtrBarEnabled.HasValue)
+        if (HasDirectWritableDtrEntry(row) && row.RuntimeState?.DtrBarEnabled is bool dtrValue)
         {
-            var dtrEnabled = row.RuntimeState.DtrBarEnabled.Value;
+            var dtrEnabled = dtrValue;
             if (ImGui.Checkbox("##DtrEnabled", ref dtrEnabled))
                 plugin.ToggleTrackedPluginDtr(row.RuntimeState, dtrEnabled);
 
@@ -453,7 +505,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             return;
         }
 
-        if (plugin.TryGetGlobalDtrEntry(row, out var globalDtrEntry) && globalDtrEntry != null)
+        if (plugin.TryGetGlobalDtrEntry(row, dtrEntries, out var globalDtrEntry) && globalDtrEntry != null)
         {
             var userVisible = globalDtrEntry.UserVisible;
             if (ImGui.Checkbox("##GlobalDtrEnabled", ref userVisible))
@@ -466,10 +518,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             return;
         }
 
-        if (ImGui.SmallButton("XLSET"))
-            plugin.OpenServerInfoBarSettings(row.RuntimeState.DisplayName);
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip($"Open XLSettings Server Info Bar for {row.RuntimeState.DisplayName}.");
+        ImGui.TextUnformatted("--");
     }
 
     private static void DrawDownloadsColumn(PluginAssessmentRow row)
@@ -611,6 +660,16 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         }
     }
 
+    private void DrawSavedCheckbox(string label, bool currentValue, Action<bool> apply)
+    {
+        var value = currentValue;
+        if (ImGui.Checkbox(label, ref value))
+        {
+            apply(value);
+            plugin.Configuration.Save();
+        }
+    }
+
     private static string GetPluginDescription(PluginAssessmentRow row)
     {
         var configuredDescription = row.Entry.Description?.Trim();
@@ -627,8 +686,11 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             : "placeholder description";
     }
 
-    private bool MatchesFilters(PluginAssessmentRow row)
+    private bool MatchesFilters(PluginAssessmentRow row, IReadOnlyList<DtrEntrySnapshot> dtrEntries)
     {
+        if (!MatchesColorFilters(row))
+            return false;
+
         if (!string.IsNullOrWhiteSpace(categoryFilterText) &&
             !ContainsInvariant(row.Entry.Category, categoryFilterText))
         {
@@ -641,14 +703,44 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(pluginNameFilterText))
-            return true;
+        if (!string.IsNullOrWhiteSpace(pluginNameFilterText) &&
+            !ContainsInvariant(row.Entry.DisplayName, pluginNameFilterText) &&
+            !row.Entry.MatchTokens.Any(token => ContainsInvariant(token, pluginNameFilterText)))
+        {
+            return false;
+        }
 
-        if (ContainsInvariant(row.Entry.DisplayName, pluginNameFilterText))
-            return true;
-
-        return row.Entry.MatchTokens.Any(token => ContainsInvariant(token, pluginNameFilterText));
+        return !plugin.Configuration.ShowOnlyPluginsWithDtrEntry || HasDtrEntry(row, dtrEntries);
     }
+
+    private bool MatchesColorFilters(PluginAssessmentRow row)
+    {
+        var cfg = plugin.Configuration;
+        if (!cfg.ShowOnlyGreenPlugins && !cfg.ShowOnlyYellowPlugins && !cfg.ShowOnlyRedPlugins)
+            return true;
+
+        if (!row.IsAssessable || row.Ignored)
+            return false;
+
+        return row.Assessment.Severity switch
+        {
+            AssessmentSeverity.Green => cfg.ShowOnlyGreenPlugins,
+            AssessmentSeverity.Yellow => cfg.ShowOnlyYellowPlugins,
+            AssessmentSeverity.Red => cfg.ShowOnlyRedPlugins,
+            _ => false,
+        };
+    }
+
+    private bool HasDtrEntry(PluginAssessmentRow row, IReadOnlyList<DtrEntrySnapshot> dtrEntries)
+    {
+        if (HasDirectWritableDtrEntry(row))
+            return true;
+
+        return plugin.TryGetGlobalDtrEntry(row, dtrEntries, out var globalDtrEntry) && globalDtrEntry != null;
+    }
+
+    private static bool HasDirectWritableDtrEntry(PluginAssessmentRow row)
+        => row.RuntimeState?.CanToggleDtr == true;
 
     private static bool ContainsInvariant(string? haystack, string needle)
         => !string.IsNullOrWhiteSpace(haystack) &&

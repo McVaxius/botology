@@ -22,6 +22,10 @@ public sealed class Configuration : IPluginConfiguration
     public bool EnableGlobalDtrControls { get; set; } = false;
     public int MasterCatalogCheckIntervalMinutes { get; set; } = 60;
     public bool HideUninstalledPlugins { get; set; } = false;
+    public bool ShowOnlyGreenPlugins { get; set; } = false;
+    public bool ShowOnlyYellowPlugins { get; set; } = false;
+    public bool ShowOnlyRedPlugins { get; set; } = false;
+    public bool ShowOnlyPluginsWithDtrEntry { get; set; } = false;
     public bool ShowInstalledColumn { get; set; } = true;
     public bool ShowUpdateColumn { get; set; } = true;
     public bool ShowRepoColumn { get; set; } = true;

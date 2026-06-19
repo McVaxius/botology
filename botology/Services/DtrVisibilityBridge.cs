@@ -49,6 +49,14 @@ public sealed class DtrVisibilityBridge
     public DtrEntrySnapshot? FindBestMatch(PluginRuntimeState runtimeState, PluginCatalogEntry entry)
     {
         var entries = CaptureEntries();
+        return FindBestMatch(runtimeState, entry, entries);
+    }
+
+    public DtrEntrySnapshot? FindBestMatch(
+        PluginRuntimeState runtimeState,
+        PluginCatalogEntry entry,
+        IReadOnlyList<DtrEntrySnapshot> entries)
+    {
         if (entries.Count == 0)
             return null;
 

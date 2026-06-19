@@ -452,11 +452,20 @@ public sealed class Plugin : IDalamudPlugin
 
     public bool TryGetGlobalDtrEntry(PluginAssessmentRow row, out DtrEntrySnapshot? entry)
     {
+        var entries = CaptureDtrEntries();
+        return TryGetGlobalDtrEntry(row, entries, out entry);
+    }
+
+    public bool TryGetGlobalDtrEntry(
+        PluginAssessmentRow row,
+        IReadOnlyList<DtrEntrySnapshot> entries,
+        out DtrEntrySnapshot? entry)
+    {
         entry = null;
         if (row.RuntimeState == null)
             return false;
 
-        entry = DtrVisibilityBridge.FindBestMatch(row.RuntimeState, row.Entry);
+        entry = DtrVisibilityBridge.FindBestMatch(row.RuntimeState, row.Entry, entries);
         return entry != null;
     }
 

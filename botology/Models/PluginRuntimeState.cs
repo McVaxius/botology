@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace botology.Models;
 
@@ -63,7 +64,20 @@ public sealed class PluginRuntimeState
 
     public bool CanToggleEnabled => LocalPluginHandle != null;
 
-    public bool CanToggleDtr => ConfigurationHandle != null && DtrBarEnabled.HasValue;
+    public bool CanToggleDtr
+    {
+        get
+        {
+            if (ConfigurationHandle == null || !DtrBarEnabled.HasValue)
+                return false;
+
+            var property = ConfigurationHandle
+                .GetType()
+                .GetProperty("DtrBarEnabled", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            return property?.PropertyType == typeof(bool) && property.CanWrite;
+        }
+    }
 
     public bool MatchesAny(IEnumerable<string> candidates)
     {
