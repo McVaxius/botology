@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using botology.Models;
 
@@ -43,6 +44,8 @@ public static class RepositoryLinkCatalog
     private static IReadOnlyList<PluginCatalogEntry> cachedMasterEntries = Array.Empty<PluginCatalogEntry>();
     private static IReadOnlyDictionary<string, PluginCatalogEntry> cachedOverlayEntries =
         new Dictionary<string, PluginCatalogEntry>(StringComparer.OrdinalIgnoreCase);
+    private static IReadOnlySet<string> cachedDeletedIds =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     private static IReadOnlyList<PluginCatalogEntry> effectiveEntries = Array.Empty<PluginCatalogEntry>();
     private static CatalogRefreshState refreshState = new();
     private static bool manifestLoaded;
@@ -69,6 +72,31 @@ public static class RepositoryLinkCatalog
             return cachedOverlayEntries.Values.OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
+    }
+
+    public static IReadOnlyList<string> GetDeletedIds(IReadOnlyList<PluginCatalogEntry> fallbackEntries)
+    {
+        EnsureCatalogLoaded(fallbackEntries);
+        lock (gate)
+            return cachedDeletedIds.OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    public static IReadOnlyList<PluginCatalogEntry> GetHiddenMasterEntries(IReadOnlyList<PluginCatalogEntry> fallbackEntries)
+    {
+        EnsureCatalogLoaded(fallbackEntries);
+        lock (gate)
+        {
+            return cachedMasterEntries
+                .Where(entry => cachedDeletedIds.Contains(entry.Id))
+                .Select(entry => entry with
+                {
+                    SourceKind = CatalogEntrySourceKind.HiddenMaster,
+                    HasLocalChanges = true,
+                })
+                .OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
     }
 
     public static PluginCatalogEntry? GetMasterEntry(string id, IReadOnlyList<PluginCatalogEntry> fallbackEntries)
@@ -133,6 +161,7 @@ public static class RepositoryLinkCatalog
         {
             cachedMasterEntries = Array.Empty<PluginCatalogEntry>();
             cachedOverlayEntries = new Dictionary<string, PluginCatalogEntry>(StringComparer.OrdinalIgnoreCase);
+            cachedDeletedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             effectiveEntries = Array.Empty<PluginCatalogEntry>();
             manifestLoaded = false;
         }
@@ -147,10 +176,13 @@ public static class RepositoryLinkCatalog
             var overlayEntries = cachedOverlayEntries.Values
                 .ToDictionary(existing => existing.Id, existing => StripRuntimeMetadata(existing), StringComparer.OrdinalIgnoreCase);
             overlayEntries[entry.Id] = StripRuntimeMetadata(entry);
+            var deletedIds = new HashSet<string>(cachedDeletedIds, StringComparer.OrdinalIgnoreCase);
+            deletedIds.Remove(entry.Id);
 
-            SaveOverlayManifestLocked(overlayEntries.Values);
+            SaveOverlayManifestLocked(overlayEntries.Values, deletedIds);
             cachedOverlayEntries = overlayEntries;
-            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries);
+            cachedDeletedIds = deletedIds;
+            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries, cachedDeletedIds);
         }
     }
 
@@ -165,9 +197,50 @@ public static class RepositoryLinkCatalog
             if (!overlayEntries.Remove(id))
                 return false;
 
-            SaveOverlayManifestLocked(overlayEntries.Values);
+            SaveOverlayManifestLocked(overlayEntries.Values, cachedDeletedIds);
             cachedOverlayEntries = overlayEntries;
-            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries);
+            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries, cachedDeletedIds);
+            return true;
+        }
+    }
+
+    public static bool HideMasterEntry(string id, IReadOnlyList<PluginCatalogEntry> fallbackEntries)
+    {
+        EnsureCatalogLoaded(fallbackEntries);
+
+        lock (gate)
+        {
+            if (!cachedMasterEntries.Any(entry => entry.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
+                return false;
+
+            var overlayEntries = cachedOverlayEntries.Values
+                .ToDictionary(existing => existing.Id, existing => StripRuntimeMetadata(existing), StringComparer.OrdinalIgnoreCase);
+            var deletedIds = new HashSet<string>(cachedDeletedIds, StringComparer.OrdinalIgnoreCase);
+            var changed = overlayEntries.Remove(id) | deletedIds.Add(id);
+            if (!changed)
+                return false;
+
+            SaveOverlayManifestLocked(overlayEntries.Values, deletedIds);
+            cachedOverlayEntries = overlayEntries;
+            cachedDeletedIds = deletedIds;
+            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries, cachedDeletedIds);
+            return true;
+        }
+    }
+
+    public static bool RestoreMasterEntry(string id, IReadOnlyList<PluginCatalogEntry> fallbackEntries)
+    {
+        EnsureCatalogLoaded(fallbackEntries);
+
+        lock (gate)
+        {
+            var deletedIds = new HashSet<string>(cachedDeletedIds, StringComparer.OrdinalIgnoreCase);
+            if (!deletedIds.Remove(id))
+                return false;
+
+            SaveOverlayManifestLocked(cachedOverlayEntries.Values, deletedIds);
+            cachedDeletedIds = deletedIds;
+            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries, cachedDeletedIds);
             return true;
         }
     }
@@ -178,18 +251,24 @@ public static class RepositoryLinkCatalog
 
         lock (gate)
         {
-            var removedCount = cachedOverlayEntries.Count;
+            var removedCount = cachedOverlayEntries.Count + cachedDeletedIds.Count;
             if (removedCount == 0)
                 return 0;
 
             cachedOverlayEntries = new Dictionary<string, PluginCatalogEntry>(StringComparer.OrdinalIgnoreCase);
-            SaveOverlayManifestLocked(Array.Empty<PluginCatalogEntry>());
-            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries);
+            cachedDeletedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            SaveOverlayManifestLocked(Array.Empty<PluginCatalogEntry>(), cachedDeletedIds);
+            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries, cachedDeletedIds);
             return removedCount;
         }
     }
 
-    public static void ExportCatalogManifest(string path, IEnumerable<PluginCatalogEntry> entries, bool writeToEntriesArray, string? sourceUrl = null)
+    public static void ExportCatalogManifest(
+        string path,
+        IEnumerable<PluginCatalogEntry> entries,
+        bool writeToEntriesArray,
+        string? sourceUrl = null,
+        IEnumerable<string>? deletedIds = null)
     {
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
@@ -200,6 +279,9 @@ public static class RepositoryLinkCatalog
             .OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
             .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
+        var normalizedDeletedIds = NormalizeIdList(deletedIds)
+            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         var manifest = new CatalogManifest
         {
@@ -207,6 +289,7 @@ public static class RepositoryLinkCatalog
             SourceUrl = sourceUrl,
             Plugins = writeToEntriesArray ? [] : storedEntries,
             Entries = writeToEntriesArray ? storedEntries : [],
+            DeletedIds = normalizedDeletedIds.Count > 0 ? normalizedDeletedIds : null,
         };
 
         File.WriteAllText(path, JsonSerializer.Serialize(manifest, JsonOptions));
@@ -257,16 +340,19 @@ public static class RepositoryLinkCatalog
                 {
                     SaveMasterManifestLocked(parsedEntries, RemoteSourceUrl);
                     cachedMasterEntries = parsedEntries;
-
-                    var prunedOverlay = PruneOverlayAgainstMasterLocked(cachedOverlayEntries, cachedMasterEntries);
-                    if (prunedOverlay.Count != cachedOverlayEntries.Count)
-                    {
-                        cachedOverlayEntries = prunedOverlay;
-                        SaveOverlayManifestLocked(cachedOverlayEntries.Values);
-                    }
-
-                    effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries);
                 }
+
+                var prunedOverlay = PruneOverlayAgainstMasterLocked(cachedOverlayEntries, cachedMasterEntries);
+                var prunedDeletedIds = PruneDeletedIdsAgainstMasterLocked(cachedDeletedIds, cachedMasterEntries);
+                if (prunedOverlay.Count != cachedOverlayEntries.Count ||
+                    prunedDeletedIds.Count != cachedDeletedIds.Count)
+                {
+                    cachedOverlayEntries = prunedOverlay;
+                    cachedDeletedIds = prunedDeletedIds;
+                    SaveOverlayManifestLocked(cachedOverlayEntries.Values, cachedDeletedIds);
+                }
+
+                effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries, cachedDeletedIds);
 
                 refreshState = refreshState with
                 {
@@ -313,10 +399,12 @@ public static class RepositoryLinkCatalog
                     HasLocalChanges = false,
                 }).ToArray();
 
-            cachedOverlayEntries = LoadOverlayEntriesLocked(fallbackEntries)
+            var overlayState = LoadOverlayStateLocked(fallbackEntries);
+            cachedOverlayEntries = overlayState.Entries
                 .ToDictionary(entry => entry.Id, entry => StripRuntimeMetadata(entry), StringComparer.OrdinalIgnoreCase);
+            cachedDeletedIds = overlayState.DeletedIds;
 
-            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries);
+            effectiveEntries = MergeEntriesLocked(cachedMasterEntries, cachedOverlayEntries, cachedDeletedIds);
             manifestLoaded = true;
         }
     }
@@ -379,7 +467,7 @@ public static class RepositoryLinkCatalog
         SaveMasterManifestLocked(chosenMasterEntries, RemoteSourceUrl);
 
         var overlayEntries = BuildOverlayEntriesLocked(legacyEntries, chosenMasterEntries);
-        SaveOverlayManifestLocked(overlayEntries);
+        SaveOverlayManifestLocked(overlayEntries, Array.Empty<string>());
 
         var now = DateTimeOffset.UtcNow;
         refreshState = refreshState with
@@ -462,21 +550,27 @@ public static class RepositoryLinkCatalog
         }
     }
 
-    private static IReadOnlyList<PluginCatalogEntry> LoadOverlayEntriesLocked(IReadOnlyList<PluginCatalogEntry> fallbackEntries)
+    private static LoadedOverlayState LoadOverlayStateLocked(IReadOnlyList<PluginCatalogEntry> fallbackEntries)
     {
         var path = GetOverlayPath();
         if (!File.Exists(path))
-            return Array.Empty<PluginCatalogEntry>();
+            return new LoadedOverlayState([], new HashSet<string>(StringComparer.OrdinalIgnoreCase));
 
         try
         {
             var manifest = JsonSerializer.Deserialize<CatalogManifest>(File.ReadAllText(path), JsonOptions);
-            return ConvertStoredEntries(GetStoredEntries(manifest), fallbackEntries, CatalogEntrySourceKind.LocalOnly, hasLocalChanges: true);
+            var entries = ConvertStoredEntries(
+                GetStoredEntries(manifest),
+                fallbackEntries,
+                CatalogEntrySourceKind.LocalOnly,
+                hasLocalChanges: true);
+            var deletedIds = new HashSet<string>(NormalizeIdList(manifest?.DeletedIds), StringComparer.OrdinalIgnoreCase);
+            return new LoadedOverlayState(entries, deletedIds);
         }
         catch (Exception ex)
         {
             Plugin.Log.Warning(ex, "[botology] Failed to load local overlay catalog.");
-            return Array.Empty<PluginCatalogEntry>();
+            return new LoadedOverlayState([], new HashSet<string>(StringComparer.OrdinalIgnoreCase));
         }
     }
 
@@ -618,13 +712,18 @@ public static class RepositoryLinkCatalog
 
     private static IReadOnlyList<PluginCatalogEntry> MergeEntriesLocked(
         IReadOnlyList<PluginCatalogEntry> masterEntries,
-        IReadOnlyDictionary<string, PluginCatalogEntry> overlayEntries)
+        IReadOnlyDictionary<string, PluginCatalogEntry> overlayEntries,
+        IReadOnlySet<string> deletedIds)
     {
         var mergedEntries = new List<PluginCatalogEntry>(Math.Max(masterEntries.Count, overlayEntries.Count));
         var masterIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var masterEntry in masterEntries)
         {
+            masterIds.Add(masterEntry.Id);
+            if (deletedIds.Contains(masterEntry.Id))
+                continue;
+
             if (overlayEntries.TryGetValue(masterEntry.Id, out var overlayEntry))
             {
                 mergedEntries.Add(StripRuntimeMetadata(overlayEntry) with
@@ -641,8 +740,6 @@ public static class RepositoryLinkCatalog
                     HasLocalChanges = false,
                 });
             }
-
-            masterIds.Add(masterEntry.Id);
         }
 
         foreach (var overlayEntry in overlayEntries.Values.Where(entry => !masterIds.Contains(entry.Id)))
@@ -676,6 +773,16 @@ public static class RepositoryLinkCatalog
         return prunedEntries;
     }
 
+    private static HashSet<string> PruneDeletedIdsAgainstMasterLocked(
+        IReadOnlySet<string> deletedIds,
+        IReadOnlyList<PluginCatalogEntry> masterEntries)
+    {
+        var masterIds = masterEntries.Select(entry => entry.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return deletedIds
+            .Where(masterIds.Contains)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
     private static void SaveMasterManifestLocked(IEnumerable<PluginCatalogEntry> entries, string sourceUrl)
     {
         EnsureCatalogDirectoryExistsLocked();
@@ -691,15 +798,21 @@ public static class RepositoryLinkCatalog
         File.WriteAllText(GetMasterCachePath(), JsonSerializer.Serialize(manifest, JsonOptions));
     }
 
-    private static void SaveOverlayManifestLocked(IEnumerable<PluginCatalogEntry> entries)
+    private static void SaveOverlayManifestLocked(
+        IEnumerable<PluginCatalogEntry> entries,
+        IEnumerable<string> deletedIds)
     {
         EnsureCatalogDirectoryExistsLocked();
+        var normalizedDeletedIds = NormalizeIdList(deletedIds)
+            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
         var manifest = new CatalogManifest
         {
             SchemaVersion = 3,
             Entries = entries.Select(ToStoredEntry).OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList(),
+            DeletedIds = normalizedDeletedIds.Count > 0 ? normalizedDeletedIds : null,
         };
 
         File.WriteAllText(GetOverlayPath(), JsonSerializer.Serialize(manifest, JsonOptions));
@@ -843,7 +956,14 @@ public static class RepositoryLinkCatalog
         public List<StoredCatalogEntry> Plugins { get; init; } = [];
 
         public List<StoredCatalogEntry> Entries { get; init; } = [];
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<string>? DeletedIds { get; init; }
     }
+
+    private sealed record LoadedOverlayState(
+        IReadOnlyList<PluginCatalogEntry> Entries,
+        IReadOnlySet<string> DeletedIds);
 
     private sealed class StoredCatalogEntry
     {

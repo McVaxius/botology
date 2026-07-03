@@ -225,6 +225,16 @@ public sealed class Plugin : IDalamudPlugin
     public IReadOnlyList<PluginCatalogEntry> CaptureOverlayCatalogEntries()
         => RepositoryLinkCatalog.GetOverlayEntries(BotologyCatalog.FallbackEntries);
 
+    public IReadOnlyList<string> CaptureDeletedCatalogIds()
+        => RepositoryLinkCatalog.GetDeletedIds(BotologyCatalog.FallbackEntries);
+
+    public IReadOnlyList<PluginCatalogEntry> CaptureCatalogEditorEntries()
+        => CaptureCatalogEntries()
+            .Concat(RepositoryLinkCatalog.GetHiddenMasterEntries(BotologyCatalog.FallbackEntries))
+            .OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
     public IReadOnlyList<string> GetKnownCatalogIds()
         => RepositoryLinkCatalog.GetKnownIds(BotologyCatalog.FallbackEntries);
 
@@ -261,6 +271,34 @@ public sealed class Plugin : IDalamudPlugin
         return removed;
     }
 
+    public bool HideMasterCatalogEntry(string id)
+    {
+        var hidden = RepositoryLinkCatalog.HideMasterEntry(id, BotologyCatalog.FallbackEntries);
+        if (hidden)
+        {
+            RepositoryMetadataService.InvalidateRefreshThrottle();
+            lastAssessmentFingerprint = string.Empty;
+            nextAssessmentCheckUtc = DateTime.MinValue;
+            QueueRepositoryMetadataRefresh();
+        }
+
+        return hidden;
+    }
+
+    public bool RestoreMasterCatalogEntry(string id)
+    {
+        var restored = RepositoryLinkCatalog.RestoreMasterEntry(id, BotologyCatalog.FallbackEntries);
+        if (restored)
+        {
+            RepositoryMetadataService.InvalidateRefreshThrottle();
+            lastAssessmentFingerprint = string.Empty;
+            nextAssessmentCheckUtc = DateTime.MinValue;
+            QueueRepositoryMetadataRefresh();
+        }
+
+        return restored;
+    }
+
     public int DropAllLocalCatalogChanges()
     {
         var removedCount = RepositoryLinkCatalog.ClearOverlayEntries(BotologyCatalog.FallbackEntries);
@@ -279,7 +317,8 @@ public sealed class Plugin : IDalamudPlugin
     public bool PrepareCatalogUploadPackage()
     {
         var overlayEntries = CaptureOverlayCatalogEntries();
-        if (overlayEntries.Count == 0)
+        var deletedIds = CaptureDeletedCatalogIds();
+        if (overlayEntries.Count == 0 && deletedIds.Count == 0)
         {
             PrintStatus("There are no local catalog changes to prepare for interactive review.");
             return false;
@@ -298,7 +337,7 @@ public sealed class Plugin : IDalamudPlugin
             var reportPath = Path.Combine(outputDirectory, "review-report.json");
 
             RepositoryLinkCatalog.ExportCatalogManifest(masterPath, CaptureMasterCatalogEntries(), writeToEntriesArray: false, sourceUrl: refreshInfo.SourceUrl);
-            RepositoryLinkCatalog.ExportCatalogManifest(localPath, overlayEntries, writeToEntriesArray: true);
+            RepositoryLinkCatalog.ExportCatalogManifest(localPath, overlayEntries, writeToEntriesArray: true, deletedIds: deletedIds);
             RepositoryLinkCatalog.ExportCatalogManifest(uploadPath, CaptureCatalogEntries(), writeToEntriesArray: false, sourceUrl: refreshInfo.SourceUrl);
 
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

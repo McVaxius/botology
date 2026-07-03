@@ -56,25 +56,53 @@ class EntryReview:
     decision: str | None = None
 
 
-def load_manifest(path: pathlib.Path) -> list[dict[str, Any]]:
+@dataclass
+class ManifestData:
+    entries: list[dict[str, Any]]
+    deleted_ids: list[Any]
+
+
+def load_manifest_data(path: pathlib.Path) -> ManifestData:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(raw, list):
         entries = raw
+        deleted_ids: list[Any] = []
     elif isinstance(raw, dict):
         raw_lower = {str(key).lower(): value for key, value in raw.items()}
-        if isinstance(raw_lower.get("entries"), list):
-            entries = raw_lower["entries"]
-        elif isinstance(raw_lower.get("plugins"), list):
-            entries = raw_lower["plugins"]
+        entries_value = raw_lower.get("entries")
+        plugins_value = raw_lower.get("plugins")
+        if entries_value is not None and not isinstance(entries_value, list):
+            raise ValueError(f"{path} contains a non-array 'entries' value.")
+        if plugins_value is not None and not isinstance(plugins_value, list):
+            raise ValueError(f"{path} contains a non-array 'plugins' value.")
+
+        if isinstance(entries_value, list) and entries_value:
+            entries = entries_value
+        elif isinstance(plugins_value, list):
+            entries = plugins_value
+        elif isinstance(entries_value, list):
+            entries = entries_value
         else:
             raise ValueError(f"{path} does not contain an 'entries' or 'plugins' array.")
+
+        deleted_ids_value = raw_lower.get("deletedids", [])
+        if deleted_ids_value is None:
+            deleted_ids = []
+        elif isinstance(deleted_ids_value, list):
+            deleted_ids = deleted_ids_value
+        else:
+            raise ValueError(f"{path} contains a non-array 'deletedIds' value.")
     else:
         raise ValueError(f"{path} must be a JSON object or array.")
 
     if not all(isinstance(entry, dict) for entry in entries):
         raise ValueError(f"{path} contains non-object catalog rows.")
 
-    return [normalize_entry_keys(entry) for entry in entries]
+    return ManifestData([normalize_entry_keys(entry) for entry in entries], deleted_ids)
+
+
+def load_manifest(path: pathlib.Path) -> list[dict[str, Any]]:
+    return load_manifest_data(path).entries
 
 
 def normalize_entry_keys(entry: dict[str, Any]) -> dict[str, Any]:
@@ -152,7 +180,7 @@ def normalize_entry(entry: dict[str, Any], rotation_ids: set[str] | None = None)
     for field in ALLOWED_FIELDS:
         value = entry.get(field)
         if field in LIST_FIELDS:
-            if value is None:
+            if not isinstance(value, list):
                 normalized[field] = []
             else:
                 normalized[field] = [normalize_text(item) for item in value if normalize_text(item)]
@@ -226,11 +254,23 @@ def field_label(field: str) -> str:
     return field
 
 
-def review_submission(master_entries: list[dict[str, Any]], submission_entries: list[dict[str, Any]]) -> list[EntryReview]:
+def review_submission(
+    master_entries: list[dict[str, Any]],
+    submission_entries: list[dict[str, Any]],
+    deleted_ids: list[Any] | None = None,
+) -> list[EntryReview]:
     reviews: list[EntryReview] = []
     master_map, _ = build_id_map(master_entries)
     _, duplicate_ids = build_id_map(submission_entries)
     submission_rotation_ids = detect_rotation_ids(submission_entries)
+    raw_deleted_ids = deleted_ids or []
+    normalized_deleted_ids = [normalize_id(value) for value in raw_deleted_ids]
+    duplicate_deleted_ids = {
+        entry_id
+        for entry_id in normalized_deleted_ids
+        if entry_id and normalized_deleted_ids.count(entry_id) > 1
+    }
+    deleted_id_set = {entry_id for entry_id in normalized_deleted_ids if entry_id}
 
     for entry in submission_entries:
         raw_id = str(entry.get("id", "")).strip()
@@ -240,6 +280,8 @@ def review_submission(master_entries: list[dict[str, Any]], submission_entries: 
 
         if raw_id.lower() in duplicate_ids:
             reasons.append("Duplicate id in submission")
+        if entry_id in deleted_id_set:
+            reasons.append("Id is present in both entries and deletedIds")
 
         normalized_entry = normalize_entry(entry, submission_rotation_ids)
         if not reasons:
@@ -256,6 +298,38 @@ def review_submission(master_entries: list[dict[str, Any]], submission_entries: 
             continue
 
         reviews.append(EntryReview(raw_id, "invalid row", "DENY", reasons, changed_fields))
+
+    submission_ids = {
+        normalize_id(entry.get("id"))
+        for entry in submission_entries
+        if normalize_id(entry.get("id"))
+    }
+    for raw_deleted_id in raw_deleted_ids:
+        entry_id = normalize_id(raw_deleted_id)
+        display_id = normalize_text(raw_deleted_id) or "<missing>"
+        reasons: list[str] = []
+
+        if not isinstance(raw_deleted_id, str):
+            reasons.append("deletedIds values must be strings")
+        if not entry_id:
+            reasons.append("deletedIds values cannot be empty")
+        if entry_id in duplicate_deleted_ids:
+            reasons.append("Duplicate id in deletedIds")
+        if entry_id in submission_ids:
+            reasons.append("Id is present in both entries and deletedIds")
+        if entry_id and entry_id not in master_map:
+            reasons.append("Cannot remove an id that is not present in master")
+
+        if reasons:
+            reviews.append(EntryReview(display_id, "invalid master-row removal", "DENY", reasons, ["row removal"]))
+        else:
+            reviews.append(EntryReview(
+                display_id,
+                "master-row removal",
+                "APPROVE",
+                ["Existing master row selected for removal"],
+                ["row removal"],
+            ))
 
     return reviews
 
@@ -302,10 +376,10 @@ def write_report(path: pathlib.Path | None, reviews: list[EntryReview], skipped_
 def print_review_header(reviews: list[EntryReview], skipped_count: int) -> None:
     print("BOTOLOGY LOCAL REVIEW")
     print("Nothing was uploaded automatically.")
-    print("Review the changed local rows below and choose APPROVE or DENY for each one.")
+    print("Review the local row changes and master-row removals below.")
     print("Suggested decision: APPROVE means the row is structurally clean.")
     print("Suggested decision: DENY means validation problems were detected.")
-    print(f"Changed local rows queued for review: {len(reviews)}")
+    print(f"Catalog changes queued for review: {len(reviews)}")
     print(f"SKIPPED identical rows: {skipped_count}")
     print("")
 
@@ -353,14 +427,22 @@ def main() -> int:
     args = parse_args()
 
     try:
-        master_entries = load_manifest(args.master_catalog)
-        submission_entries = load_manifest(args.submission)
+        master_manifest = load_manifest_data(args.master_catalog)
+        submission_manifest = load_manifest_data(args.submission)
     except Exception as exc:  # noqa: BLE001
         print(f"Failed to load inputs: {exc}", file=sys.stderr)
         return 1
 
-    reviews = review_submission(master_entries, submission_entries)
-    skipped_count = len(submission_entries) - len(reviews)
+    reviews = review_submission(
+        master_manifest.entries,
+        submission_manifest.entries,
+        submission_manifest.deleted_ids,
+    )
+    skipped_count = (
+        len(submission_manifest.entries)
+        + len(submission_manifest.deleted_ids)
+        - len(reviews)
+    )
     print_review_header(reviews, skipped_count)
 
     if not reviews:

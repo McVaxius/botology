@@ -20,6 +20,7 @@ public sealed record PluginCatalogEntry(
     {
         CatalogEntrySourceKind.LocalOverride => "local override",
         CatalogEntrySourceKind.LocalOnly => "local only",
+        CatalogEntrySourceKind.HiddenMaster => "hidden master",
         _ => "master",
     };
 }

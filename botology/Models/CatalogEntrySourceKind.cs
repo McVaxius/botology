@@ -5,4 +5,5 @@ public enum CatalogEntrySourceKind
     Master,
     LocalOverride,
     LocalOnly,
+    HiddenMaster,
 }

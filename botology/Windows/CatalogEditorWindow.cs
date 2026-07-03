@@ -37,7 +37,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
     public override void Draw()
     {
-        var entries = plugin.CaptureCatalogEntries();
+        var entries = plugin.CaptureCatalogEditorEntries();
         var localChangeCount = entries.Count(entry => entry.HasLocalChanges);
         var ctrlHeld = ImGui.GetIO().KeyCtrl;
         var filteredEntries = entries
@@ -48,17 +48,17 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         {
             var refreshedEntry = entries.FirstOrDefault(entry => entry.Id.Equals(draft.OriginalId, StringComparison.OrdinalIgnoreCase));
             if (refreshedEntry != null && !draft.HasUnsavedChanges)
-                LoadDraft(refreshedEntry, startEditable: refreshedEntry.HasLocalChanges || refreshedEntry.SourceKind == CatalogEntrySourceKind.LocalOnly);
+                LoadDraft(refreshedEntry, startEditable: ShouldStartEditable(refreshedEntry));
         }
 
         if (draft == null && !string.IsNullOrWhiteSpace(selectedId))
         {
             var selectedEntry = entries.FirstOrDefault(entry => entry.Id.Equals(selectedId, StringComparison.OrdinalIgnoreCase));
             if (selectedEntry != null)
-                LoadDraft(selectedEntry, startEditable: selectedEntry.HasLocalChanges || selectedEntry.SourceKind == CatalogEntrySourceKind.LocalOnly);
+                LoadDraft(selectedEntry, startEditable: ShouldStartEditable(selectedEntry));
         }
 
-        ImGui.TextWrapped("Master catalog rows stay read-only until you start a local override. Local work lives in the overlay file and wins over master by plugin shortname.");
+        ImGui.TextWrapped("Master rows stay read-only until you override them. Local rows can also hide stale master ids without changing the upstream catalog file.");
         if (ImGui.SmallButton("Reload master now"))
             plugin.RefreshMasterCatalog(force: true, silent: false);
         ImGui.SameLine();
@@ -126,7 +126,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                     ? $"[*] {entry.DisplayName} ({entry.SourceLabel})##{entry.Id}"
                     : $"{entry.DisplayName} ({entry.SourceLabel})##{entry.Id}";
                 if (ImGui.Selectable(label, isSelected))
-                    LoadDraft(entry, startEditable: entry.HasLocalChanges || entry.SourceKind == CatalogEntrySourceKind.LocalOnly);
+                    LoadDraft(entry, startEditable: ShouldStartEditable(entry));
             }
         }
         ImGui.EndChild();
@@ -150,9 +150,11 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         }
 
         ImGui.Text($"{draft.DisplayNameOrId} [{draft.SourceLabel}]");
-        ImGui.TextWrapped(draft.ExistsInMaster
-            ? "This row exists in master. Override it when you want a local edit."
-            : "This row exists only in the local overlay.");
+        ImGui.TextWrapped(draft.SourceKind == CatalogEntrySourceKind.HiddenMaster
+            ? "This master row is hidden from Botology by the local overlay."
+            : draft.ExistsInMaster
+                ? "This row exists in master. Override it when you want a local edit."
+                : "This row exists only in the local overlay.");
         ImGui.Separator();
 
         if (DrawActionBar())
@@ -169,10 +171,37 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         if (draft == null)
             return false;
 
+        if (draft.SourceKind == CatalogEntrySourceKind.HiddenMaster)
+        {
+            if (ImGui.SmallButton("Restore hidden master row"))
+            {
+                if (plugin.RestoreMasterCatalogEntry(draft.OriginalId))
+                    plugin.PrintStatus($"Restored master row for {draft.DisplayNameOrId}.");
+                ReloadDraftFromCurrentState();
+                return true;
+            }
+
+            return false;
+        }
+
         if (!draft.EditingEnabled && draft.ExistsInMaster)
         {
             if (ImGui.SmallButton("Override master row"))
                 draft.EditingEnabled = true;
+            ImGui.SameLine();
+        }
+
+        if (draft.ExistsInMaster)
+        {
+            if (ImGui.SmallButton("Change plugin id"))
+            {
+                draft = CatalogEntryDraft.CreateIdReplacement(draft);
+                selectedId = null;
+                return false;
+            }
+
+            if (ImGui.IsItemHovered())
+                DrawWrappedTooltip("Creates a new local row from this data. Saving the new id also hides the old master id.");
             ImGui.SameLine();
         }
 
@@ -198,6 +227,28 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         {
             DropLocalChanges();
             return true;
+        }
+
+        if (draft.ExistsInMaster)
+        {
+            ImGui.SameLine();
+            ImGui.BeginDisabled(!ctrlHeld);
+            var hideClicked = ImGui.SmallButton("Hide master row");
+            ImGui.EndDisabled();
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            {
+                DrawWrappedTooltip(ctrlHeld
+                    ? "CTRL is held. Clicking now removes any local override and hides this master id from the effective catalog."
+                    : "Hold CTRL to remove any local override and hide this master id from the effective catalog.");
+            }
+
+            if (hideClicked)
+            {
+                if (plugin.HideMasterCatalogEntry(draft.OriginalId))
+                    plugin.PrintStatus($"Hidden master row for {draft.DisplayNameOrId}.");
+                ReloadDraftFromCurrentState();
+                return true;
+            }
         }
 
         ImGui.SameLine();
@@ -237,6 +288,8 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         ImGui.TextWrapped("Rules compare against plugin shortnames, including this row if you select it. Red beats yellow, yellow beats green, and a row that lists required green plugins turns red if any of them are missing.");
         if (draft.IsNewLocal)
             ImGui.TextWrapped("New rows use the plugin shortname as the runtime match token automatically.");
+        if (!string.IsNullOrWhiteSpace(draft.ReplacesMasterId))
+            ImGui.TextWrapped($"Saving this replacement will hide the old master id: {draft.ReplacesMasterId}");
         else if (!draft.EditingEnabled && draft.ExistsInMaster)
             ImGui.TextWrapped("Click Override master row to start a writable local copy of this master row.");
     }
@@ -254,16 +307,36 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         }
 
         var entry = draft.ToEntry();
+        var replacedMasterId = draft.ReplacesMasterId;
         var masterEntry = plugin.GetMasterCatalogEntry(entry.Id);
         if (masterEntry != null && EntriesEquivalent(masterEntry, entry))
         {
             plugin.ReplaceWithMasterData(entry.Id);
-            plugin.PrintStatus($"No local delta to save for {entry.DisplayName}; using master data.");
+            if (!string.IsNullOrWhiteSpace(replacedMasterId))
+            {
+                var hidden = plugin.HideMasterCatalogEntry(replacedMasterId);
+                plugin.PrintStatus(hidden
+                    ? $"Using existing master row {entry.Id} and hid master row {replacedMasterId}."
+                    : $"Using existing master row {entry.Id}; the previous master row was already absent.");
+            }
+            else
+            {
+                plugin.PrintStatus($"No local delta to save for {entry.DisplayName}; using master data.");
+            }
+
             LoadDraft(masterEntry, startEditable: false);
             return;
         }
 
         plugin.SaveCatalogEntry(entry);
+        if (!string.IsNullOrWhiteSpace(replacedMasterId) &&
+            !replacedMasterId.Equals(entry.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            var hidden = plugin.HideMasterCatalogEntry(replacedMasterId);
+            plugin.PrintStatus(hidden
+                ? $"Saved replacement row {entry.Id} and hid master row {replacedMasterId}."
+                : $"Saved replacement row {entry.Id}; the previous master row was already absent.");
+        }
         draft = CatalogEntryDraft.FromEntry(entry with
         {
             SourceKind = plugin.GetMasterCatalogEntry(entry.Id) != null
@@ -320,11 +393,11 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             return;
         }
 
-        var refreshedEntry = plugin.CaptureCatalogEntries()
+        var refreshedEntry = plugin.CaptureCatalogEditorEntries()
             .FirstOrDefault(entry => entry.Id.Equals(draft.OriginalId, StringComparison.OrdinalIgnoreCase));
         if (refreshedEntry != null)
         {
-            LoadDraft(refreshedEntry, startEditable: refreshedEntry.HasLocalChanges || refreshedEntry.SourceKind == CatalogEntrySourceKind.LocalOnly);
+            LoadDraft(refreshedEntry, startEditable: ShouldStartEditable(refreshedEntry));
             return;
         }
 
@@ -461,21 +534,24 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
     private IEnumerable<PluginCatalogEntry> GetRelationPickerEntries(IReadOnlyList<PluginCatalogEntry> entries)
     {
+        var visibleEntries = entries
+            .Where(entry => entry.SourceKind != CatalogEntrySourceKind.HiddenMaster)
+            .ToArray();
         if (draft == null)
-            return entries;
+            return visibleEntries;
 
         var currentId = draft.GetEffectiveId();
         if (string.IsNullOrWhiteSpace(currentId) ||
-            entries.Any(entry => entry.Id.Equals(currentId, StringComparison.OrdinalIgnoreCase)))
+            visibleEntries.Any(entry => entry.Id.Equals(currentId, StringComparison.OrdinalIgnoreCase)))
         {
-            return entries;
+            return visibleEntries;
         }
 
         var draftDisplayName = string.IsNullOrWhiteSpace(draft.DisplayName) ? currentId : draft.DisplayName.Trim();
         var draftCategory = string.IsNullOrWhiteSpace(draft.Category) ? "Uncategorized" : draft.Category.Trim();
         var draftNotes = string.IsNullOrWhiteSpace(draft.Notes) ? "No notes configured." : draft.Notes.Trim();
 
-        return entries.Concat(
+        return visibleEntries.Concat(
         [
             new PluginCatalogEntry(
                 currentId,
@@ -597,6 +673,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             1 => entry.SourceKind == CatalogEntrySourceKind.Master,
             2 => entry.SourceKind == CatalogEntrySourceKind.LocalOverride,
             3 => entry.SourceKind == CatalogEntrySourceKind.LocalOnly,
+            4 => entry.SourceKind == CatalogEntrySourceKind.HiddenMaster,
             _ => true,
         };
     }
@@ -606,6 +683,9 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
            !entryDraft.ExistsInMaster ||
            entryDraft.SourceKind == CatalogEntrySourceKind.LocalOverride ||
            entryDraft.EditingEnabled;
+
+    private static bool ShouldStartEditable(PluginCatalogEntry entry)
+        => entry.SourceKind is CatalogEntrySourceKind.LocalOverride or CatalogEntrySourceKind.LocalOnly;
 
     private static string BuildDropLocalChangesTooltip(CatalogEntryDraft entryDraft, bool canDropLocalChanges, bool ctrlHeld)
     {
@@ -638,8 +718,8 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             return "There are no local catalog changes to drop.";
 
         return ctrlHeld
-            ? $"CTRL is held. Clicking now deletes all {localChangeCount} local override/local-only rows and falls back to master."
-            : $"Hold CTRL to delete all {localChangeCount} local override/local-only rows and fall back to master.";
+            ? $"CTRL is held. Clicking now deletes all {localChangeCount} local rows and hidden-master markers, then falls back to master."
+            : $"Hold CTRL to delete all {localChangeCount} local rows and hidden-master markers, then fall back to master.";
     }
 
     private static string BuildPrepareUploadTooltip(int localChangeCount, bool ctrlHeld)
@@ -648,8 +728,8 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             return "There are no local catalog changes to prepare for upload.";
 
         return ctrlHeld
-            ? "CTRL is held. Clicking now exports master.json, local.json, and plugin-repository-links.json into today's upload-prep folder, launches the Python review script, and opens the folder in Explorer. Use the command window to interactively approve or deny each changed local row. This does not upload anything by itself."
-            : "Requires Python. Hold CTRL to export today's upload-prep folder and start the interactive approve/deny review script. This does not upload anything by itself.";
+            ? "CTRL is held. Clicking now exports master.json, local.json, and plugin-repository-links.json into today's upload-prep folder, launches the Python review script, and opens the folder in Explorer. Use the command window to review each changed row or master-row removal. This does not upload anything by itself."
+            : "Requires Python. Hold CTRL to export today's upload-prep folder and start the interactive review for changed rows and master-row removals. This does not upload anything by itself.";
     }
 
     private static string BuildInspectScriptTooltip(bool ctrlHeld)
@@ -661,6 +741,12 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
     {
         if (string.IsNullOrWhiteSpace(entryDraft.GetEffectiveId()))
             return "Catalog rows need a plugin shortname before they can be saved.";
+
+        if (!string.IsNullOrWhiteSpace(entryDraft.ReplacesMasterId) &&
+            entryDraft.GetEffectiveId().Equals(entryDraft.ReplacesMasterId, StringComparison.OrdinalIgnoreCase))
+        {
+            return "The replacement row needs a different plugin id.";
+        }
 
         if (string.IsNullOrWhiteSpace(entryDraft.DisplayName))
             return "Catalog rows need a display name.";
@@ -771,7 +857,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
     }
 
     private static string SourceFilterLabel(int index)
-        => index is >= 0 and < 4 ? SourceFilterLabels[index] : SourceFilterLabels[0];
+        => index is >= 0 and < 5 ? SourceFilterLabels[index] : SourceFilterLabels[0];
 
     private static readonly string[] SourceFilterLabels =
     {
@@ -779,6 +865,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         "Master only",
         "Local overrides",
         "Local only",
+        "Hidden master",
     };
 
     private enum RelationTarget
@@ -809,11 +896,13 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         public bool ExistsInMaster;
         public bool IsNewLocal;
         public bool EditingEnabled;
+        public string ReplacesMasterId = string.Empty;
 
         public string SourceLabel => SourceKind switch
         {
             CatalogEntrySourceKind.LocalOverride => "local override",
             CatalogEntrySourceKind.LocalOnly => "local only",
+            CatalogEntrySourceKind.HiddenMaster => "hidden master",
             _ => "master",
         };
 
@@ -855,6 +944,30 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 IsNewLocal = true,
                 EditingEnabled = true,
                 Notes = "No notes configured.",
+            };
+        }
+
+        public static CatalogEntryDraft CreateIdReplacement(CatalogEntryDraft source)
+        {
+            return new CatalogEntryDraft
+            {
+                OriginalId = string.Empty,
+                Category = source.Category,
+                DisplayName = source.DisplayName,
+                MatchTokensText = string.Empty,
+                Notes = source.Notes,
+                RepoUrl = source.RepoUrl,
+                RepoJsonUrl = source.RepoJsonUrl,
+                Description = source.Description,
+                RepoJsonUrlsText = source.RepoJsonUrlsText,
+                GreenIdsText = source.GreenIdsText,
+                YellowIdsText = source.YellowIdsText,
+                RedIdsText = source.RedIdsText,
+                SourceKind = CatalogEntrySourceKind.LocalOnly,
+                ExistsInMaster = false,
+                IsNewLocal = true,
+                EditingEnabled = true,
+                ReplacesMasterId = source.OriginalId,
             };
         }
 
