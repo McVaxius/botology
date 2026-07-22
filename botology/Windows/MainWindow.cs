@@ -15,6 +15,8 @@ public sealed class MainWindow : PositionedWindow, IDisposable
 {
     private const string BlockingPopupId = "BotologyBlockingAlert";
     private const string ColumnSelectionPopupId = "BotologyColumnSelection";
+    private const string PatchNotesPopupId = "BotologyPatchNotes";
+    private const string AiAttributionTooltip = "Likely AI-written code based on Aetherfeed contributor and coding-pattern attribution; snapshot 2026-07-22.";
 
     private readonly Plugin plugin;
     private string categoryFilterText = string.Empty;
@@ -25,6 +27,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     {
         Category,
         Source,
+        AiAttribution,
         Installed,
         Update,
         Repo,
@@ -82,6 +85,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         {
             ImGui.TextWrapped("No plugins match the current filters.");
             DrawColumnSelectionPopup();
+            DrawPatchNotesPopup();
             DrawBlockingAlertPopup();
             FinalizePendingWindowPlacement();
             return;
@@ -120,6 +124,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         }
 
         DrawColumnSelectionPopup();
+        DrawPatchNotesPopup();
         DrawBlockingAlertPopup();
         FinalizePendingWindowPlacement();
     }
@@ -163,6 +168,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.SameLine();
         if (ImGui.SmallButton("Data"))
             plugin.OpenCatalogFolder();
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Patch Notes"))
+            ImGui.OpenPopup(PatchNotesPopupId);
         ImGui.SameLine();
         if (ImGui.SmallButton("Reload"))
             plugin.RefreshMasterCatalog(force: true, silent: false);
@@ -253,6 +261,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             GridColumn.Source,
         };
 
+        if (cfg.ShowAiColumn)
+            columns.Add(GridColumn.AiAttribution);
+
         if (cfg.ShowInstalledColumn)
             columns.Add(GridColumn.Installed);
         if (cfg.ShowUpdateColumn)
@@ -289,6 +300,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                 break;
             case GridColumn.Source:
                 ImGui.TableSetupColumn("Source", ImGuiTableColumnFlags.WidthFixed, 120f);
+                break;
+            case GridColumn.AiAttribution:
+                ImGui.TableSetupColumn("AI", ImGuiTableColumnFlags.WidthFixed, 42f);
                 break;
             case GridColumn.Installed:
                 ImGui.TableSetupColumn("Installed", ImGuiTableColumnFlags.WidthFixed, 75f);
@@ -351,6 +365,9 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                     break;
                 case GridColumn.Source:
                     DrawSourceColumn(row);
+                    break;
+                case GridColumn.AiAttribution:
+                    DrawAiAttributionColumn(row);
                     break;
                 case GridColumn.Installed:
                     ImGui.TextUnformatted(row.IsInstalled ? "Yes" : "No");
@@ -433,6 +450,17 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             _ => new Vector4(0.78f, 0.78f, 0.78f, 1f),
         };
         ImGui.TextColored(color, row.Entry.SourceLabel);
+    }
+
+    private static void DrawAiAttributionColumn(PluginAssessmentRow row)
+    {
+        if (row.Entry.IsAiAttributed)
+            ImGui.TextColored(new Vector4(0.72f, 0.48f, 1.0f, 1f), "AI");
+        else
+            ImGui.TextUnformatted("--");
+
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(AiAttributionTooltip);
     }
 
     private void DrawRepoColumn(PluginAssessmentRow row)
@@ -619,6 +647,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         DrawColumnToggle("Installed?", plugin.Configuration.ShowInstalledColumn, value => plugin.Configuration.ShowInstalledColumn = value);
         DrawColumnToggle("Update?", plugin.Configuration.ShowUpdateColumn, value => plugin.Configuration.ShowUpdateColumn = value);
         DrawColumnToggle("Repo", plugin.Configuration.ShowRepoColumn, value => plugin.Configuration.ShowRepoColumn = value);
+        DrawColumnToggle("AI attribution", plugin.Configuration.ShowAiColumn, value => plugin.Configuration.ShowAiColumn = value);
         DrawColumnToggle("DTR", plugin.Configuration.ShowDtrColumn, value => plugin.Configuration.ShowDtrColumn = value);
         DrawColumnToggle("Downloads", plugin.Configuration.ShowDownloadsColumn, value => plugin.Configuration.ShowDownloadsColumn = value);
         DrawColumnToggle("Last Update Date", plugin.Configuration.ShowLastUpdateColumn, value => plugin.Configuration.ShowLastUpdateColumn = value);
@@ -628,7 +657,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         DrawColumnToggle("Ignore / ?", plugin.Configuration.ShowIgnoreColumn, value => plugin.Configuration.ShowIgnoreColumn = value);
 
         ImGui.Separator();
-        ImGui.TextWrapped("Category / Plugin, Source, and Enabled? stay visible so the grid remains operable.");
+        ImGui.TextWrapped("Category / Plugin, Source, and Enabled stay visible so the grid remains operable.");
         ImGui.EndPopup();
     }
 
@@ -646,6 +675,51 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             plugin.AcknowledgeBlockingAlert();
             ImGui.CloseCurrentPopup();
         }
+
+        ImGui.EndPopup();
+    }
+
+    private void DrawPatchNotesPopup()
+    {
+        ImGui.SetNextWindowSize(new Vector2(760f, 560f), ImGuiCond.Appearing);
+        if (!ImGui.BeginPopupModal(PatchNotesPopupId, ImGuiWindowFlags.None))
+            return;
+
+        var releases = plugin.CaptureCatalogReleases();
+        if (ImGui.BeginChild("##PatchNotesScroll", new Vector2(0f, -40f), true))
+        {
+            if (releases.Count == 0)
+            {
+                ImGui.TextWrapped("No patch notes available");
+            }
+            else
+            {
+                for (var releaseIndex = 0; releaseIndex < releases.Count; releaseIndex++)
+                {
+                    var release = releases[releaseIndex];
+                    if (releaseIndex > 0)
+                        ImGui.Separator();
+
+                    ImGui.TextColored(new Vector4(0.72f, 0.48f, 1.0f, 1f), release.Title);
+                    ImGui.TextDisabled(release.PublishedUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture));
+                    foreach (var section in release.Sections)
+                    {
+                        ImGui.Spacing();
+                        ImGui.TextUnformatted(section.Heading);
+                        foreach (var item in section.Items)
+                        {
+                            ImGui.Bullet();
+                            ImGui.SameLine();
+                            ImGui.TextWrapped(item);
+                        }
+                    }
+                }
+            }
+        }
+        ImGui.EndChild();
+
+        if (ImGui.Button("Close"))
+            ImGui.CloseCurrentPopup();
 
         ImGui.EndPopup();
     }

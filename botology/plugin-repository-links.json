@@ -11,6 +11,7 @@
         "repoUrl": "Optional repository homepage or source URL used by the Repo button.",
         "repoJsonUrl": "Optional concrete repo.json URL or human note shown by the [Copy] button.",
         "repoJsonUrls": "Optional array of multiple concrete repo.json feed URLs. Botology merges metadata across them and [Copy] copies them all.",
+        "isAiAttributed": "Optional boolean. True means Aetherfeed's frozen 2026-07-22 attribution identified likely AI-written code; false or omitted is not proof that a plugin is human-only.",
         "ruleType": "Optional built-in assessment rule. Omit it to fall back to the compiled default handling for that id.",
         "relatedIds": "Optional plugin ids consulted by paired/direct/bossmod rules."
     },
@@ -26,6 +27,7 @@
     "plugins": [
         {
             "id": "artisan",
+            "isAiAttributed": true,
             "category": "DOH/L Content Bots",
             "displayName": "Artisan",
             "matchTokens": [
@@ -185,6 +187,7 @@
         },
         {
             "id": "bocchi",
+            "isAiAttributed": true,
             "category": "DOW/DOM Content Bots",
             "displayName": "BOCCHI",
             "matchTokens": [
@@ -254,6 +257,7 @@
         },
         {
             "id": "lootgoblin",
+            "isAiAttributed": true,
             "category": "DOW/DOM Content Bots",
             "displayName": "LootGoblin",
             "matchTokens": [
@@ -267,6 +271,7 @@
         },
         {
             "id": "mogtome",
+            "isAiAttributed": true,
             "category": "DOW/DOM Content Bots",
             "displayName": "MOGTOME",
             "matchTokens": [
@@ -347,6 +352,7 @@
         },
         {
             "id": "ai_duty_solver",
+            "isAiAttributed": true,
             "category": "Duty solving",
             "displayName": "AI Duty Solver",
             "matchTokens": [
@@ -552,6 +558,7 @@
         },
         {
             "id": "questionable_wiggly",
+            "isAiAttributed": true,
             "category": "Quest",
             "displayName": "Questionable (wiggly)",
             "matchTokens": [
@@ -718,6 +725,7 @@
         },
         {
             "id": "botology",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "Botology",
             "matchTokens": [
@@ -793,6 +801,7 @@
         },
         {
             "id": "choke_abo",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "Choke-abo",
             "matchTokens": [
@@ -843,6 +852,7 @@
         },
         {
             "id": "dheacon",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "Dheacon",
             "matchTokens": [
@@ -855,6 +865,7 @@
         },
         {
             "id": "dhog_potato_system",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "Dhog Potato System",
             "matchTokens": [
@@ -868,6 +879,7 @@
         },
         {
             "id": "dhoggpt",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "DhogGPT",
             "matchTokens": [
@@ -954,6 +966,7 @@
         },
         {
             "id": "footballer",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "Footballer",
             "matchTokens": [
@@ -967,6 +980,7 @@
         },
         {
             "id": "frenrider",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "FrenRider",
             "matchTokens": [
@@ -1088,6 +1102,7 @@
         },
         {
             "id": "krangler",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "Krangler",
             "matchTokens": [
@@ -1339,6 +1354,7 @@
         },
         {
             "id": "thick_thighs_save_lives",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "Thick Thighs Save Lives",
             "matchTokens": [
@@ -1414,6 +1430,7 @@
         },
         {
             "id": "vermaxion",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "VerMaxion",
             "matchTokens": [
@@ -1508,6 +1525,7 @@
         },
         {
             "id": "xa_hud_navigator",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "XA HUD Navigator",
             "matchTokens": [
@@ -1521,6 +1539,7 @@
         },
         {
             "id": "xa_slave",
+            "isAiAttributed": true,
             "category": "Utility Bots",
             "displayName": "XA Slave",
             "matchTokens": [

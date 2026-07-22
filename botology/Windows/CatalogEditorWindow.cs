@@ -273,6 +273,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         ImGui.InputText("Category", ref draft.Category, 128);
         ImGui.InputText("Display name", ref draft.DisplayName, 128);
+        ImGui.Checkbox("Likely AI-written (Aetherfeed attribution)", ref draft.IsAiAttributed);
         DrawNotesEditor();
         DrawMultilineText("Description", ref draft.Description, 100f);
         ImGui.InputText("Repo URL", ref draft.RepoUrl, 512);
@@ -787,7 +788,8 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
            ListsEqual(left.RepoJsonUrls, right.RepoJsonUrls) &&
            ListsEqual(left.GreenIds, right.GreenIds) &&
            ListsEqual(left.YellowIds, right.YellowIds) &&
-           ListsEqual(left.RedIds, right.RedIds);
+           ListsEqual(left.RedIds, right.RedIds) &&
+           left.IsAiAttributed == right.IsAiAttributed;
 
     private static bool ListsEqual(IEnumerable<string>? left, IEnumerable<string>? right)
         => ParseList(left).SequenceEqual(ParseList(right), StringComparer.OrdinalIgnoreCase);
@@ -892,6 +894,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         public string GreenIdsText = string.Empty;
         public string YellowIdsText = string.Empty;
         public string RedIdsText = string.Empty;
+        public bool IsAiAttributed;
         public CatalogEntrySourceKind SourceKind;
         public bool ExistsInMaster;
         public bool IsNewLocal;
@@ -927,6 +930,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 GreenIdsText = string.Join(Environment.NewLine, entry.GreenIds ?? []),
                 YellowIdsText = string.Join(Environment.NewLine, entry.YellowIds ?? []),
                 RedIdsText = string.Join(Environment.NewLine, entry.RedIds ?? []),
+                IsAiAttributed = entry.IsAiAttributed,
                 SourceKind = entry.SourceKind,
                 ExistsInMaster = entry.SourceKind != CatalogEntrySourceKind.LocalOnly,
                 IsNewLocal = false,
@@ -963,6 +967,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 GreenIdsText = source.GreenIdsText,
                 YellowIdsText = source.YellowIdsText,
                 RedIdsText = source.RedIdsText,
+                IsAiAttributed = source.IsAiAttributed,
                 SourceKind = CatalogEntrySourceKind.LocalOnly,
                 ExistsInMaster = false,
                 IsNewLocal = true,
@@ -1011,7 +1016,8 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 yellowIds.Length > 0 ? yellowIds : null,
                 redIds.Length > 0 ? redIds : null,
                 sourceKind,
-                true);
+                true,
+                IsAiAttributed);
         }
     }
 }

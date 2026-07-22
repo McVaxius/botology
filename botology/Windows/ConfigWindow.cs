@@ -79,7 +79,7 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         }
 
         var masterToastNotifications = cfg.ToastOnMasterCatalogChange;
-        if (ImGui.Checkbox("Toast when master catalog changes", ref masterToastNotifications))
+        if (ImGui.Checkbox("Toast for catalog notes affecting installed plugins.", ref masterToastNotifications))
         {
             cfg.ToastOnMasterCatalogChange = masterToastNotifications;
             cfg.Save();

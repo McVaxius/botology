@@ -35,6 +35,7 @@ public sealed class Plugin : IDalamudPlugin
     public PluginManagerBridge PluginManagerBridge { get; }
     public DtrVisibilityBridge DtrVisibilityBridge { get; }
     public RepositoryMetadataService RepositoryMetadataService { get; }
+    public CatalogChangelogService ChangelogService { get; }
     public WindowSystem WindowSystem { get; } = new(PluginInfo.InternalName);
 
     private readonly MainWindow mainWindow;
@@ -54,6 +55,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginManagerBridge = new PluginManagerBridge(PluginInterface, CommandManager, Log);
         DtrVisibilityBridge = new DtrVisibilityBridge(PluginInterface, DtrBar, Log);
         RepositoryMetadataService = new RepositoryMetadataService(Log);
+        ChangelogService = new CatalogChangelogService(PluginInterface.GetPluginConfigDirectory(), Log);
         RepositoryLinkCatalog.Reload();
 
         mainWindow = new MainWindow(this);
@@ -95,6 +97,7 @@ public sealed class Plugin : IDalamudPlugin
         dtrEntry?.Remove();
 
         RepositoryMetadataService.Dispose();
+        ChangelogService.Dispose();
         catalogEditorWindow.Dispose();
         dtrManagerWindow.Dispose();
         configWindow.Dispose();
@@ -246,6 +249,9 @@ public sealed class Plugin : IDalamudPlugin
 
     public CatalogRefreshInfo GetCatalogRefreshInfo()
         => RepositoryLinkCatalog.GetRefreshInfo();
+
+    public IReadOnlyList<CatalogRelease> CaptureCatalogReleases()
+        => ChangelogService.GetReleases();
 
     public void SaveCatalogEntry(PluginCatalogEntry entry)
     {
@@ -583,18 +589,40 @@ public sealed class Plugin : IDalamudPlugin
 
     private async Task RefreshMasterCatalogAsync(bool force, bool silent)
     {
-        var result = await RepositoryLinkCatalog.RefreshMasterCatalogAsync(BotologyCatalog.FallbackEntries, force).ConfigureAwait(false);
+        var masterRefreshTask = RepositoryLinkCatalog.RefreshMasterCatalogAsync(BotologyCatalog.FallbackEntries, force);
+        var changelogRefreshTask = ChangelogService.RefreshAsync();
+        await Task.WhenAll(masterRefreshTask, changelogRefreshTask).ConfigureAwait(false);
+
+        var result = await masterRefreshTask.ConfigureAwait(false);
+        var changelogResult = await changelogRefreshTask.ConfigureAwait(false);
         RepositoryMetadataService.InvalidateRefreshThrottle();
         lastAssessmentFingerprint = string.Empty;
         nextAssessmentCheckUtc = DateTime.MinValue;
         QueueRepositoryMetadataRefresh();
         RescheduleMasterCatalogCheck();
 
-        if (result.Changed && Configuration.ToastOnMasterCatalogChange)
-            ShowOperatorToast("Botology master catalog changed and was refreshed.");
+        if (changelogResult.HasValidRemoteData)
+            ProcessCatalogReleaseNotifications();
 
         if (!silent || result.Changed)
             PrintStatus(result.Message);
+    }
+
+    private void ProcessCatalogReleaseNotifications()
+    {
+        var evaluation = CatalogChangelogService.EvaluateNotifications(
+            CaptureCatalogReleases(),
+            Configuration.LastProcessedCatalogReleaseId,
+            CaptureMasterCatalogEntries(),
+            PluginManagerBridge.CaptureSnapshot());
+        if (!evaluation.HasNewRelease)
+            return;
+
+        if (Configuration.ToastOnMasterCatalogChange && evaluation.InstalledPluginNames.Count > 0)
+            ShowOperatorToast(CatalogChangelogService.BuildNotificationMessage(evaluation.InstalledPluginNames));
+
+        Configuration.LastProcessedCatalogReleaseId = evaluation.NewestReleaseId;
+        Configuration.Save();
     }
 
     private IReadOnlyList<PluginAssessmentRow> CaptureBaseRows()

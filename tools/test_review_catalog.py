@@ -61,5 +61,42 @@ class DeletedIdReviewTests(unittest.TestCase):
         self.assertTrue(all(review.recommendation == "DENY" for review in reviews))
 
 
+class AiAttributionTests(unittest.TestCase):
+    def test_missing_ai_attribution_normalizes_to_false(self) -> None:
+        normalized = review_catalog.normalize_entry(entry("missing"))
+
+        self.assertIs(False, normalized["isAiAttributed"])
+
+    def test_true_and_false_ai_attribution_values_are_preserved(self) -> None:
+        true_entry = entry("true") | {"isAiAttributed": True}
+        false_entry = entry("false") | {"isAiAttributed": False}
+
+        self.assertIs(True, review_catalog.normalize_entry(true_entry)["isAiAttributed"])
+        self.assertIs(False, review_catalog.normalize_entry(false_entry)["isAiAttributed"])
+
+    def test_ai_attribution_alias_is_case_insensitive(self) -> None:
+        normalized = review_catalog.normalize_entry_keys(
+            entry("alias") | {"ISAIATTRIBUTED": True},
+        )
+
+        self.assertEqual(True, normalized["isAiAttributed"])
+
+    def test_ai_attribution_change_is_reported(self) -> None:
+        master = review_catalog.normalize_entry(entry("changed") | {"isAiAttributed": True})
+        submission = review_catalog.normalize_entry(entry("changed") | {"isAiAttributed": False})
+
+        self.assertIn("isAiAttributed", review_catalog.compare_entries(master, submission))
+
+    def test_non_boolean_ai_attribution_is_denied(self) -> None:
+        reviews = review_catalog.review_submission(
+            [entry("invalid")],
+            [entry("invalid") | {"isAiAttributed": "true"}],
+        )
+
+        self.assertEqual(1, len(reviews))
+        self.assertEqual("DENY", reviews[0].recommendation)
+        self.assertIn("must be a boolean", " ".join(reviews[0].reasons))
+
+
 if __name__ == "__main__":
     unittest.main()

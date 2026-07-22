@@ -22,12 +22,14 @@ ALLOWED_FIELDS = {
     "green",
     "yellow",
     "red",
+    "isAiAttributed",
 }
 LEGACY_ENTRY_FIELDS = {"ruleType", "relatedIds"}
 
 REQUIRED_FIELDS = {"id", "displayName", "matchTokens"}
 LIST_FIELDS = {"matchTokens", "repoJsonUrls", "green", "yellow", "red"}
 TEXT_FIELDS = {"id", "category", "displayName", "notes", "repoUrl", "repoJsonUrl", "description"}
+BOOLEAN_FIELDS = {"isAiAttributed"}
 FIELD_ALIASES = {
     "id": "id",
     "category": "category",
@@ -41,6 +43,7 @@ FIELD_ALIASES = {
     "green": "green",
     "yellow": "yellow",
     "red": "red",
+    "isaiattributed": "isAiAttributed",
     "ruletype": "ruleType",
     "relatedids": "relatedIds",
 }
@@ -184,6 +187,8 @@ def normalize_entry(entry: dict[str, Any], rotation_ids: set[str] | None = None)
                 normalized[field] = []
             else:
                 normalized[field] = [normalize_text(item) for item in value if normalize_text(item)]
+        elif field in BOOLEAN_FIELDS:
+            normalized[field] = value if isinstance(value, bool) else False
         elif value is None:
             normalized[field] = ""
         else:
@@ -220,6 +225,13 @@ def validate_entry(entry: dict[str, Any]) -> list[str]:
             continue
         if not isinstance(value, str):
             reasons.append(f"Field '{field_label(field)}' must be a string")
+
+    for field in BOOLEAN_FIELDS:
+        value = entry.get(field)
+        if value is None:
+            continue
+        if not isinstance(value, bool):
+            reasons.append(f"Field '{field_label(field)}' must be a boolean")
 
     if entry.get("ruleType") is not None and not isinstance(entry.get("ruleType"), str):
         reasons.append("Field 'ruleType' must be a string")

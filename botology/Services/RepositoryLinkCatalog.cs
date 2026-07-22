@@ -275,7 +275,7 @@ public static class RepositoryLinkCatalog
             Directory.CreateDirectory(directory);
 
         var storedEntries = entries
-            .Select(ToStoredEntry)
+            .Select(entry => ToStoredEntry(entry, preserveExplicitFalse: writeToEntriesArray))
             .OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
             .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -476,7 +476,7 @@ public static class RepositoryLinkCatalog
             SourceUrl = RemoteSourceUrl,
             LastCheckedUtc = remoteEntries.Count > 0 ? now : refreshState.LastCheckedUtc,
             LastUpdatedUtc = now,
-            ContentFingerprint = ComputeFingerprint(JsonSerializer.Serialize(new CatalogManifest { Plugins = chosenMasterEntries.Select(ToStoredEntry).ToList() }, JsonOptions)),
+            ContentFingerprint = ComputeFingerprint(JsonSerializer.Serialize(new CatalogManifest { Plugins = chosenMasterEntries.Select(entry => ToStoredEntry(entry)).ToList() }, JsonOptions)),
         };
         SaveRefreshStateLocked();
     }
@@ -638,7 +638,8 @@ public static class RepositoryLinkCatalog
                 yellowIds.Length > 0 ? yellowIds : null,
                 redIds.Length > 0 ? redIds : null,
                 sourceKind,
-                hasLocalChanges));
+                hasLocalChanges,
+                storedEntry.IsAiAttributed == true));
         }
 
         return entries
@@ -790,7 +791,7 @@ public static class RepositoryLinkCatalog
         {
             SchemaVersion = 3,
             SourceUrl = sourceUrl,
-            Plugins = entries.Select(ToStoredEntry).OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
+            Plugins = entries.Select(entry => ToStoredEntry(entry)).OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList(),
         };
@@ -809,7 +810,7 @@ public static class RepositoryLinkCatalog
         var manifest = new CatalogManifest
         {
             SchemaVersion = 3,
-            Entries = entries.Select(ToStoredEntry).OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
+            Entries = entries.Select(entry => ToStoredEntry(entry, preserveExplicitFalse: true)).OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList(),
             DeletedIds = normalizedDeletedIds.Count > 0 ? normalizedDeletedIds : null,
@@ -870,12 +871,13 @@ public static class RepositoryLinkCatalog
            ListsEqual(left.RepoJsonUrls, right.RepoJsonUrls) &&
            ListsEqual(left.GreenIds, right.GreenIds) &&
            ListsEqual(left.YellowIds, right.YellowIds) &&
-           ListsEqual(left.RedIds, right.RedIds);
+           ListsEqual(left.RedIds, right.RedIds) &&
+           left.IsAiAttributed == right.IsAiAttributed;
 
     private static bool ListsEqual(IEnumerable<string>? left, IEnumerable<string>? right)
         => NormalizeTextList(left).SequenceEqual(NormalizeTextList(right), StringComparer.OrdinalIgnoreCase);
 
-    private static StoredCatalogEntry ToStoredEntry(PluginCatalogEntry entry)
+    private static StoredCatalogEntry ToStoredEntry(PluginCatalogEntry entry, bool preserveExplicitFalse = false)
         => new()
         {
             Id = entry.Id,
@@ -890,6 +892,11 @@ public static class RepositoryLinkCatalog
             Green = NormalizeIdList(entry.GreenIds),
             Yellow = NormalizeIdList(entry.YellowIds),
             Red = NormalizeIdList(entry.RedIds),
+            IsAiAttributed = entry.IsAiAttributed
+                ? true
+                : preserveExplicitFalse
+                    ? false
+                    : null,
         };
 
     private static string[] NormalizeTextList(IEnumerable<string>? values)
@@ -990,6 +997,9 @@ public static class RepositoryLinkCatalog
         public string[] Yellow { get; init; } = [];
 
         public string[] Red { get; init; } = [];
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? IsAiAttributed { get; init; }
 
         public string? RuleType { get; init; }
 

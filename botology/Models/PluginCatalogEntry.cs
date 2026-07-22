@@ -14,7 +14,8 @@ public sealed record PluginCatalogEntry(
     string[]? YellowIds = null,
     string[]? RedIds = null,
     CatalogEntrySourceKind SourceKind = CatalogEntrySourceKind.Master,
-    bool HasLocalChanges = false)
+    bool HasLocalChanges = false,
+    bool IsAiAttributed = false)
 {
     public string SourceLabel => SourceKind switch
     {

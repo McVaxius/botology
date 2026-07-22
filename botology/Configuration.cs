@@ -29,6 +29,7 @@ public sealed class Configuration : IPluginConfiguration
     public bool ShowInstalledColumn { get; set; } = true;
     public bool ShowUpdateColumn { get; set; } = true;
     public bool ShowRepoColumn { get; set; } = true;
+    public bool ShowAiColumn { get; set; } = true;
     public bool ShowDtrColumn { get; set; } = true;
     public bool ShowNotesColumn { get; set; } = true;
     public bool ShowDetailedNotes { get; set; } = true;
@@ -37,6 +38,7 @@ public sealed class Configuration : IPluginConfiguration
     public bool ShowLastUpdateColumn { get; set; } = false;
     public bool ShowDalamudApiLevelColumn { get; set; } = false;
     public bool ShowAuthorColumn { get; set; } = false;
+    public string LastProcessedCatalogReleaseId { get; set; } = string.Empty;
     public List<string> IgnoredPluginIds { get; set; } = new();
 
     public void Save() => Plugin.PluginInterface.SavePluginConfig(this);
