@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01
+
+- Build only the plugin project in GitHub Actions so test and regression projects do not block production artifacts.
+
 ## 2026-07-22
 
 - Added optional `IsAiAttributed` catalog support through master/local storage, overlay equivalence, editor/export, Python review validation, bundled data, and compiled fallbacks. The default-visible `AI` column uses the frozen 2026-07-22 Aetherfeed attribution snapshot and describes the signal as likely, not definitive.
