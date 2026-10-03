@@ -10,7 +10,10 @@ on:
 env:
   PLUGIN_NAME: botology
   INTERNAL_NAME: botology
-  RELEASE_DIR: botology\bin\x64\Release\botology
+  RELEASE_DIR: botology\botology\bin\x64\Release\botology
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -19,12 +22,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          path: botology
           submodules: recursive
+          persist-credentials: false
+
+      - name: Checkout AethertekUI
+        uses: actions/checkout@v4
+        with:
+          repository: McVaxius/aethertekUI
+          path: aethertekUI
+          ssh-key: ${{ secrets.AETHERTEKUI_DEPLOY_KEY }}
+          persist-credentials: false
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: "10.0.201"
 
       - name: Download Dalamud
         run: |
@@ -32,9 +45,12 @@ jobs:
           Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev\"
 
       - name: Build
+        working-directory: botology
         run: |
-          dotnet restore -r win "botology/botology.csproj"
-          dotnet build "botology/botology.csproj" --configuration Release --no-restore -p:Platform=x64
+          $dalamudLibPath = "$env:AppData/XIVLauncher/addon/Hooks/dev"
+          dotnet restore "botology/botology.csproj" -p:Platform=x64 -p:DalamudLibPath="$dalamudLibPath"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build "botology/botology.csproj" --configuration Release --no-restore -p:Platform=x64 -p:DalamudLibPath="$dalamudLibPath"
         env:
           DOTNET_CLI_TELEMETRY_OPTOUT: true
 
