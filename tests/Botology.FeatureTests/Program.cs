@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using botology.Models;
 using botology.Services;
+using botology.Windows;
 
 var failures = new List<string>();
 
@@ -104,6 +105,26 @@ if (toStoredEntry != null)
         "Storage conversion must preserve true AI values.");
 }
 
+var compareRows = typeof(MainWindow).GetMethod("CompareRows", BindingFlags.Static | BindingFlags.NonPublic)!;
+var gridColumn = typeof(MainWindow).GetNestedType("GridColumn", BindingFlags.NonPublic)!;
+int Compare(PluginAssessmentRow left, PluginAssessmentRow right, string column)
+    => (int)compareRows.Invoke(null, [left, right, Enum.Parse(gridColumn, column)])!;
+var oldVersion = new PluginRuntimeState("Old", "Old", new Version(1, 9), true, false, null, null, new object(), null, null, null);
+var newVersion = new PluginRuntimeState("New", "New", new Version(1, 10), false, true, null, null, new object(), null, null, null);
+var oldRow = new PluginAssessmentRow(affectedEntry, oldVersion, new(AssessmentSeverity.Green, "OK", ""), false);
+var newRow = new PluginAssessmentRow(unrelatedEntry, newVersion, new(AssessmentSeverity.Red, "Warning", ""), false);
+var presentationCopy=oldRow.Assessment with { UiSummaryKey="No warning rules triggered.",UiSummaryArguments=["presentation only"] };
+Check(oldRow.Assessment==presentationCopy && oldRow.Assessment.GetHashCode()==presentationCopy.GetHashCode(),
+    "Localized presentation metadata must not change assessment domain equality.");
+Check(Compare(oldRow, newRow, "Installed") < 0, "Installed versions must sort numerically: 1.9 precedes 1.10.");
+Check(Compare(oldRow with { RuntimeState = null }, newRow, "Installed") < 0, "Missing installed versions must remain sortable.");
+Check(Compare(oldRow, newRow, "Update") < 0, "Update sorting must use availability from the captured runtime state.");
+Check(Compare(oldRow, newRow, "Enabled") > 0, "Enabled sorting must reflect loaded state.");
+Check(Compare(oldRow, newRow, "Category") < 0, "Rows in one category must sort by plugin name.");
+Check(Compare(oldRow, newRow with { RuntimeState = oldVersion }, "Notes") < 0, "Assessment sorting must preserve severity order.");
+Check(Compare(oldRow, oldRow with { Ignored = true }, "Ignore") < 0, "Ignore sorting must reflect the saved value.");
+Check(Compare(oldRow, newRow, "Author") == 0, "Missing optional metadata must remain sortable.");
+
 var tempDirectory = Path.Combine(Path.GetTempPath(), $"botology-feature-tests-{Guid.NewGuid():N}");
 Directory.CreateDirectory(tempDirectory);
 try
@@ -161,7 +182,8 @@ if (failures.Count > 0)
     return 1;
 }
 
-Console.WriteLine("Botology feature tests passed: notification matching, duplicate prevention, and changelog cache fallback.");
+AethertekUI.Tests.BotologyUiSmoke.Run();
+Console.WriteLine("Botology feature tests passed: notification matching, duplicate prevention, AI storage, changelog cache fallback, grid sorting, and native main-window rendering.");
 return 0;
 
 sealed class FixedResponseHandler(HttpStatusCode statusCode, string content) : HttpMessageHandler

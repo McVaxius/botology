@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Color" xml:space="preserve"><value>色</value></data>
+  <data name="Language" xml:space="preserve"><value>言語</value></data>
+  <data name="Teal" xml:space="preserve"><value>ティール</value></data>
+  <data name="Blue" xml:space="preserve"><value>青</value></data>
+  <data name="Pink" xml:space="preserve"><value>ピンク</value></data>
+  <data name="Custom RGB" xml:space="preserve"><value>カスタム RGB</value></data>
+  <data name="Settings" xml:space="preserve"><value>設定</value></data>
+  <data name="Catalog Editor" xml:space="preserve"><value>カタログ編集</value></data>
+  <data name="Dalamud Plugin Compatibility Manager" xml:space="preserve"><value>Dalamud プラグイン互換性マネージャー</value></data>
+  <data name="Manager enabled" xml:space="preserve"><value>管理を有効化</value></data>
+  <data name="Catalog" xml:space="preserve"><value>カタログ</value></data>
+  <data name="Data" xml:space="preserve"><value>データ</value></data>
+  <data name="Patch Notes" xml:space="preserve"><value>更新履歴</value></data>
+  <data name="Reload" xml:space="preserve"><value>再読み込み</value></data>
+  <data name="Status" xml:space="preserve"><value>状態</value></data>
+  <data name="Green" xml:space="preserve"><value>緑</value></data>
+  <data name="Yellow" xml:space="preserve"><value>黄</value></data>
+  <data name="Red" xml:space="preserve"><value>赤</value></data>
+  <data name="Visible" xml:space="preserve"><value>表示</value></data>
+  <data name="Hidden" xml:space="preserve"><value>非表示</value></data>
+  <data name="Plugin hidden" xml:space="preserve"><value>プラグインで非表示</value></data>
+  <data name="Master updated" xml:space="preserve"><value>マスター更新</value></data>
+  <data name="Refreshing..." xml:space="preserve"><value>更新中...</value></data>
+  <data name="Checked: {0}" xml:space="preserve"><value>確認日時: {0}</value></data>
+  <data name="Never" xml:space="preserve"><value>未実行</value></data>
+  <data name="Category" xml:space="preserve"><value>カテゴリ</value></data>
+  <data name="Plugin Name" xml:space="preserve"><value>プラグイン名</value></data>
+  <data name="Author" xml:space="preserve"><value>作者</value></data>
+  <data name="All Categories" xml:space="preserve"><value>すべてのカテゴリ</value></data>
+  <data name="Search plugins..." xml:space="preserve"><value>プラグインを検索...</value></data>
+  <data name="Search authors..." xml:space="preserve"><value>作者を検索...</value></data>
+  <data name="Hide uninstalled" xml:space="preserve"><value>未インストールを隠す</value></data>
+  <data name="Detailed Notes" xml:space="preserve"><value>詳細な説明</value></data>
+  <data name="Has DTR entry" xml:space="preserve"><value>DTR 項目あり</value></data>
+  <data name="Columns" xml:space="preserve"><value>列</value></data>
+  <data name="Color filter" xml:space="preserve"><value>色フィルター</value></data>
+  <data name="Category / Plugin" xml:space="preserve"><value>カテゴリ / プラグイン</value></data>
+  <data name="Source" xml:space="preserve"><value>出所</value></data>
+  <data name="Installed" xml:space="preserve"><value>導入済み</value></data>
+  <data name="Installed?" xml:space="preserve"><value>導入済み?</value></data>
+  <data name="Update" xml:space="preserve"><value>更新</value></data>
+  <data name="Update?" xml:space="preserve"><value>更新?</value></data>
+  <data name="Enabled" xml:space="preserve"><value>有効</value></data>
+  <data name="Downloads" xml:space="preserve"><value>ダウンロード数</value></data>
+  <data name="Last Update Date" xml:space="preserve"><value>最終更新日</value></data>
+  <data name="Notes / Warnings" xml:space="preserve"><value>説明 / 警告</value></data>
+  <data name="Ignore / ?" xml:space="preserve"><value>無視 / ?</value></data>
+  <data name="AI attribution" xml:space="preserve"><value>AI 判定</value></data>
+  <data name="Available" xml:space="preserve"><value>更新あり</value></data>
+  <data name="Ignored" xml:space="preserve"><value>無視</value></data>
+  <data name="Copy" xml:space="preserve"><value>コピー</value></data>
+  <data name="Disable plugin" xml:space="preserve"><value>プラグインを無効化</value></data>
+  <data name="Enable plugin" xml:space="preserve"><value>プラグインを有効化</value></data>
+  <data name="master" xml:space="preserve"><value>マスター</value></data>
+  <data name="local override" xml:space="preserve"><value>ローカル上書き</value></data>
+  <data name="local only" xml:space="preserve"><value>ローカルのみ</value></data>
+  <data name="hidden master" xml:space="preserve"><value>非表示のマスター</value></data>
+  <data name="Close" xml:space="preserve"><value>閉じる</value></data>
+  <data name="OK" xml:space="preserve"><value>OK</value></data>
+  <data name="No plugins match the current filters." xml:space="preserve"><value>フィルターに一致するプラグインはありません。</value></data>
+  <data name="No patch notes available" xml:space="preserve"><value>更新履歴はありません</value></data>
+  <data name="Plugin enabled" xml:space="preserve"><value>プラグインを有効化</value></data>
+  <data name="Show DTR bar entry" xml:space="preserve"><value>DTR 項目を表示</value></data>
+  <data name="DTR mode" xml:space="preserve"><value>DTR モード</value></data>
+  <data name="Text only" xml:space="preserve"><value>テキストのみ</value></data>
+  <data name="Icon + text" xml:space="preserve"><value>アイコン＋テキスト</value></data>
+  <data name="Icon only" xml:space="preserve"><value>アイコンのみ</value></data>
+  <data name="DTR enabled glyph" xml:space="preserve"><value>DTR 有効時の字形</value></data>
+  <data name="DTR disabled glyph" xml:space="preserve"><value>DTR 無効時の字形</value></data>
+  <data name="DTR manager" xml:space="preserve"><value>DTR 管理</value></data>
+  <data name="XLSettings Server Info Bar" xml:space="preserve"><value>XLSettings サーバー情報バー</value></data>
+  <data name="Toast warnings on changes" xml:space="preserve"><value>変更時にトースト警告</value></data>
+  <data name="Toast for catalog notes affecting installed plugins." xml:space="preserve"><value>導入済みプラグインに関するカタログ通知。</value></data>
+  <data name="Popup box that requires OK" xml:space="preserve"><value>確認が必要なポップアップ</value></data>
+  <data name="Open the plugin window on changes" xml:space="preserve"><value>変更時にウィンドウを開く</value></data>
+  <data name="Open main window on load" xml:space="preserve"><value>読み込み時にメイン画面を開く</value></data>
+  <data name="Enable periodic master catalog checks" xml:space="preserve"><value>マスターカタログを定期確認</value></data>
+  <data name="Master catalog check interval (minutes)" xml:space="preserve"><value>マスター確認間隔（分）</value></data>
+  <data name="Reload master now" xml:space="preserve"><value>マスターを再読み込み</value></data>
+  <data name="Open DATA editor" xml:space="preserve"><value>DATA 編集を開く</value></data>
+  <data name="Open DATA folder" xml:space="preserve"><value>DATA フォルダーを開く</value></data>
+  <data name="Last master check: {0}" xml:space="preserve"><value>最終マスター確認: {0}</value></data>
+  <data name="Last master update: {0}" xml:space="preserve"><value>最終マスター更新: {0}</value></data>
+  <data name="{0} live DTR entries" xml:space="preserve"><value>DTR 項目: {0}</value></data>
+  <data name="No live DTR entries." xml:space="preserve"><value>DTR 項目はありません。</value></data>
+  <data name="DTR Entry" xml:space="preserve"><value>DTR 項目</value></data>
+  <data name="State" xml:space="preserve"><value>状態</value></data>
+  <data name="Show" xml:space="preserve"><value>表示</value></data>
+  <data name="Move" xml:space="preserve"><value>移動</value></data>
+  <data name="Up" xml:space="preserve"><value>上</value></data>
+  <data name="Down" xml:space="preserve"><value>下</value></data>
+  <data name="New local entry" xml:space="preserve"><value>ローカル項目を追加</value></data>
+  <data name="Drop local changes" xml:space="preserve"><value>ローカル変更を破棄</value></data>
+  <data name="PREPARE UPLOAD" xml:space="preserve"><value>アップロード準備</value></data>
+  <data name="INSPECT SCRIPT" xml:space="preserve"><value>スクリプトを確認</value></data>
+  <data name="SEARCH" xml:space="preserve"><value>検索</value></data>
+  <data name="All sources" xml:space="preserve"><value>すべての出所</value></data>
+  <data name="Master only" xml:space="preserve"><value>マスターのみ</value></data>
+  <data name="Local overrides" xml:space="preserve"><value>ローカル上書き</value></data>
+  <data name="Override master row" xml:space="preserve"><value>マスター行を上書き</value></data>
+  <data name="Change plugin id" xml:space="preserve"><value>プラグイン ID を変更</value></data>
+  <data name="Save new entry" xml:space="preserve"><value>新規項目を保存</value></data>
+  <data name="Save local changes" xml:space="preserve"><value>ローカル変更を保存</value></data>
+  <data name="Hide master row" xml:space="preserve"><value>マスター行を隠す</value></data>
+  <data name="Restore hidden master row" xml:space="preserve"><value>マスター行を復元</value></data>
+  <data name="Clear draft" xml:space="preserve"><value>下書きを消去</value></data>
+  <data name="Reload from current state" xml:space="preserve"><value>現在の状態を再読み込み</value></data>
+  <data name="Id" xml:space="preserve"><value>ID</value></data>
+  <data name="Display name" xml:space="preserve"><value>表示名</value></data>
+  <data name="Description" xml:space="preserve"><value>説明</value></data>
+  <data name="Repo URL" xml:space="preserve"><value>リポジトリ URL</value></data>
+  <data name="Repo JSON URL" xml:space="preserve"><value>リポジトリ JSON URL</value></data>
+  <data name="Green plugins" xml:space="preserve"><value>緑のプラグイン</value></data>
+  <data name="Yellow plugins" xml:space="preserve"><value>黄のプラグイン</value></data>
+  <data name="Red plugins" xml:space="preserve"><value>赤のプラグイン</value></data>
+  <data name="Notes" xml:space="preserve"><value>説明</value></data>
+  <data name="Plugin shortname" xml:space="preserve"><value>プラグイン短縮名</value></data>
+  <data name="Optional id suffix" xml:space="preserve"><value>任意の ID 接尾辞</value></data>
+  <data name="Effective id" xml:space="preserve"><value>有効な ID</value></data>
+  <data name="The shortname shown in Dalamud" xml:space="preserve"><value>Dalamud に表示される短縮名</value></data>
+  <data name="Leave blank unless multiple plugins share that shortname" xml:space="preserve"><value>短縮名が重複しない場合は空欄</value></data>
+  <data name="Select plugin shortname..." xml:space="preserve"><value>プラグイン短縮名を選択...</value></data>
+  <data name="SHORTNAME" xml:space="preserve"><value>短縮名</value></data>
+  <data name="Remove" xml:space="preserve"><value>削除</value></data>
+  <data name="No plugin shortnames selected." xml:space="preserve"><value>短縮名が選択されていません。</value></data>
+  <data name="Rule preview" xml:space="preserve"><value>ルールのプレビュー</value></data>
+  <data name="No green / yellow / red rules configured yet." xml:space="preserve"><value>色のルールは未設定です。</value></data>
+  <data name="No notes configured." xml:space="preserve"><value>説明は未設定です。</value></data>
+  <data name="Not installed." xml:space="preserve"><value>未インストール。</value></data>
+  <data name="Installed but disabled." xml:space="preserve"><value>導入済みですが無効です。</value></data>
+  <data name="Required green plugins are loaded." xml:space="preserve"><value>必要な緑のプラグインは読み込み済みです。</value></data>
+  <data name="No warning rules triggered." xml:space="preserve"><value>警告ルールは発動していません。</value></data>
+  <data name="No colors selected shows all rows. Selected colors include only assessed, non-ignored rows." xml:space="preserve"><value>色を選択しないと全行を表示します。色は評価済みで無視されていない行のみ表示します。</value></data>
+  <data name="Category / Plugin, Source, and Enabled stay visible so the grid remains operable." xml:space="preserve"><value>操作のため、カテゴリ / プラグイン、出所、有効の列は常に表示されます。</value></data>
+  <data name="The grid uses live installed, enabled, update-available, and DTR detection from Dalamud. Direct plugin DTR config is used first; live DTR entries use the same Server Info Bar visibility data as XLSettings." xml:space="preserve"><value>導入、有効状態、更新、DTR を Dalamud から取得します。プラグインの DTR 設定を優先し、DTR 項目には XLSettings と同じ情報バーの表示設定を使います。</value></data>
+  <data name="Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows." xml:space="preserve"><value>無視した行は警告計算から除外されますが、青で表示されます。</value></data>
+  <data name="Special thanks to Canto who cooked most of the initial dataset and proposed categorizations. " xml:space="preserve"><value>初期データとカテゴリ案の多くを作成した Canto に感謝します。</value></data>
+  <data name="Toggles Dalamud Server Info Bar visibility." xml:space="preserve"><value>Dalamud 情報バーの表示を切り替えます。</value></data>
+  <data name="Plugin currently sets Shown=false; showing here only clears Dalamud hidden state." xml:space="preserve"><value>プラグインが Shown=false を指定しています。ここでは Dalamud の非表示設定のみ解除できます。</value></data>
+  <data name="Master rows stay read-only until you override them. Local rows can also hide stale master ids without changing the upstream catalog file." xml:space="preserve"><value>マスター行は上書きするまで読み取り専用です。ローカル行は元のカタログを変更せず古いマスター ID を隠せます。</value></data>
+  <data name="Select a catalog row on the left or create a new local entry." xml:space="preserve"><value>左の行を選ぶかローカル項目を作成してください。</value></data>
+  <data name="This master row is hidden from Botology by the local overlay." xml:space="preserve"><value>このマスター行はローカル設定で隠されています。</value></data>
+  <data name="This row exists in master. Override it when you want a local edit." xml:space="preserve"><value>この行はマスターにあります。ローカル編集するには上書きしてください。</value></data>
+  <data name="This row exists only in the local overlay." xml:space="preserve"><value>この行はローカルにのみ存在します。</value></data>
+  <data name="Creates a new local row from this data. Saving the new id also hides the old master id." xml:space="preserve"><value>ローカル行を作成します。新しい ID の保存で古いマスター ID も隠します。</value></data>
+  <data name="Click Override master row first to create a writable local copy." xml:space="preserve"><value>まず「マスター行を上書き」を押して編集可能なコピーを作成します。</value></data>
+  <data name="Click Override master row to start a writable local copy of this master row." xml:space="preserve"><value>「マスター行を上書き」で編集可能なコピーを作成します。</value></data>
+  <data name="Rules compare against plugin shortnames, including this row if you select it. Red beats yellow, yellow beats green, and a row that lists required green plugins turns red if any of them are missing." xml:space="preserve"><value>ルールは選択した場合この行も含め短縮名を比較します。赤、黄、緑の順に優先し、必要な緑のプラグインが一つでもなければ赤になります。</value></data>
+  <data name="New rows use the plugin shortname as the runtime match token automatically." xml:space="preserve"><value>新規行は短縮名を実行時の照合に自動使用します。</value></data>
+  <data name="Notes are the operator-facing explanation shown with the current rule result. The Green / Yellow / Red plugin lists decide the color; use Notes to explain why the row should end up in that state." xml:space="preserve"><value>説明は現在のルール結果の理由を伝えます。緑・黄・赤の一覧で色を決め、説明でその状態になる理由を記入します。</value></data>
+  <data name="There are no local catalog changes to drop." xml:space="preserve"><value>破棄するローカル変更はありません。</value></data>
+  <data name="There are no local catalog changes to prepare for upload." xml:space="preserve"><value>準備するローカル変更はありません。</value></data>
+  <data name="There are no local changes to drop for this row." xml:space="preserve"><value>この行にはローカル変更がありません。</value></data>
+  <data name="Hold CTRL to discard this new local entry draft." xml:space="preserve"><value>CTRL を押して新規下書きを破棄します。</value></data>
+  <data name="Hold CTRL to delete this local-only row from the overlay." xml:space="preserve"><value>CTRL を押してローカル行を削除します。</value></data>
+  <data name="Hold CTRL to delete the local override and fall back to master data." xml:space="preserve"><value>CTRL を押して上書きを削除しマスターに戻します。</value></data>
+  <data name="Hold CTRL to discard the current edit session for this master row." xml:space="preserve"><value>CTRL を押して現在の編集を破棄します。</value></data>
+  <data name="CTRL is held. Clicking now discards this new local entry draft." xml:space="preserve"><value>CTRL 押下中。クリックで下書きを破棄します。</value></data>
+  <data name="CTRL is held. Clicking now deletes this local-only row from the overlay." xml:space="preserve"><value>CTRL 押下中。クリックでローカル行を削除します。</value></data>
+  <data name="CTRL is held. Clicking now deletes the local override and restores master data." xml:space="preserve"><value>CTRL 押下中。クリックで上書きを削除しマスターを復元します。</value></data>
+  <data name="CTRL is held. Clicking now discards the current edit session and reloads master data." xml:space="preserve"><value>CTRL 押下中。クリックで編集を破棄しマスターを読み込みます。</value></data>
+  <data name="Hold CTRL to remove any local override and hide this master id from the effective catalog." xml:space="preserve"><value>CTRL を押して上書きを削除しマスター ID を隠します。</value></data>
+  <data name="CTRL is held. Clicking now removes any local override and hides this master id from the effective catalog." xml:space="preserve"><value>CTRL 押下中。クリックで上書きを削除しマスター ID を隠します。</value></data>
+  <data name="CTRL-click to see the folder containing review_catalog.py if you are curious." xml:space="preserve"><value>CTRL クリックで review_catalog.py のフォルダーを開きます。</value></data>
+  <data name="CTRL is held. Clicking now opens the folder containing review_catalog.py." xml:space="preserve"><value>CTRL 押下中。クリックで review_catalog.py のフォルダーを開きます。</value></data>
+  <data name="That combination of name and suffix already exists in local data. Saving will update that local row." xml:space="preserve"><value>名前と接尾辞はローカルに存在します。保存で行を更新します。</value></data>
+  <data name="That combination of name and suffix already exists and this will become a local override." xml:space="preserve"><value>名前と接尾辞は既に存在し、ローカル上書きになります。</value></data>
+  <data name="Likely AI-written (Aetherfeed attribution)" xml:space="preserve"><value>AI 作成の可能性（Aetherfeed 判定）</value></data>
+  <data name="Likely AI-written code based on Aetherfeed contributor and coding-pattern attribution; snapshot 2026-07-22." xml:space="preserve"><value>Aetherfeed の作者とコードパターンに基づく AI 判定（2026-07-22 時点）。</value></data>
+  <data name="Drop all local changes ({0})" xml:space="preserve"><value>全ローカル変更を破棄（{0}）</value></data>
+  <data name="Saving this replacement will hide the old master id: {0}" xml:space="preserve"><value>保存すると古い ID を隠します: {0}</value></data>
+  <data name="Red when loaded: {0}" xml:space="preserve"><value>読み込み時に赤: {0}</value></data>
+  <data name="Yellow when loaded: {0}" xml:space="preserve"><value>読み込み時に黄: {0}</value></data>
+  <data name="Red when required green plugins are missing: {0}" xml:space="preserve"><value>必要な緑のプラグインがない場合は赤: {0}</value></data>
+  <data name="Green when required green plugins are loaded: {0}" xml:space="preserve"><value>必要なプラグインを読み込むと緑: {0}</value></data>
+  <data name="Notes shown with this row: {0}" xml:space="preserve"><value>この行の説明: {0}</value></data>
+  <data name="Missing required green plugins: {0}." xml:space="preserve"><value>必要な緑のプラグインがありません: {0}。</value></data>
+  <data name="{0} is loaded." xml:space="preserve"><value>{0} は読み込み済みです。</value></data>
+  <data name="{0} are loaded." xml:space="preserve"><value>{0} は読み込み済みです。</value></data>
+  <data name="Blue: ignored row. Underlying assessment is {0}: {1}" xml:space="preserve"><value>青: 無視した行。元の評価: {0}: {1}</value></data>
+  <data name="Global DTR: {0} ({1})" xml:space="preserve"><value>グローバル DTR: {0}（{1}）</value></data>
+  <data name="Global DTR: {0} ({1}; plugin sets Shown=false)" xml:space="preserve"><value>グローバル DTR: {0}（{1}、Shown=false）</value></data>
+  <data name="Repo feeds: {0}" xml:space="preserve"><value>リポジトリフィード: {0}</value></data>
+  <data name="Placeholder repo.json URL: {0}" xml:space="preserve"><value>仮の repo.json URL: {0}</value></data>
+  <data name="Uncategorized" xml:space="preserve"><value>未分類</value></data>
+  <data name="placeholder description" xml:space="preserve"><value>仮の説明</value></data>
+  <data name="Hold CTRL to delete all {0} local rows and hidden-master markers, then fall back to master." xml:space="preserve"><value>CTRL を押してローカル {0} 行と非表示設定を削除しマスターに戻します。</value></data>
+  <data name="CTRL is held. Clicking now deletes all {0} local rows and hidden-master markers, then falls back to master." xml:space="preserve"><value>CTRL 押下中。クリックでローカル {0} 行と非表示設定を削除しマスターに戻します。</value></data>
+  <data name="Requires Python. Hold CTRL to export today's upload-prep folder and start the interactive review for changed rows and master-row removals. This does not upload anything by itself." xml:space="preserve"><value>Python が必要です。CTRL を押して今日の準備フォルダーを出力し、変更とマスター行削除の対話式確認を開始します。自動アップロードは行いません。</value></data>
+  <data name="CTRL is held. Clicking now exports master.json, local.json, and plugin-repository-links.json into today's upload-prep folder, launches the Python review script, and opens the folder in Explorer. Use the command window to review each changed row or master-row removal. This does not upload anything by itself." xml:space="preserve"><value>CTRL 押下中。master.json、local.json、plugin-repository-links.json を今日の準備フォルダーに出力し、Python 確認を起動してフォルダーを開きます。コマンド画面で各変更・削除を確認してください。自動アップロードはしません。</value></data>
+  <data name="Repo" xml:space="preserve"><value>リポジトリ</value></data>
+  <data name="Compatibility warning" xml:space="preserve"><value>互換性の警告</value></data>
+  <data name="All active tracked plugins are green." xml:space="preserve"><value>追跡中の有効なプラグインはすべて緑です。</value></data>
+  <data name="{0} non-green plugin entries: {1}" xml:space="preserve"><value>緑以外のプラグイン {0} 件: {1}</value></data>
+  <data name="Loading UI fonts..." xml:space="preserve"><value>UI フォントを読み込み中...</value></data>
+  <data name="UI fonts failed to load. See the plugin log." xml:space="preserve"><value>UI フォントの読み込みに失敗しました。ログを確認してください。</value></data>
+  <data name="Unavailable for current Dalamud API {0} (manifest API {1})." xml:space="preserve"><value>現在の Dalamud API {0} では利用できません（マニフェスト API {1}）。</value></data>
+  <data name="Ignore" xml:space="preserve"><value>無視</value></data>
+</root>

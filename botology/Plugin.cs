@@ -5,12 +5,14 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using AethertekUI;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.IoC;
 using Dalamud.Interface.Windowing;
+using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using botology.Models;
@@ -19,7 +21,7 @@ using botology.Windows;
 
 namespace botology;
 
-public sealed class Plugin : IDalamudPlugin
+public sealed class Plugin : IDalamudPlugin, IBotologyUi
 {
     private const string ReviewScriptResourceName = "botology.review_catalog.py";
 
@@ -42,6 +44,16 @@ public sealed class Plugin : IDalamudPlugin
     private readonly ConfigWindow configWindow;
     private readonly DtrManagerWindow dtrManagerWindow;
     private readonly CatalogEditorWindow catalogEditorWindow;
+    private MaterialTheme uiTheme = null!;
+    private BotologyFonts uiFonts = null!;
+    private UiText uiText = null!;
+    private string appliedLanguage = "";
+    private uint appliedAccent;
+    private System.Numerics.Vector3 accentDraft;
+    private AethertekUI.MaterialOptions<string> languageOptions = null!;
+    private int checkedFontGeneration=-1;
+    private bool fontIssueLogged;
+
     private IDtrBarEntry? dtrEntry;
     private DateTime nextAssessmentCheckUtc = DateTime.MinValue;
     private DateTime nextMasterCatalogCheckUtc = DateTime.MinValue;
@@ -52,6 +64,7 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        ApplyAppearance();
         PluginManagerBridge = new PluginManagerBridge(PluginInterface, CommandManager, Log);
         DtrVisibilityBridge = new DtrVisibilityBridge(PluginInterface, DtrBar, Log);
         RepositoryMetadataService = new RepositoryMetadataService(Log);
@@ -70,7 +83,7 @@ public sealed class Plugin : IDalamudPlugin
 
         RegisterCommands();
 
-        PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
+        PluginInterface.UiBuilder.Draw += DrawUi;
         PluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
         PluginInterface.UiBuilder.OpenMainUi += OpenMainUi;
         Framework.Update += OnFrameworkUpdate;
@@ -88,7 +101,7 @@ public sealed class Plugin : IDalamudPlugin
     public void Dispose()
     {
         Framework.Update -= OnFrameworkUpdate;
-        PluginInterface.UiBuilder.Draw -= WindowSystem.Draw;
+        PluginInterface.UiBuilder.Draw -= DrawUi;
         PluginInterface.UiBuilder.OpenConfigUi -= OpenConfigUi;
         PluginInterface.UiBuilder.OpenMainUi -= OpenMainUi;
 
@@ -102,6 +115,79 @@ public sealed class Plugin : IDalamudPlugin
         dtrManagerWindow.Dispose();
         configWindow.Dispose();
         mainWindow.Dispose();
+        uiFonts.Dispose();
+        uiText.Dispose();
+    }
+
+    private void DrawUi()
+    {
+        ApplyAppearance();
+        if(!mainWindow.IsOpen && !configWindow.IsOpen && !dtrManagerWindow.IsOpen && !catalogEditorWindow.IsOpen) return;
+        using var text = uiText.Enter();
+        if(!uiFonts.Ready)
+        {
+            if(!fontIssueLogged && uiFonts.LoadException is { } error) { Log.Error(error,"[botology] Required UI fonts failed to load.");fontIssueLogged=true; }
+            // Do not silently present temporary host fonts as the finished UI.
+            DrawFontStatus(uiFonts.LoadException is null);
+            return;
+        }
+        if(checkedFontGeneration!=uiFonts.Generation)
+        {
+            try
+            {
+                var generation=uiFonts.Generation;
+                uiFonts.CheckGlyphs(UiText.Values(uiText.Resources).Concat(UiText.Languages.Select(l=>l.Name)));
+                checkedFontGeneration=generation;
+            }
+            catch(Exception ex) { if(!fontIssueLogged) { Log.Error(ex,"[botology] Required UI glyph coverage failed.");fontIssueLogged=true; } DrawFontStatus(false);return; }
+        }
+        using var theme = MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, MaterialStyleMode.ColorsOnly);
+        using var geometry=new MaterialStyleScope();
+        geometry.Style(Dalamud.Bindings.ImGui.ImGuiStyleVar.WindowPadding,new System.Numerics.Vector2(16*ImGuiHelpers.GlobalScale));
+        WindowSystem.Draw();
+    }
+
+    private static void DrawFontStatus(bool loading)
+    {
+        Dalamud.Bindings.ImGui.ImGui.SetNextWindowSize(new System.Numerics.Vector2(460f*ImGuiHelpers.GlobalScale,0f));
+        if(Dalamud.Bindings.ImGui.ImGui.Begin("Botology##FontStatus",Dalamud.Bindings.ImGui.ImGuiWindowFlags.AlwaysAutoResize))
+            Dalamud.Bindings.ImGui.ImGui.TextWrapped(UiText.T(loading?"Loading UI fonts...":"UI fonts failed to load. See the plugin log."));
+        Dalamud.Bindings.ImGui.ImGui.End();
+    }
+
+    private void ApplyAppearance()
+    {
+        var language=UiText.Languages.Any(l=>l.Code==Configuration.UiLanguage)?Configuration.UiLanguage:"en";
+        if(language!=appliedLanguage)
+        {
+            uiFonts?.Dispose();
+            uiText?.Dispose();
+            uiText=new(language,role=>uiFonts!.Push(role));
+            uiFonts=new(PluginInterface.UiBuilder.FontAtlas,uiText.GlyphRanges(),language);
+            languageOptions=new(UiText.Languages.Select(l=>new MaterialOption<string>(l.Code,l.Code,l.Name)).ToArray());
+            appliedLanguage=language;
+            checkedFontGeneration=-1;
+            fontIssueLogged=false;
+        }
+        if(uiTheme is null || (Configuration.UiAccentRgb & 0xFFFFFF)!=appliedAccent)
+        {
+            appliedAccent=Configuration.UiAccentRgb & 0xFFFFFF;
+            uiTheme=BotologyPresentation.Theme(appliedAccent);
+            var color=BotologyPresentation.Rgb(appliedAccent);
+            accentDraft=new(color.X,color.Y,color.Z);
+        }
+    }
+
+    public void DrawAppearanceSelector()
+    {
+        var language=appliedLanguage;
+        using var controls=MaterialControls.Push(BotologyPresentation.Controls(28,18));
+        var changed=MaterialAppearanceSelector.Draw("appearance",ref accentDraft,ref language,languageOptions,
+            new(UiText.T("Color"),UiText.T("Language"),UiText.T("Teal"),UiText.T("Blue"),UiText.T("Pink"),UiText.T("Custom RGB")));
+        if(changed.AccentChanged) Configuration.UiAccentRgb=((uint)Math.Clamp((int)MathF.Round(accentDraft.X*255),0,255)<<16)
+            |((uint)Math.Clamp((int)MathF.Round(accentDraft.Y*255),0,255)<<8)|(uint)Math.Clamp((int)MathF.Round(accentDraft.Z*255),0,255);
+        if(changed.LanguageChanged) Configuration.UiLanguage=language;
+        if(changed.AccentChanged || changed.LanguageChanged) Configuration.Save();
     }
 
     public void OpenMainUi()
@@ -631,7 +717,7 @@ public sealed class Plugin : IDalamudPlugin
         return BotologyCatalog.BuildRows(PluginManagerBridge.CaptureSnapshot(), ignoredIds);
     }
 
-    private static PluginAssessmentRow ApplyPatchCompatibilityAssessment(PluginAssessmentRow row)
+    internal static PluginAssessmentRow ApplyPatchCompatibilityAssessment(PluginAssessmentRow row)
     {
         if (!row.IsUnavailableForCurrentPatch)
             return row;
@@ -648,7 +734,12 @@ public sealed class Plugin : IDalamudPlugin
             ? patchMessage
             : $"{patchMessage}{Environment.NewLine}{Environment.NewLine}{row.Assessment.Details}";
 
-        return row with { Assessment = new AssessmentResult(severity, summary, details) };
+        return row with { Assessment = new AssessmentResult(severity, summary, details)
+        {
+            UiSummaryKey="Unavailable for current Dalamud API {0} (manifest API {1}).",
+            UiSummaryArguments=[PluginAssessmentRow.CurrentDalamudApiLevel,row.Metadata!.DalamudApiLevel!.Value],
+            UiUnderlyingAssessment=row.Assessment,
+        } };
     }
 
     private void QueueRepositoryMetadataRefresh()

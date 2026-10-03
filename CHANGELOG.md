@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-02
+
+- Colour selections now retint the whole UI using relative OKLCH colours for surfaces, fields, borders, foregrounds, panel gradients and neutral badges. Measured lightness stays stable for dark/pale/grey selections; default teal and semantic status colours are preserved.
+- Fixed live UI startup by merging Dalamud's bundled CJK font for the language selector and selected locale. Neutral language codes previously caused Windows font merging to do nothing and blocked the UI on missing glyphs. Font status windows now keep a readable width.
+- Added measured appearance/geometry roles, slate surfaces, Segoe content typography, native vector branding, explicit switch tracks, wrapping controls and a reserved footer. Native Dalamud chrome remains in place.
+- Added shared colour and nine-language selectors in the header and Settings, two compatible configuration preferences, embedded translations and locale formatting. Cached managed fonts check loading/glyph coverage and atlas rebuilds; appearance changes apply next frame and custom RGB saves on edit completion.
+- Extended the existing offline feature harness with snapshot-based native window/popup scenarios, reference bounds/colour checks and deterministic RGBA regression comparisons. Diagnostic evidence remains separate from pending game screenshot acceptance.
+- Kept wrapped popup widths stable after opening and checked that native button interactions actually render each popup without collapsed bounds.
+- Adopted the local AethertekUI library for the approved main-window design: cyan accent, compact header and action toolbar, assessment counters, category dropdown, searches, filters, sortable plugin grid, and launcher footer outside the scrolling table.
+- Preserved saved column choices and existing actions, DTR visibility paths, notifications, descriptions, rule details, and window placement. Installed cells show captured versions; updates show availability; source badges show actual catalog provenance; assessment badges remain in Notes / Warnings.
+- Added local project references and a theme scope around the complete window lifecycle. Versions remain Botology 0.3.0.1 and AethertekUI 0.3.0; release CI will need separate library provisioning before publication.
+
 ## 2026-10-01
 
 - Build only the plugin project in GitHub Actions so test and regression projects do not block production artifacts.

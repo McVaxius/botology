@@ -8,9 +8,11 @@ namespace botology.Windows;
 public sealed class ConfigWindow : PositionedWindow, IDisposable
 {
     private static readonly string[] DtrModes = { "Text only", "Icon + text", "Icon only" };
-    private readonly Plugin plugin;
+    private readonly IBotologyUi plugin;
 
-    public ConfigWindow(Plugin plugin)
+    public ConfigWindow(Plugin plugin) : this((IBotologyUi)plugin) { }
+
+    internal ConfigWindow(IBotologyUi plugin)
         : base($"{PluginInfo.DisplayName} Settings##Config")
     {
         this.plugin = plugin;
@@ -27,14 +29,19 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
 
     public override void Draw()
     {
+        UiGui.Title(PluginInfo.DisplayName+" Settings",PluginInfo.DisplayName+" "+UiText.T("Settings"));
+        using var font=UiText.Font(UiFontRole.Body);
+        using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
+        plugin.DrawAppearanceSelector();
+        ImGui.Separator();
         var cfg = plugin.Configuration;
 
         var enabled = cfg.PluginEnabled;
-        if (ImGui.Checkbox("Plugin enabled", ref enabled))
+        if (UiGui.Checkbox("Plugin enabled", ref enabled))
             plugin.SetPluginEnabled(enabled, printStatus: true);
 
         var dtr = cfg.DtrBarEnabled;
-        if (ImGui.Checkbox("Show DTR bar entry", ref dtr))
+        if (UiGui.Checkbox("Show DTR bar entry", ref dtr))
         {
             cfg.DtrBarEnabled = dtr;
             cfg.Save();
@@ -42,7 +49,7 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         }
 
         var mode = cfg.DtrBarMode;
-        if (ImGui.Combo("DTR mode", ref mode, DtrModes, DtrModes.Length))
+        if (UiGui.Combo("DTR mode", ref mode, DtrModes, DtrModes.Length))
         {
             cfg.DtrBarMode = mode;
             cfg.Save();
@@ -50,7 +57,7 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         }
 
         var onIcon = cfg.DtrIconEnabled;
-        if (ImGui.InputText("DTR enabled glyph", ref onIcon, 8))
+        if (UiGui.InputText("DTR enabled glyph", ref onIcon, 8))
         {
             cfg.DtrIconEnabled = onIcon.Length <= 3 ? onIcon : onIcon[..3];
             cfg.Save();
@@ -58,56 +65,56 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         }
 
         var offIcon = cfg.DtrIconDisabled;
-        if (ImGui.InputText("DTR disabled glyph", ref offIcon, 8))
+        if (UiGui.InputText("DTR disabled glyph", ref offIcon, 8))
         {
             cfg.DtrIconDisabled = offIcon.Length <= 3 ? offIcon : offIcon[..3];
             cfg.Save();
             plugin.UpdateDtrBar();
         }
 
-        if (ImGui.SmallButton("DTR manager"))
+        if (UiGui.SmallButton("DTR manager"))
             plugin.OpenDtrManagerUi();
         ImGui.SameLine();
-        if (ImGui.SmallButton("XLSettings Server Info Bar"))
+        if (UiGui.SmallButton("XLSettings Server Info Bar"))
             plugin.OpenServerInfoBarSettings();
 
         var toastNotifications = cfg.ToastNotifications;
-        if (ImGui.Checkbox("Toast warnings on changes", ref toastNotifications))
+        if (UiGui.Checkbox("Toast warnings on changes", ref toastNotifications))
         {
             cfg.ToastNotifications = toastNotifications;
             cfg.Save();
         }
 
         var masterToastNotifications = cfg.ToastOnMasterCatalogChange;
-        if (ImGui.Checkbox("Toast for catalog notes affecting installed plugins.", ref masterToastNotifications))
+        if (UiGui.Checkbox("Toast for catalog notes affecting installed plugins.", ref masterToastNotifications))
         {
             cfg.ToastOnMasterCatalogChange = masterToastNotifications;
             cfg.Save();
         }
 
         var popupNotifications = cfg.BlockingPopupNotifications;
-        if (ImGui.Checkbox("Popup box that requires OK", ref popupNotifications))
+        if (UiGui.Checkbox("Popup box that requires OK", ref popupNotifications))
         {
             cfg.BlockingPopupNotifications = popupNotifications;
             cfg.Save();
         }
 
         var openWindow = cfg.OpenWindowOnAssessmentChange;
-        if (ImGui.Checkbox("Open the plugin window on changes", ref openWindow))
+        if (UiGui.Checkbox("Open the plugin window on changes", ref openWindow))
         {
             cfg.OpenWindowOnAssessmentChange = openWindow;
             cfg.Save();
         }
 
         var openOnLoad = cfg.OpenMainWindowOnLoad;
-        if (ImGui.Checkbox("Open main window on load", ref openOnLoad))
+        if (UiGui.Checkbox("Open main window on load", ref openOnLoad))
         {
             cfg.OpenMainWindowOnLoad = openOnLoad;
             cfg.Save();
         }
 
         var periodicChecks = cfg.EnablePeriodicMasterCatalogChecks;
-        if (ImGui.Checkbox("Enable periodic master catalog checks", ref periodicChecks))
+        if (UiGui.Checkbox("Enable periodic master catalog checks", ref periodicChecks))
         {
             cfg.EnablePeriodicMasterCatalogChecks = periodicChecks;
             cfg.Save();
@@ -115,30 +122,30 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         }
 
         var intervalMinutes = Math.Max(1, cfg.MasterCatalogCheckIntervalMinutes);
-        if (ImGui.InputInt("Master catalog check interval (minutes)", ref intervalMinutes))
+        if (UiGui.InputInt("Master catalog check interval (minutes)", ref intervalMinutes))
         {
             cfg.MasterCatalogCheckIntervalMinutes = Math.Max(1, intervalMinutes);
             cfg.Save();
             plugin.RescheduleMasterCatalogCheck();
         }
 
-        if (ImGui.SmallButton("Reload master now"))
+        if (UiGui.SmallButton("Reload master now"))
             plugin.RefreshMasterCatalog(force: true, silent: false);
         ImGui.SameLine();
-        if (ImGui.SmallButton("Open DATA editor"))
+        if (UiGui.SmallButton("Open DATA editor"))
             plugin.OpenCatalogEditorUi();
         ImGui.SameLine();
-        if (ImGui.SmallButton("Open DATA folder"))
+        if (UiGui.SmallButton("Open DATA folder"))
             plugin.OpenCatalogFolder();
 
         ImGui.Separator();
         var refreshInfo = plugin.GetCatalogRefreshInfo();
-        ImGui.TextWrapped("The grid uses live installed, enabled, update-available, and DTR detection from Dalamud. Direct plugin DTR config is used first; live DTR entries use the same Server Info Bar visibility data as XLSettings.");
-        ImGui.TextWrapped("Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows.");
-        ImGui.TextWrapped("Special thanks to Canto who cooked most of the initial dataset and proposed categorizations. ");
+        ImGui.TextWrapped(UiText.T("The grid uses live installed, enabled, update-available, and DTR detection from Dalamud. Direct plugin DTR config is used first; live DTR entries use the same Server Info Bar visibility data as XLSettings."));
+        ImGui.TextWrapped(UiText.T("Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows."));
+        ImGui.TextWrapped(UiText.T("Special thanks to Canto who cooked most of the initial dataset and proposed categorizations. "));
         //ImGui.TextWrapped($"Master source: {refreshInfo.SourceUrl ?? "Unknown"}");
-        ImGui.TextWrapped($"Last master check: {(refreshInfo.LastCheckedUtc?.ToLocalTime().ToString("g") ?? "Never")}");
-        ImGui.TextWrapped($"Last master update: {(refreshInfo.LastUpdatedUtc?.ToLocalTime().ToString("g") ?? "Never")}");
+        ImGui.TextWrapped(UiText.F("Last master check: {0}",UiText.Date(refreshInfo.LastCheckedUtc)));
+        ImGui.TextWrapped(UiText.F("Last master update: {0}",UiText.Date(refreshInfo.LastUpdatedUtc)));
 
         FinalizePendingWindowPlacement();
     }

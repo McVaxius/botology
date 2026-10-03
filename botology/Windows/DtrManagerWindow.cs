@@ -8,9 +8,11 @@ namespace botology.Windows;
 
 public sealed class DtrManagerWindow : PositionedWindow, IDisposable
 {
-    private readonly Plugin plugin;
+    private readonly IBotologyUi plugin;
 
-    public DtrManagerWindow(Plugin plugin)
+    public DtrManagerWindow(Plugin plugin) : this((IBotologyUi)plugin) { }
+
+    internal DtrManagerWindow(IBotologyUi plugin)
         : base($"{PluginInfo.DisplayName} DTR Manager##DtrManager")
     {
         this.plugin = plugin;
@@ -27,15 +29,18 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
 
     public override void Draw()
     {
-        if (ImGui.SmallButton("XLSettings Server Info Bar"))
+        UiGui.Title(PluginInfo.DisplayName+" DTR Manager",PluginInfo.DisplayName+" "+UiText.T("DTR manager"));
+        using var font=UiText.Font(UiFontRole.Body);
+        using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
+        if (UiGui.SmallButton("XLSettings Server Info Bar"))
             plugin.OpenServerInfoBarSettings();
 
         var entries = plugin.CaptureDtrEntries();
-        ImGui.TextUnformatted($"{entries.Count} live DTR entries");
+        ImGui.TextUnformatted(UiText.F("{0} live DTR entries",entries.Count));
 
         if (entries.Count == 0)
         {
-            ImGui.TextUnformatted("No live DTR entries.");
+            ImGui.TextUnformatted(UiText.T("No live DTR entries."));
             FinalizePendingWindowPlacement();
             return;
         }
@@ -49,12 +54,13 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
 
         if (ImGui.BeginTable("BotologyDtrEntries", 5, tableFlags, new Vector2(-1f, -1f)))
         {
-            ImGui.TableSetupColumn("#", ImGuiTableColumnFlags.WidthFixed, 42f);
+            var scale=AethertekUI.MaterialTheme.Metrics.Scale;
+            ImGui.TableSetupColumn("#", ImGuiTableColumnFlags.WidthFixed, 42f*scale);
             ImGui.TableSetupColumn("DTR Entry", ImGuiTableColumnFlags.WidthStretch, 0f);
-            ImGui.TableSetupColumn("State", ImGuiTableColumnFlags.WidthFixed, 115f);
-            ImGui.TableSetupColumn("Show", ImGuiTableColumnFlags.WidthFixed, 70f);
-            ImGui.TableSetupColumn("Move", ImGuiTableColumnFlags.WidthFixed, 110f);
-            ImGui.TableHeadersRow();
+            ImGui.TableSetupColumn("State", ImGuiTableColumnFlags.WidthFixed, Math.Max(115f*scale,new[]{"Visible","Hidden","Plugin hidden"}.Max(l=>ImGui.CalcTextSize(UiText.T(l)).X)));
+            ImGui.TableSetupColumn("Show", ImGuiTableColumnFlags.WidthFixed, Math.Max(70f*scale,ImGui.CalcTextSize(UiText.T("Show")).X));
+            ImGui.TableSetupColumn("Move", ImGuiTableColumnFlags.WidthFixed, Math.Max(110f*scale,ImGui.CalcTextSize(UiText.T("Up")).X+ImGui.CalcTextSize(UiText.T("Down")).X+4*ImGui.GetStyle().FramePadding.X+ImGui.GetStyle().ItemSpacing.X));
+            UiGui.TableHeadersRow();
 
             foreach (var entry in entries)
             {
@@ -62,7 +68,7 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
                 ImGui.PushID(entry.Title);
 
                 ImGui.TableSetColumnIndex(0);
-                ImGui.TextUnformatted((entry.Order + 1).ToString());
+                ImGui.TextUnformatted((entry.Order + 1).ToString(UiText.Current.Culture));
 
                 ImGui.TableSetColumnIndex(1);
                 ImGui.TextUnformatted(entry.Title);
@@ -74,21 +80,21 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
 
                 ImGui.TableSetColumnIndex(3);
                 var userVisible = entry.UserVisible;
-                if (ImGui.Checkbox("##DtrUserVisible", ref userVisible))
+                if (UiGui.Checkbox("##DtrUserVisible", ref userVisible))
                     plugin.SetGlobalDtrEntryVisible(entry.Title, userVisible);
                 if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(entry.PluginShown
+                    ImGui.SetTooltip(UiText.T(entry.PluginShown
                         ? "Toggles Dalamud Server Info Bar visibility."
-                        : "Plugin currently sets Shown=false; showing here only clears Dalamud hidden state.");
+                        : "Plugin currently sets Shown=false; showing here only clears Dalamud hidden state."));
 
                 ImGui.TableSetColumnIndex(4);
                 ImGui.BeginDisabled(entry.Order == 0);
-                if (ImGui.SmallButton("Up"))
+                if (UiGui.SmallButton("Up"))
                     plugin.MoveGlobalDtrEntry(entry.Title, -1);
                 ImGui.EndDisabled();
                 ImGui.SameLine();
                 ImGui.BeginDisabled(entry.Order == entries.Count - 1);
-                if (ImGui.SmallButton("Down"))
+                if (UiGui.SmallButton("Down"))
                     plugin.MoveGlobalDtrEntry(entry.Title, 1);
                 ImGui.EndDisabled();
 
@@ -108,6 +114,6 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
             : entry.UserHidden
                 ? new Vector4(1f, 0.75f, 0.35f, 1f)
                 : new Vector4(0.58f, 0.58f, 0.58f, 1f);
-        ImGui.TextColored(color, entry.StateLabel);
+        ImGui.TextColored(color, UiText.T(entry.StateLabel));
     }
 }

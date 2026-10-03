@@ -5,9 +5,17 @@
     <PlatformTarget>x64</PlatformTarget>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>Botology.FeatureTests</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="Baselines/*.png" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="..\..\botology\botology.csproj" />
+    <Reference Include="Dalamud"><HintPath>$(DalamudLibPath)/Dalamud.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="Dalamud.Bindings.ImGui"><HintPath>$(DalamudLibPath)/Dalamud.Bindings.ImGui.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="HexaGen.Runtime"><HintPath>$(DalamudLibPath)/HexaGen.Runtime.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(DalamudLibPath)/Newtonsoft.Json.dll</HintPath><Private>true</Private></Reference>
+    <None Include="$(DalamudLibPath)/cimgui.dll" Link="cimgui.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="..\..\..\aethertekUI\tests\AethertekUI.Tests\SoftwarePreview.cs" Link="SoftwarePreview.cs" />
   </ItemGroup>
 </Project>

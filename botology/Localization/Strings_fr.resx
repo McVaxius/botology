@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Color" xml:space="preserve"><value>Couleur</value></data>
+  <data name="Language" xml:space="preserve"><value>Langue</value></data>
+  <data name="Teal" xml:space="preserve"><value>Turquoise</value></data>
+  <data name="Blue" xml:space="preserve"><value>Bleu</value></data>
+  <data name="Pink" xml:space="preserve"><value>Rose</value></data>
+  <data name="Custom RGB" xml:space="preserve"><value>RVB personnalisé</value></data>
+  <data name="Settings" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="Catalog Editor" xml:space="preserve"><value>Éditeur du catalogue</value></data>
+  <data name="Dalamud Plugin Compatibility Manager" xml:space="preserve"><value>Gestionnaire de compatibilité des plugins Dalamud</value></data>
+  <data name="Manager enabled" xml:space="preserve"><value>Gestionnaire activé</value></data>
+  <data name="Catalog" xml:space="preserve"><value>Catalogue</value></data>
+  <data name="Data" xml:space="preserve"><value>Données</value></data>
+  <data name="Patch Notes" xml:space="preserve"><value>Notes de version</value></data>
+  <data name="Reload" xml:space="preserve"><value>Recharger</value></data>
+  <data name="Status" xml:space="preserve"><value>État</value></data>
+  <data name="Green" xml:space="preserve"><value>Vert</value></data>
+  <data name="Yellow" xml:space="preserve"><value>Jaune</value></data>
+  <data name="Red" xml:space="preserve"><value>Rouge</value></data>
+  <data name="Visible" xml:space="preserve"><value>Visible</value></data>
+  <data name="Hidden" xml:space="preserve"><value>Masqué</value></data>
+  <data name="Plugin hidden" xml:space="preserve"><value>Masqué par le plugin</value></data>
+  <data name="Master updated" xml:space="preserve"><value>Catalogue maître actualisé</value></data>
+  <data name="Refreshing..." xml:space="preserve"><value>Actualisation...</value></data>
+  <data name="Checked: {0}" xml:space="preserve"><value>Vérifié : {0}</value></data>
+  <data name="Never" xml:space="preserve"><value>Jamais</value></data>
+  <data name="Category" xml:space="preserve"><value>Catégorie</value></data>
+  <data name="Plugin Name" xml:space="preserve"><value>Nom du plugin</value></data>
+  <data name="Author" xml:space="preserve"><value>Auteur</value></data>
+  <data name="All Categories" xml:space="preserve"><value>Toutes les catégories</value></data>
+  <data name="Search plugins..." xml:space="preserve"><value>Rechercher des plugins...</value></data>
+  <data name="Search authors..." xml:space="preserve"><value>Rechercher des auteurs...</value></data>
+  <data name="Hide uninstalled" xml:space="preserve"><value>Masquer les non installés</value></data>
+  <data name="Detailed Notes" xml:space="preserve"><value>Notes détaillées</value></data>
+  <data name="Has DTR entry" xml:space="preserve"><value>Avec entrée DTR</value></data>
+  <data name="Columns" xml:space="preserve"><value>Colonnes</value></data>
+  <data name="Color filter" xml:space="preserve"><value>Filtre de couleur</value></data>
+  <data name="Category / Plugin" xml:space="preserve"><value>Catégorie / Plugin</value></data>
+  <data name="Source" xml:space="preserve"><value>Source</value></data>
+  <data name="Installed" xml:space="preserve"><value>Installé</value></data>
+  <data name="Installed?" xml:space="preserve"><value>Installé ?</value></data>
+  <data name="Update" xml:space="preserve"><value>Mise à jour</value></data>
+  <data name="Update?" xml:space="preserve"><value>Mise à jour ?</value></data>
+  <data name="Enabled" xml:space="preserve"><value>Activé</value></data>
+  <data name="Downloads" xml:space="preserve"><value>Téléchargements</value></data>
+  <data name="Last Update Date" xml:space="preserve"><value>Dernière mise à jour</value></data>
+  <data name="Notes / Warnings" xml:space="preserve"><value>Notes / Avertissements</value></data>
+  <data name="Ignore / ?" xml:space="preserve"><value>Ignorer / ?</value></data>
+  <data name="AI attribution" xml:space="preserve"><value>Attribution IA</value></data>
+  <data name="Available" xml:space="preserve"><value>Disponible</value></data>
+  <data name="Ignored" xml:space="preserve"><value>Ignoré</value></data>
+  <data name="Copy" xml:space="preserve"><value>Copier</value></data>
+  <data name="Disable plugin" xml:space="preserve"><value>Désactiver le plugin</value></data>
+  <data name="Enable plugin" xml:space="preserve"><value>Activer le plugin</value></data>
+  <data name="master" xml:space="preserve"><value>maître</value></data>
+  <data name="local override" xml:space="preserve"><value>modification locale</value></data>
+  <data name="local only" xml:space="preserve"><value>local uniquement</value></data>
+  <data name="hidden master" xml:space="preserve"><value>maître masqué</value></data>
+  <data name="Close" xml:space="preserve"><value>Fermer</value></data>
+  <data name="OK" xml:space="preserve"><value>OK</value></data>
+  <data name="No plugins match the current filters." xml:space="preserve"><value>Aucun plugin ne correspond aux filtres.</value></data>
+  <data name="No patch notes available" xml:space="preserve"><value>Aucune note de version</value></data>
+  <data name="Plugin enabled" xml:space="preserve"><value>Plugin activé</value></data>
+  <data name="Show DTR bar entry" xml:space="preserve"><value>Afficher l'entrée DTR</value></data>
+  <data name="DTR mode" xml:space="preserve"><value>Mode DTR</value></data>
+  <data name="Text only" xml:space="preserve"><value>Texte seul</value></data>
+  <data name="Icon + text" xml:space="preserve"><value>Icône + texte</value></data>
+  <data name="Icon only" xml:space="preserve"><value>Icône seule</value></data>
+  <data name="DTR enabled glyph" xml:space="preserve"><value>Glyphe DTR activé</value></data>
+  <data name="DTR disabled glyph" xml:space="preserve"><value>Glyphe DTR désactivé</value></data>
+  <data name="DTR manager" xml:space="preserve"><value>Gestionnaire DTR</value></data>
+  <data name="XLSettings Server Info Bar" xml:space="preserve"><value>Barre d'infos serveur XLSettings</value></data>
+  <data name="Toast warnings on changes" xml:space="preserve"><value>Alertes toast lors des changements</value></data>
+  <data name="Toast for catalog notes affecting installed plugins." xml:space="preserve"><value>Toast pour les notes concernant les plugins installés.</value></data>
+  <data name="Popup box that requires OK" xml:space="preserve"><value>Fenêtre exigeant une confirmation</value></data>
+  <data name="Open the plugin window on changes" xml:space="preserve"><value>Ouvrir la fenêtre lors des changements</value></data>
+  <data name="Open main window on load" xml:space="preserve"><value>Ouvrir la fenêtre au chargement</value></data>
+  <data name="Enable periodic master catalog checks" xml:space="preserve"><value>Vérifier régulièrement le catalogue maître</value></data>
+  <data name="Master catalog check interval (minutes)" xml:space="preserve"><value>Intervalle de vérification (minutes)</value></data>
+  <data name="Reload master now" xml:space="preserve"><value>Recharger le maître</value></data>
+  <data name="Open DATA editor" xml:space="preserve"><value>Ouvrir l'éditeur DATA</value></data>
+  <data name="Open DATA folder" xml:space="preserve"><value>Ouvrir le dossier DATA</value></data>
+  <data name="Last master check: {0}" xml:space="preserve"><value>Dernière vérification : {0}</value></data>
+  <data name="Last master update: {0}" xml:space="preserve"><value>Dernière actualisation : {0}</value></data>
+  <data name="{0} live DTR entries" xml:space="preserve"><value>{0} entrées DTR actives</value></data>
+  <data name="No live DTR entries." xml:space="preserve"><value>Aucune entrée DTR active.</value></data>
+  <data name="DTR Entry" xml:space="preserve"><value>Entrée DTR</value></data>
+  <data name="State" xml:space="preserve"><value>État</value></data>
+  <data name="Show" xml:space="preserve"><value>Afficher</value></data>
+  <data name="Move" xml:space="preserve"><value>Déplacer</value></data>
+  <data name="Up" xml:space="preserve"><value>Haut</value></data>
+  <data name="Down" xml:space="preserve"><value>Bas</value></data>
+  <data name="New local entry" xml:space="preserve"><value>Nouvelle entrée locale</value></data>
+  <data name="Drop local changes" xml:space="preserve"><value>Annuler les modifications locales</value></data>
+  <data name="PREPARE UPLOAD" xml:space="preserve"><value>PRÉPARER L'ENVOI</value></data>
+  <data name="INSPECT SCRIPT" xml:space="preserve"><value>INSPECTER LE SCRIPT</value></data>
+  <data name="SEARCH" xml:space="preserve"><value>RECHERCHE</value></data>
+  <data name="All sources" xml:space="preserve"><value>Toutes les sources</value></data>
+  <data name="Master only" xml:space="preserve"><value>Maître uniquement</value></data>
+  <data name="Local overrides" xml:space="preserve"><value>Modifications locales</value></data>
+  <data name="Override master row" xml:space="preserve"><value>Modifier la ligne maître</value></data>
+  <data name="Change plugin id" xml:space="preserve"><value>Changer l'identifiant</value></data>
+  <data name="Save new entry" xml:space="preserve"><value>Enregistrer l'entrée</value></data>
+  <data name="Save local changes" xml:space="preserve"><value>Enregistrer les modifications</value></data>
+  <data name="Hide master row" xml:space="preserve"><value>Masquer la ligne maître</value></data>
+  <data name="Restore hidden master row" xml:space="preserve"><value>Restaurer la ligne maître</value></data>
+  <data name="Clear draft" xml:space="preserve"><value>Effacer le brouillon</value></data>
+  <data name="Reload from current state" xml:space="preserve"><value>Recharger l'état actuel</value></data>
+  <data name="Id" xml:space="preserve"><value>ID</value></data>
+  <data name="Display name" xml:space="preserve"><value>Nom affiché</value></data>
+  <data name="Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Repo URL" xml:space="preserve"><value>URL du dépôt</value></data>
+  <data name="Repo JSON URL" xml:space="preserve"><value>URL JSON du dépôt</value></data>
+  <data name="Green plugins" xml:space="preserve"><value>Plugins verts</value></data>
+  <data name="Yellow plugins" xml:space="preserve"><value>Plugins jaunes</value></data>
+  <data name="Red plugins" xml:space="preserve"><value>Plugins rouges</value></data>
+  <data name="Notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="Plugin shortname" xml:space="preserve"><value>Nom court du plugin</value></data>
+  <data name="Optional id suffix" xml:space="preserve"><value>Suffixe facultatif</value></data>
+  <data name="Effective id" xml:space="preserve"><value>Identifiant effectif</value></data>
+  <data name="The shortname shown in Dalamud" xml:space="preserve"><value>Le nom court affiché dans Dalamud</value></data>
+  <data name="Leave blank unless multiple plugins share that shortname" xml:space="preserve"><value>Laisser vide si le nom court est unique</value></data>
+  <data name="Select plugin shortname..." xml:space="preserve"><value>Choisir un nom court...</value></data>
+  <data name="SHORTNAME" xml:space="preserve"><value>NOM COURT</value></data>
+  <data name="Remove" xml:space="preserve"><value>Retirer</value></data>
+  <data name="No plugin shortnames selected." xml:space="preserve"><value>Aucun nom court sélectionné.</value></data>
+  <data name="Rule preview" xml:space="preserve"><value>Aperçu des règles</value></data>
+  <data name="No green / yellow / red rules configured yet." xml:space="preserve"><value>Aucune règle de couleur configurée.</value></data>
+  <data name="No notes configured." xml:space="preserve"><value>Aucune note configurée.</value></data>
+  <data name="Not installed." xml:space="preserve"><value>Non installé.</value></data>
+  <data name="Installed but disabled." xml:space="preserve"><value>Installé mais désactivé.</value></data>
+  <data name="Required green plugins are loaded." xml:space="preserve"><value>Les plugins verts requis sont chargés.</value></data>
+  <data name="No warning rules triggered." xml:space="preserve"><value>Aucune règle d'alerte déclenchée.</value></data>
+  <data name="No colors selected shows all rows. Selected colors include only assessed, non-ignored rows." xml:space="preserve"><value>Sans couleur, toutes les lignes sont visibles ; les couleurs montrent les lignes évaluées et non ignorées.</value></data>
+  <data name="Category / Plugin, Source, and Enabled stay visible so the grid remains operable." xml:space="preserve"><value>Catégorie / Plugin, Source et Activé restent visibles pour utiliser le tableau.</value></data>
+  <data name="The grid uses live installed, enabled, update-available, and DTR detection from Dalamud. Direct plugin DTR config is used first; live DTR entries use the same Server Info Bar visibility data as XLSettings." xml:space="preserve"><value>Le tableau détecte installation, activation, mises à jour et DTR depuis Dalamud. Le DTR du plugin est prioritaire ; les entrées utilisent la visibilité de la barre serveur comme XLSettings.</value></data>
+  <data name="Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows." xml:space="preserve"><value>Les lignes ignorées sont exclues des alertes mais restent visibles en bleu.</value></data>
+  <data name="Special thanks to Canto who cooked most of the initial dataset and proposed categorizations. " xml:space="preserve"><value>Merci à Canto pour l'essentiel des données initiales et les catégories.</value></data>
+  <data name="Toggles Dalamud Server Info Bar visibility." xml:space="preserve"><value>Change la visibilité dans la barre serveur Dalamud.</value></data>
+  <data name="Plugin currently sets Shown=false; showing here only clears Dalamud hidden state." xml:space="preserve"><value>Le plugin définit Shown=false ; afficher ici efface uniquement le masquage Dalamud.</value></data>
+  <data name="Master rows stay read-only until you override them. Local rows can also hide stale master ids without changing the upstream catalog file." xml:space="preserve"><value>Les lignes maître restent en lecture seule avant modification. Les lignes locales peuvent masquer les anciens identifiants sans modifier le catalogue source.</value></data>
+  <data name="Select a catalog row on the left or create a new local entry." xml:space="preserve"><value>Sélectionnez une ligne à gauche ou créez une entrée locale.</value></data>
+  <data name="This master row is hidden from Botology by the local overlay." xml:space="preserve"><value>Cette ligne maître est masquée par les données locales.</value></data>
+  <data name="This row exists in master. Override it when you want a local edit." xml:space="preserve"><value>Cette ligne existe dans le maître. Modifiez-la pour une version locale.</value></data>
+  <data name="This row exists only in the local overlay." xml:space="preserve"><value>Cette ligne existe uniquement localement.</value></data>
+  <data name="Creates a new local row from this data. Saving the new id also hides the old master id." xml:space="preserve"><value>Crée une ligne locale. Enregistrer le nouvel identifiant masque aussi l'ancien.</value></data>
+  <data name="Click Override master row first to create a writable local copy." xml:space="preserve"><value>Cliquez d'abord sur Modifier la ligne maître pour une copie modifiable.</value></data>
+  <data name="Click Override master row to start a writable local copy of this master row." xml:space="preserve"><value>Modifier la ligne maître crée une copie locale modifiable.</value></data>
+  <data name="Rules compare against plugin shortnames, including this row if you select it. Red beats yellow, yellow beats green, and a row that lists required green plugins turns red if any of them are missing." xml:space="preserve"><value>Les règles comparent les noms courts, y compris cette ligne si sélectionnée. Rouge prime sur jaune, jaune sur vert. Un plugin vert requis manquant rend la ligne rouge.</value></data>
+  <data name="New rows use the plugin shortname as the runtime match token automatically." xml:space="preserve"><value>Les nouvelles lignes utilisent automatiquement le nom court pour la détection.</value></data>
+  <data name="Notes are the operator-facing explanation shown with the current rule result. The Green / Yellow / Red plugin lists decide the color; use Notes to explain why the row should end up in that state." xml:space="preserve"><value>Les notes expliquent le résultat. Les listes vertes, jaunes et rouges déterminent la couleur ; les notes expliquent pourquoi.</value></data>
+  <data name="There are no local catalog changes to drop." xml:space="preserve"><value>Aucune modification locale à annuler.</value></data>
+  <data name="There are no local catalog changes to prepare for upload." xml:space="preserve"><value>Aucune modification locale à préparer.</value></data>
+  <data name="There are no local changes to drop for this row." xml:space="preserve"><value>Aucune modification locale pour cette ligne.</value></data>
+  <data name="Hold CTRL to discard this new local entry draft." xml:space="preserve"><value>Maintenez CTRL pour annuler le nouveau brouillon.</value></data>
+  <data name="Hold CTRL to delete this local-only row from the overlay." xml:space="preserve"><value>Maintenez CTRL pour supprimer la ligne locale.</value></data>
+  <data name="Hold CTRL to delete the local override and fall back to master data." xml:space="preserve"><value>Maintenez CTRL pour supprimer la modification et revenir au maître.</value></data>
+  <data name="Hold CTRL to discard the current edit session for this master row." xml:space="preserve"><value>Maintenez CTRL pour annuler l'édition actuelle.</value></data>
+  <data name="CTRL is held. Clicking now discards this new local entry draft." xml:space="preserve"><value>CTRL maintenu. Cliquer annule le nouveau brouillon.</value></data>
+  <data name="CTRL is held. Clicking now deletes this local-only row from the overlay." xml:space="preserve"><value>CTRL maintenu. Cliquer supprime la ligne locale.</value></data>
+  <data name="CTRL is held. Clicking now deletes the local override and restores master data." xml:space="preserve"><value>CTRL maintenu. Cliquer supprime la modification et restaure le maître.</value></data>
+  <data name="CTRL is held. Clicking now discards the current edit session and reloads master data." xml:space="preserve"><value>CTRL maintenu. Cliquer annule l'édition et recharge le maître.</value></data>
+  <data name="Hold CTRL to remove any local override and hide this master id from the effective catalog." xml:space="preserve"><value>Maintenez CTRL pour supprimer les modifications et masquer cet identifiant maître.</value></data>
+  <data name="CTRL is held. Clicking now removes any local override and hides this master id from the effective catalog." xml:space="preserve"><value>CTRL maintenu. Cliquer supprime les modifications et masque l'identifiant maître.</value></data>
+  <data name="CTRL-click to see the folder containing review_catalog.py if you are curious." xml:space="preserve"><value>CTRL-clic ouvre le dossier de review_catalog.py.</value></data>
+  <data name="CTRL is held. Clicking now opens the folder containing review_catalog.py." xml:space="preserve"><value>CTRL maintenu. Cliquer ouvre le dossier de review_catalog.py.</value></data>
+  <data name="That combination of name and suffix already exists in local data. Saving will update that local row." xml:space="preserve"><value>Ce nom et suffixe existent localement. Enregistrer actualise la ligne.</value></data>
+  <data name="That combination of name and suffix already exists and this will become a local override." xml:space="preserve"><value>Ce nom et suffixe existent ; cela crée une modification locale.</value></data>
+  <data name="Likely AI-written (Aetherfeed attribution)" xml:space="preserve"><value>Probablement écrit par IA (Aetherfeed)</value></data>
+  <data name="Likely AI-written code based on Aetherfeed contributor and coding-pattern attribution; snapshot 2026-07-22." xml:space="preserve"><value>Code probablement écrit par IA selon les auteurs et motifs Aetherfeed ; état du 22/07/2026.</value></data>
+  <data name="Drop all local changes ({0})" xml:space="preserve"><value>Annuler toutes les modifications ({0})</value></data>
+  <data name="Saving this replacement will hide the old master id: {0}" xml:space="preserve"><value>Enregistrer masquera l'ancien identifiant : {0}</value></data>
+  <data name="Red when loaded: {0}" xml:space="preserve"><value>Rouge si chargés : {0}</value></data>
+  <data name="Yellow when loaded: {0}" xml:space="preserve"><value>Jaune si chargés : {0}</value></data>
+  <data name="Red when required green plugins are missing: {0}" xml:space="preserve"><value>Rouge si plugins verts requis absents : {0}</value></data>
+  <data name="Green when required green plugins are loaded: {0}" xml:space="preserve"><value>Vert si plugins requis chargés : {0}</value></data>
+  <data name="Notes shown with this row: {0}" xml:space="preserve"><value>Notes de cette ligne : {0}</value></data>
+  <data name="Missing required green plugins: {0}." xml:space="preserve"><value>Plugins verts requis manquants : {0}.</value></data>
+  <data name="{0} is loaded." xml:space="preserve"><value>{0} est chargé.</value></data>
+  <data name="{0} are loaded." xml:space="preserve"><value>{0} sont chargés.</value></data>
+  <data name="Blue: ignored row. Underlying assessment is {0}: {1}" xml:space="preserve"><value>Bleu : ligne ignorée. Évaluation : {0} : {1}</value></data>
+  <data name="Global DTR: {0} ({1})" xml:space="preserve"><value>DTR global : {0} ({1})</value></data>
+  <data name="Global DTR: {0} ({1}; plugin sets Shown=false)" xml:space="preserve"><value>DTR global : {0} ({1} ; Shown=false)</value></data>
+  <data name="Repo feeds: {0}" xml:space="preserve"><value>Flux du dépôt : {0}</value></data>
+  <data name="Placeholder repo.json URL: {0}" xml:space="preserve"><value>URL repo.json provisoire : {0}</value></data>
+  <data name="Uncategorized" xml:space="preserve"><value>Sans catégorie</value></data>
+  <data name="placeholder description" xml:space="preserve"><value>description provisoire</value></data>
+  <data name="Hold CTRL to delete all {0} local rows and hidden-master markers, then fall back to master." xml:space="preserve"><value>Maintenez CTRL pour supprimer les {0} lignes locales et masquages, puis revenir au maître.</value></data>
+  <data name="CTRL is held. Clicking now deletes all {0} local rows and hidden-master markers, then falls back to master." xml:space="preserve"><value>CTRL maintenu. Cliquer supprime {0} lignes locales et masquages et revient au maître.</value></data>
+  <data name="Requires Python. Hold CTRL to export today's upload-prep folder and start the interactive review for changed rows and master-row removals. This does not upload anything by itself." xml:space="preserve"><value>Python requis. Maintenez CTRL pour exporter le dossier du jour et lancer la revue des modifications et suppressions. Aucun envoi automatique.</value></data>
+  <data name="CTRL is held. Clicking now exports master.json, local.json, and plugin-repository-links.json into today's upload-prep folder, launches the Python review script, and opens the folder in Explorer. Use the command window to review each changed row or master-row removal. This does not upload anything by itself." xml:space="preserve"><value>CTRL maintenu. Exporte master.json, local.json et plugin-repository-links.json, lance la revue Python et ouvre le dossier. Vérifiez chaque modification ou suppression dans la console. Aucun envoi automatique.</value></data>
+  <data name="Repo" xml:space="preserve"><value>Dépôt</value></data>
+  <data name="Compatibility warning" xml:space="preserve"><value>Avertissement de compatibilité</value></data>
+  <data name="All active tracked plugins are green." xml:space="preserve"><value>Tous les plugins actifs suivis sont verts.</value></data>
+  <data name="{0} non-green plugin entries: {1}" xml:space="preserve"><value>{0} entrées de plugins non verts : {1}</value></data>
+  <data name="Loading UI fonts..." xml:space="preserve"><value>Chargement des polices...</value></data>
+  <data name="UI fonts failed to load. See the plugin log." xml:space="preserve"><value>Échec du chargement des polices. Consultez le journal.</value></data>
+  <data name="Unavailable for current Dalamud API {0} (manifest API {1})." xml:space="preserve"><value>Indisponible pour l’API Dalamud actuelle {0} (API du manifeste {1}).</value></data>
+  <data name="Ignore" xml:space="preserve"><value>Ignorer</value></data>
+</root>

@@ -11,7 +11,7 @@ namespace botology.Windows;
 
 public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 {
-    private readonly Plugin plugin;
+    private readonly IBotologyUi plugin;
     private string searchText = string.Empty;
     private string categoryFilterText = string.Empty;
     private string relationShortnameFilterText = string.Empty;
@@ -20,7 +20,9 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
     private CatalogEntryDraft? draft;
     private string? selectedId;
 
-    public CatalogEditorWindow(Plugin plugin)
+    public CatalogEditorWindow(Plugin plugin) : this((IBotologyUi)plugin) { }
+
+    internal CatalogEditorWindow(IBotologyUi plugin)
         : base($"{PluginInfo.DisplayName} Catalog Editor##CatalogEditor")
     {
         this.plugin = plugin;
@@ -34,9 +36,14 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
     public void Dispose()
     {
     }
+    internal void DiagnosticSelect(PluginCatalogEntry entry,bool editable) => LoadDraft(entry,editable);
 
     public override void Draw()
     {
+        UiGui.Title(PluginInfo.DisplayName+" Catalog Editor",PluginInfo.DisplayName+" "+UiText.T("Catalog Editor"));
+        using var font=UiText.Font(UiFontRole.Body);
+        using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
+        var scale=AethertekUI.MaterialTheme.Metrics.Scale;
         var entries = plugin.CaptureCatalogEditorEntries();
         var localChangeCount = entries.Count(entry => entry.HasLocalChanges);
         var ctrlHeld = ImGui.GetIO().KeyCtrl;
@@ -58,21 +65,23 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 LoadDraft(selectedEntry, startEditable: ShouldStartEditable(selectedEntry));
         }
 
-        ImGui.TextWrapped("Master rows stay read-only until you override them. Local rows can also hide stale master ids without changing the upstream catalog file.");
-        if (ImGui.SmallButton("Reload master now"))
+        ImGui.TextWrapped(UiText.T("Master rows stay read-only until you override them. Local rows can also hide stale master ids without changing the upstream catalog file."));
+        if (UiGui.SmallButton("Reload master now"))
             plugin.RefreshMasterCatalog(force: true, silent: false);
         ImGui.SameLine();
-        if (ImGui.SmallButton("OPEN DATA FOLDER"))
+        if (UiGui.SmallButton("OPEN DATA FOLDER"))
             plugin.OpenCatalogFolder();
         ImGui.SameLine();
-        if (ImGui.SmallButton("New local entry"))
+        if (UiGui.SmallButton("New local entry"))
             CreateNewLocalDraft();
         ImGui.SameLine();
         ImGui.BeginDisabled(localChangeCount == 0 || !ctrlHeld);
-        var dropAllClicked = ImGui.SmallButton($"Drop all local changes ({localChangeCount})");
+        var dropAllClicked = UiGui.SmallButton($"Drop all local changes ({localChangeCount})",UiText.F("Drop all local changes ({0})",localChangeCount));
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            DrawWrappedTooltip(BuildDropAllLocalChangesTooltip(localChangeCount, ctrlHeld));
+            DrawWrappedTooltip(localChangeCount==0 ? UiText.T("There are no local catalog changes to drop.") :
+                UiText.F(ctrlHeld ? "CTRL is held. Clicking now deletes all {0} local rows and hidden-master markers, then falls back to master." :
+                    "Hold CTRL to delete all {0} local rows and hidden-master markers, then fall back to master.",localChangeCount));
         if (dropAllClicked && plugin.DropAllLocalCatalogChanges() > 0)
         {
             draft = null;
@@ -80,7 +89,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         }
         ImGui.SameLine();
         ImGui.BeginDisabled(localChangeCount == 0 || !ctrlHeld);
-        var prepareUploadClicked = ImGui.SmallButton("PREPARE UPLOAD");
+        var prepareUploadClicked = UiGui.SmallButton("PREPARE UPLOAD");
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             DrawWrappedTooltip(BuildPrepareUploadTooltip(localChangeCount, ctrlHeld));
@@ -88,7 +97,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             plugin.PrepareCatalogUploadPackage();
         ImGui.SameLine();
         ImGui.BeginDisabled(!ctrlHeld);
-        var inspectScriptClicked = ImGui.SmallButton("INSPECT SCRIPT");
+        var inspectScriptClicked = UiGui.SmallButton("INSPECT SCRIPT");
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             DrawWrappedTooltip(BuildInspectScriptTooltip(ctrlHeld));
@@ -96,18 +105,18 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             plugin.OpenCatalogScriptFolder();
 
         ImGui.Separator();
-        ImGui.SetNextItemWidth(220f);
-        ImGui.InputTextWithHint("##CatalogSearch", "SEARCH", ref searchText, 128);
+        ImGui.SetNextItemWidth(220f*scale);
+        ImGui.InputTextWithHint("##CatalogSearch", UiText.T("SEARCH"), ref searchText, 128);
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(220f);
-        ImGui.InputTextWithHint("##CatalogCategoryFilter", "CATEGORY", ref categoryFilterText, 128);
+        ImGui.SetNextItemWidth(220f*scale);
+        ImGui.InputTextWithHint("##CatalogCategoryFilter", UiText.T("CATEGORY"), ref categoryFilterText, 128);
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(180f);
+        ImGui.SetNextItemWidth(180f*scale);
         if (ImGui.BeginCombo("##CatalogSourceFilter", SourceFilterLabel(sourceFilterIndex)))
         {
             for (var index = 0; index < SourceFilterLabels.Length; index++)
             {
-                if (ImGui.Selectable(SourceFilterLabels[index], index == sourceFilterIndex))
+                if (UiGui.Selectable(SourceFilterLabels[index], index == sourceFilterIndex))
                     sourceFilterIndex = index;
             }
 
@@ -115,7 +124,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         }
 
         var availableHeight = ImGui.GetContentRegionAvail().Y;
-        const float listWidth = 390f;
+        var listWidth = 390f*AethertekUI.MaterialTheme.Metrics.Scale;
 
         if (ImGui.BeginChild("##CatalogList", new Vector2(listWidth, availableHeight), true))
         {
@@ -125,7 +134,10 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 var label = entry.HasLocalChanges
                     ? $"[*] {entry.DisplayName} ({entry.SourceLabel})##{entry.Id}"
                     : $"{entry.DisplayName} ({entry.SourceLabel})##{entry.Id}";
-                if (ImGui.Selectable(label, isSelected))
+                var display=entry.HasLocalChanges
+                    ? $"[*] {entry.DisplayName} ({UiText.T(entry.SourceLabel)})"
+                    : $"{entry.DisplayName} ({UiText.T(entry.SourceLabel)})";
+                if (UiGui.Selectable(label, isSelected,display))
                     LoadDraft(entry, startEditable: ShouldStartEditable(entry));
             }
         }
@@ -145,16 +157,16 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
     {
         if (draft == null)
         {
-            ImGui.TextWrapped("Select a catalog row on the left or create a new local entry.");
+            ImGui.TextWrapped(UiText.T("Select a catalog row on the left or create a new local entry."));
             return;
         }
 
-        ImGui.Text($"{draft.DisplayNameOrId} [{draft.SourceLabel}]");
-        ImGui.TextWrapped(draft.SourceKind == CatalogEntrySourceKind.HiddenMaster
+        ImGui.Text(UiText.F("{0} [{1}]",draft.DisplayNameOrId,UiText.T(draft.SourceLabel)));
+        ImGui.TextWrapped(UiText.T(draft.SourceKind == CatalogEntrySourceKind.HiddenMaster
             ? "This master row is hidden from Botology by the local overlay."
             : draft.ExistsInMaster
                 ? "This row exists in master. Override it when you want a local edit."
-                : "This row exists only in the local overlay.");
+                : "This row exists only in the local overlay."));
         ImGui.Separator();
 
         if (DrawActionBar())
@@ -173,7 +185,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         if (draft.SourceKind == CatalogEntrySourceKind.HiddenMaster)
         {
-            if (ImGui.SmallButton("Restore hidden master row"))
+            if (UiGui.SmallButton("Restore hidden master row"))
             {
                 if (plugin.RestoreMasterCatalogEntry(draft.OriginalId))
                     plugin.PrintStatus($"Restored master row for {draft.DisplayNameOrId}.");
@@ -186,14 +198,14 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         if (!draft.EditingEnabled && draft.ExistsInMaster)
         {
-            if (ImGui.SmallButton("Override master row"))
+            if (UiGui.SmallButton("Override master row"))
                 draft.EditingEnabled = true;
             ImGui.SameLine();
         }
 
         if (draft.ExistsInMaster)
         {
-            if (ImGui.SmallButton("Change plugin id"))
+            if (UiGui.SmallButton("Change plugin id"))
             {
                 draft = CatalogEntryDraft.CreateIdReplacement(draft);
                 selectedId = null;
@@ -207,7 +219,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         var saveLabel = draft.IsNewLocal ? "Save new entry" : "Save local changes";
         ImGui.BeginDisabled(!draft.EditingEnabled);
-        var saveClicked = ImGui.SmallButton(saveLabel);
+        var saveClicked = UiGui.SmallButton(saveLabel);
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) && !draft.EditingEnabled)
             DrawWrappedTooltip("Click Override master row first to create a writable local copy.");
@@ -219,7 +231,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         var canDropLocalChanges = CanDropLocalChanges(draft);
         var ctrlHeld = ImGui.GetIO().KeyCtrl;
         ImGui.BeginDisabled(!canDropLocalChanges || !ctrlHeld);
-        var dropClicked = ImGui.SmallButton("Drop local changes");
+        var dropClicked = UiGui.SmallButton("Drop local changes");
         ImGui.EndDisabled();
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             DrawWrappedTooltip(BuildDropLocalChangesTooltip(draft, canDropLocalChanges, ctrlHeld));
@@ -233,7 +245,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         {
             ImGui.SameLine();
             ImGui.BeginDisabled(!ctrlHeld);
-            var hideClicked = ImGui.SmallButton("Hide master row");
+            var hideClicked = UiGui.SmallButton("Hide master row");
             ImGui.EndDisabled();
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             {
@@ -253,7 +265,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         ImGui.SameLine();
         var resetLabel = draft.IsNewLocal ? "Clear draft" : "Reload from current state";
-        if (ImGui.SmallButton(resetLabel))
+        if (UiGui.SmallButton(resetLabel))
             ReloadDraftFromCurrentState();
 
         return false;
@@ -271,13 +283,13 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         else
             DrawReadOnlyText("Id", draft.Id);
 
-        ImGui.InputText("Category", ref draft.Category, 128);
-        ImGui.InputText("Display name", ref draft.DisplayName, 128);
-        ImGui.Checkbox("Likely AI-written (Aetherfeed attribution)", ref draft.IsAiAttributed);
+        UiGui.InputText("Category", ref draft.Category, 128);
+        UiGui.InputText("Display name", ref draft.DisplayName, 128);
+        UiGui.Checkbox("Likely AI-written (Aetherfeed attribution)", ref draft.IsAiAttributed);
         DrawNotesEditor();
         DrawMultilineText("Description", ref draft.Description, 100f);
-        ImGui.InputText("Repo URL", ref draft.RepoUrl, 512);
-        ImGui.InputText("Repo JSON URL", ref draft.RepoJsonUrl, 512);
+        UiGui.InputText("Repo URL", ref draft.RepoUrl, 512);
+        UiGui.InputText("Repo JSON URL", ref draft.RepoJsonUrl, 512);
         DrawRelationEditor(entries, "Green plugins", RelationTarget.Green);
         DrawRelationEditor(entries, "Yellow plugins", RelationTarget.Yellow);
         DrawRelationEditor(entries, "Red plugins", RelationTarget.Red);
@@ -286,13 +298,13 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         ImGui.EndDisabled();
 
         ImGui.Separator();
-        ImGui.TextWrapped("Rules compare against plugin shortnames, including this row if you select it. Red beats yellow, yellow beats green, and a row that lists required green plugins turns red if any of them are missing.");
+        ImGui.TextWrapped(UiText.T("Rules compare against plugin shortnames, including this row if you select it. Red beats yellow, yellow beats green, and a row that lists required green plugins turns red if any of them are missing."));
         if (draft.IsNewLocal)
-            ImGui.TextWrapped("New rows use the plugin shortname as the runtime match token automatically.");
+            ImGui.TextWrapped(UiText.T("New rows use the plugin shortname as the runtime match token automatically."));
         if (!string.IsNullOrWhiteSpace(draft.ReplacesMasterId))
-            ImGui.TextWrapped($"Saving this replacement will hide the old master id: {draft.ReplacesMasterId}");
+            ImGui.TextWrapped(UiText.F("Saving this replacement will hide the old master id: {0}",draft.ReplacesMasterId));
         else if (!draft.EditingEnabled && draft.ExistsInMaster)
-            ImGui.TextWrapped("Click Override master row to start a writable local copy of this master row.");
+            ImGui.TextWrapped(UiText.T("Click Override master row to start a writable local copy of this master row."));
     }
 
     private void SaveDraft()
@@ -420,10 +432,10 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
     private void DrawNewEntryIdentityEditor(IReadOnlyList<PluginCatalogEntry> entries, CatalogEntryDraft entryDraft)
     {
-        ImGui.TextUnformatted("Plugin shortname");
-        ImGui.InputTextWithHint("##NewEntryShortname", "The shortname shown in Dalamud", ref entryDraft.NewEntryShortname, 128);
-        ImGui.TextUnformatted("Optional id suffix");
-        ImGui.InputTextWithHint("##NewEntryVariantSuffix", "Leave blank unless multiple plugins share that shortname", ref entryDraft.VariantSuffix, 128);
+        ImGui.TextUnformatted(UiText.T("Plugin shortname"));
+        ImGui.InputTextWithHint("##NewEntryShortname", UiText.T("The shortname shown in Dalamud"), ref entryDraft.NewEntryShortname, 128);
+        ImGui.TextUnformatted(UiText.T("Optional id suffix"));
+        ImGui.InputTextWithHint("##NewEntryVariantSuffix", UiText.T("Leave blank unless multiple plugins share that shortname"), ref entryDraft.VariantSuffix, 128);
         var effectiveId = entryDraft.GetEffectiveId();
         DrawReadOnlyText("Effective id", effectiveId);
 
@@ -437,13 +449,13 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         var warningText = existingEntry.SourceKind == CatalogEntrySourceKind.LocalOnly
             ? "That combination of name and suffix already exists in local data. Saving will update that local row."
             : "That combination of name and suffix already exists and this will become a local override.";
-        ImGui.TextColored(new Vector4(1.0f, 0.35f, 0.35f, 1.0f), warningText);
+        ImGui.TextColored(new Vector4(1.0f, 0.35f, 0.35f, 1.0f), UiText.T(warningText));
     }
 
     private void DrawMultilineText(string label, ref string value, float height)
     {
-        ImGui.TextUnformatted(label);
-        ImGui.InputTextMultiline($"##{label.Replace(' ', '_')}", ref value, 4096, new Vector2(-1f, height));
+        ImGui.TextUnformatted(UiText.T(label));
+        ImGui.InputTextMultiline($"##{label.Replace(' ', '_')}", ref value, 4096, new Vector2(-1f, height*AethertekUI.MaterialTheme.Metrics.Scale));
     }
 
     private void DrawNotesEditor()
@@ -451,9 +463,9 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         if (draft == null)
             return;
 
-        ImGui.TextUnformatted("Notes");
-        ImGui.TextWrapped("Notes are the operator-facing explanation shown with the current rule result. The Green / Yellow / Red plugin lists decide the color; use Notes to explain why the row should end up in that state.");
-        ImGui.InputTextMultiline("##Notes", ref draft.Notes, 4096, new Vector2(-1f, 100f));
+        ImGui.TextUnformatted(UiText.T("Notes"));
+        ImGui.TextWrapped(UiText.T("Notes are the operator-facing explanation shown with the current rule result. The Green / Yellow / Red plugin lists decide the color; use Notes to explain why the row should end up in that state."));
+        ImGui.InputTextMultiline("##Notes", ref draft.Notes, 4096, new Vector2(-1f, 100f*AethertekUI.MaterialTheme.Metrics.Scale));
     }
 
     private void DrawRelationEditor(IReadOnlyList<PluginCatalogEntry> entries, string label, RelationTarget relationTarget)
@@ -465,9 +477,9 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             .OrderBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        ImGui.TextUnformatted(label);
+        ImGui.TextUnformatted(UiText.T(label));
         ImGui.SetNextItemWidth(-1f);
-        if (ImGui.BeginCombo($"##{label.Replace(' ', '_')}_Picker", "Select plugin shortname..."))
+        if (ImGui.BeginCombo($"##{label.Replace(' ', '_')}_Picker", UiText.T("Select plugin shortname...")))
         {
             if (ImGui.IsWindowAppearing())
             {
@@ -475,12 +487,12 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 relationDisplayNameFilterText = string.Empty;
             }
 
-            ImGui.SetNextItemWidth(180f);
-            ImGui.InputTextWithHint($"##{label.Replace(' ', '_')}_Shortname", "SHORTNAME", ref relationShortnameFilterText, 128);
+            ImGui.SetNextItemWidth(180f*AethertekUI.MaterialTheme.Metrics.Scale);
+            ImGui.InputTextWithHint($"##{label.Replace(' ', '_')}_Shortname", UiText.T("SHORTNAME"), ref relationShortnameFilterText, 128);
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(180f);
-            ImGui.InputTextWithHint($"##{label.Replace(' ', '_')}_DisplayName", "DISPLAY NAME", ref relationDisplayNameFilterText, 128);
-            if (ImGui.BeginChild($"##{label.Replace(' ', '_')}_PickerList", new Vector2(0f, 220f), true))
+            ImGui.SetNextItemWidth(180f*AethertekUI.MaterialTheme.Metrics.Scale);
+            ImGui.InputTextWithHint($"##{label.Replace(' ', '_')}_DisplayName", UiText.T("DISPLAY NAME"), ref relationDisplayNameFilterText, 128);
+            if (ImGui.BeginChild($"##{label.Replace(' ', '_')}_PickerList", new Vector2(0f, 220f*AethertekUI.MaterialTheme.Metrics.Scale), true))
             {
                 foreach (var entry in relationEntries)
                 {
@@ -510,16 +522,16 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         var ids = GetRelationIds(relationTarget);
         if (ids.Length == 0)
         {
-            ImGui.TextDisabled("No plugin shortnames selected.");
+            ImGui.TextDisabled(UiText.T("No plugin shortnames selected."));
             return;
         }
 
-        var height = MathF.Min(120f, 30f + (ids.Length * 24f));
+        var height = MathF.Min(120f, 30f + (ids.Length * 24f))*AethertekUI.MaterialTheme.Metrics.Scale;
         if (ImGui.BeginChild($"##{label.Replace(' ', '_')}_List", new Vector2(-1f, height), true))
         {
             foreach (var id in ids)
             {
-                if (ImGui.SmallButton($"Remove##{label}_{id}"))
+                if (UiGui.SmallButton($"Remove##{label}_{id}"))
                     RemoveRelationId(relationTarget, id);
 
                 ImGui.SameLine();
@@ -576,31 +588,31 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         var redIds = GetRelationIds(RelationTarget.Red);
 
         ImGui.Separator();
-        ImGui.TextUnformatted("Rule preview");
+        ImGui.TextUnformatted(UiText.T("Rule preview"));
 
         if (greenIds.Length == 0 && yellowIds.Length == 0 && redIds.Length == 0)
         {
-            ImGui.TextDisabled("No green / yellow / red rules configured yet.");
+            ImGui.TextDisabled(UiText.T("No green / yellow / red rules configured yet."));
             return;
         }
 
         if (redIds.Length > 0)
-            ImGui.TextColored(new Vector4(1f, 0.35f, 0.35f, 1f), $"Red when loaded: {FormatRelationNames(redIds, relationEntries)}");
+            ImGui.TextColored(new Vector4(1f, 0.35f, 0.35f, 1f), UiText.F("Red when loaded: {0}",FormatRelationNames(redIds, relationEntries)));
 
         if (yellowIds.Length > 0)
-            ImGui.TextColored(new Vector4(1f, 0.86f, 0.35f, 1f), $"Yellow when loaded: {FormatRelationNames(yellowIds, relationEntries)}");
+            ImGui.TextColored(new Vector4(1f, 0.86f, 0.35f, 1f), UiText.F("Yellow when loaded: {0}",FormatRelationNames(yellowIds, relationEntries)));
 
         if (greenIds.Length > 0)
         {
             var formattedNames = FormatRelationNames(greenIds, relationEntries);
-            ImGui.TextColored(new Vector4(1f, 0.35f, 0.35f, 1f), $"Red when required green plugins are missing: {formattedNames}");
-            ImGui.TextColored(new Vector4(0.45f, 0.95f, 0.45f, 1f), $"Green when required green plugins are loaded: {formattedNames}");
+            ImGui.TextColored(new Vector4(1f, 0.35f, 0.35f, 1f), UiText.F("Red when required green plugins are missing: {0}",formattedNames));
+            ImGui.TextColored(new Vector4(0.45f, 0.95f, 0.45f, 1f), UiText.F("Green when required green plugins are loaded: {0}",formattedNames));
         }
 
         var notesPreview = string.IsNullOrWhiteSpace(draft.Notes)
-            ? "No notes configured."
+            ? UiText.T("No notes configured.")
             : draft.Notes.Trim();
-        ImGui.TextWrapped($"Notes shown with this row: {notesPreview}");
+        ImGui.TextWrapped(UiText.F("Notes shown with this row: {0}",notesPreview));
     }
 
     private void AppendRelationId(RelationTarget relationTarget, string id)
@@ -760,7 +772,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
     private static void DrawReadOnlyText(string label, string value)
     {
-        ImGui.TextUnformatted(label);
+        ImGui.TextUnformatted(UiText.T(label));
         ImGui.TextWrapped(string.IsNullOrWhiteSpace(value) ? "--" : value);
     }
 
@@ -770,8 +782,8 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             return;
 
         ImGui.BeginTooltip();
-        ImGui.PushTextWrapPos(380f);
-        ImGui.TextUnformatted(text);
+        ImGui.PushTextWrapPos(380f*AethertekUI.MaterialTheme.Metrics.Scale);
+        ImGui.TextUnformatted(UiText.T(text));
         ImGui.PopTextWrapPos();
         ImGui.EndTooltip();
     }
@@ -859,7 +871,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
     }
 
     private static string SourceFilterLabel(int index)
-        => index is >= 0 and < 5 ? SourceFilterLabels[index] : SourceFilterLabels[0];
+        => index is >= 0 and < 5 ? UiText.T(SourceFilterLabels[index]) : UiText.T(SourceFilterLabels[0]);
 
     private static readonly string[] SourceFilterLabels =
     {

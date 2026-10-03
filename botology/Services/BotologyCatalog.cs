@@ -114,16 +114,18 @@ public static class BotologyCatalog
             var summary = runtimeState == null
                 ? "Not installed."
                 : "Installed but disabled.";
-            return new AssessmentResult(AssessmentSeverity.Green, summary, entry.Notes);
+            return new AssessmentResult(AssessmentSeverity.Green, summary, entry.Notes) { UiSummaryKey=summary };
         }
 
         var redMatches = GetLoadedEntries(snapshot, entryMap, entry.RedIds);
         if (redMatches.Count > 0)
-            return new AssessmentResult(AssessmentSeverity.Red, $"{FormatEntryNames(redMatches)} {BeVerb(redMatches.Count)} loaded.", entry.Notes);
+            return new AssessmentResult(AssessmentSeverity.Red, $"{FormatEntryNames(redMatches)} {BeVerb(redMatches.Count)} loaded.", entry.Notes)
+                { UiSummaryKey=redMatches.Count==1?"{0} is loaded.":"{0} are loaded.",UiSummaryArguments=[FormatEntryNames(redMatches)] };
 
         var yellowMatches = GetLoadedEntries(snapshot, entryMap, entry.YellowIds);
         if (yellowMatches.Count > 0)
-            return new AssessmentResult(AssessmentSeverity.Yellow, $"{FormatEntryNames(yellowMatches)} {BeVerb(yellowMatches.Count)} loaded.", entry.Notes);
+            return new AssessmentResult(AssessmentSeverity.Yellow, $"{FormatEntryNames(yellowMatches)} {BeVerb(yellowMatches.Count)} loaded.", entry.Notes)
+                { UiSummaryKey=yellowMatches.Count==1?"{0} is loaded.":"{0} are loaded.",UiSummaryArguments=[FormatEntryNames(yellowMatches)] };
 
         if (entry.GreenIds is { Length: > 0 } greenIds)
         {
@@ -133,12 +135,13 @@ public static class BotologyCatalog
                 .ToArray();
 
             if (missingGreenIds.Length > 0)
-                return new AssessmentResult(AssessmentSeverity.Red, $"Missing required green plugins: {FormatExpectedNames(missingGreenIds, entryMap)}.", entry.Notes);
+                return new AssessmentResult(AssessmentSeverity.Red, $"Missing required green plugins: {FormatExpectedNames(missingGreenIds, entryMap)}.", entry.Notes)
+                    { UiSummaryKey="Missing required green plugins: {0}.",UiSummaryArguments=[FormatExpectedNames(missingGreenIds,entryMap)] };
 
-            return new AssessmentResult(AssessmentSeverity.Green, "Required green plugins are loaded.", entry.Notes);
+            return new AssessmentResult(AssessmentSeverity.Green, "Required green plugins are loaded.", entry.Notes) { UiSummaryKey="Required green plugins are loaded." };
         }
 
-        return new AssessmentResult(AssessmentSeverity.Green, "No warning rules triggered.", entry.Notes);
+        return new AssessmentResult(AssessmentSeverity.Green, "No warning rules triggered.", entry.Notes) { UiSummaryKey="No warning rules triggered." };
     }
 
     private static string[] RotationPeers(string selfId, params string[] explicitRedIds)
