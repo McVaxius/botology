@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-06 - Actions shared-library revision
+
+- Pin the existing AethertekUI checkout to published commit 6c193cf06ac67f954c549cafc2033ac0efdd630a so fresh builds receive the Hindi shaping APIs required by this consumer. Preserve existing credentials, build/package paths and release behavior; hosted execution is verified separately against each published commit.
+
 ## 2026-10-06 - Hindi UI integration
 
 - Add the complete 207-entry Hindi catalog through the existing resource and saved-language paths. Use the shared Windows shaping host for normal and font-status windows, translated measurement, captions, tooltips, selectors, and retained single-line/multiline editors. Preserve native control IDs, Unicode values, automation and other saved preferences.
