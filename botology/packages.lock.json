@@ -16,6 +16,12 @@
       },
       "aethertekui": {
         "type": "Project"
+      },
+      "aethertekui.dalamud": {
+        "type": "Project",
+        "dependencies": {
+          "AethertekUI": "[0.3.0, )"
+        }
       }
     }
   }

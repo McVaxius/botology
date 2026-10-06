@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using AethertekUI;
+using AethertekUI.Dalamud;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
@@ -33,6 +36,8 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
     [PluginService] internal static IToastGui ToastGui { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
 
+    [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
+
     public Configuration Configuration { get; }
     public PluginManagerBridge PluginManagerBridge { get; }
     public DtrVisibilityBridge DtrVisibilityBridge { get; }
@@ -45,8 +50,12 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
     private readonly DtrManagerWindow dtrManagerWindow;
     private readonly CatalogEditorWindow catalogEditorWindow;
     private MaterialTheme uiTheme = null!;
+    private readonly MaterialWindowFold fontStatusFold = new();
+    private readonly MaterialWindowDecorations fontStatusDecorations = new();
+    private readonly Dictionary<string, MaterialWindowOpacity> windowOpacities = new();
     private BotologyFonts uiFonts = null!;
     private UiText uiText = null!;
+    private readonly MaterialTextHost uiTextHost;
     private string appliedLanguage = "";
     private uint appliedAccent;
     private System.Numerics.Vector3 accentDraft;
@@ -63,6 +72,7 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
 
     public Plugin()
     {
+        uiTextHost = new(TextureProvider);
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         ApplyAppearance();
         PluginManagerBridge = new PluginManagerBridge(PluginInterface, CommandManager, Log);
@@ -117,6 +127,7 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
         mainWindow.Dispose();
         uiFonts.Dispose();
         uiText.Dispose();
+        uiTextHost.Dispose();
     }
 
     private void DrawUi()
@@ -124,6 +135,7 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
         ApplyAppearance();
         if(!mainWindow.IsOpen && !configWindow.IsOpen && !dtrManagerWindow.IsOpen && !catalogEditorWindow.IsOpen) return;
         using var text = uiText.Enter();
+        using var shapedText = uiTextHost.Push();
         if(!uiFonts.Ready)
         {
             if(!fontIssueLogged && uiFonts.LoadException is { } error) { Log.Error(error,"[botology] Required UI fonts failed to load.");fontIssueLogged=true; }
@@ -136,23 +148,50 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
             try
             {
                 var generation=uiFonts.Generation;
-                uiFonts.CheckGlyphs(UiText.Values(uiText.Resources).Concat(UiText.Languages.Select(l=>l.Name)));
+                foreach (var role in Enum.GetValues<UiFontRole>())
+                    uiTextHost.Renderer.CheckGlyphs(uiText.RequiredText, BotologyPresentation.AtlasHeight(role) * ImGuiHelpers.GlobalScale);
+                uiFonts.CheckGlyphs(uiText.RequiredText.Select(MaterialText.NativeGlyphText));
                 checkedFontGeneration=generation;
             }
             catch(Exception ex) { if(!fontIssueLogged) { Log.Error(ex,"[botology] Required UI glyph coverage failed.");fontIssueLogged=true; } DrawFontStatus(false);return; }
         }
         using var theme = MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, MaterialStyleMode.ColorsOnly);
         using var geometry=new MaterialStyleScope();
-        geometry.Style(Dalamud.Bindings.ImGui.ImGuiStyleVar.WindowPadding,new System.Numerics.Vector2(16*ImGuiHelpers.GlobalScale));
+        geometry.Style(Dalamud.Bindings.ImGui.ImGuiStyleVar.WindowPadding,new System.Numerics.Vector2((Configuration.UiCompact ? 10 : 16)*ImGuiHelpers.GlobalScale));
+        if (Configuration.UiCompact)
+        {
+            geometry.Style(ImGuiStyleVar.ItemSpacing, new Vector2(8, 4) * ImGuiHelpers.GlobalScale);
+            geometry.Style(ImGuiStyleVar.FramePadding, new Vector2(8, 3) * ImGuiHelpers.GlobalScale);
+            geometry.Style(ImGuiStyleVar.CellPadding, new Vector2(6, 3) * ImGuiHelpers.GlobalScale);
+        }
+        using var chrome = MaterialWindowChrome.Push();
         WindowSystem.Draw();
+        foreach (var window in WindowSystem.Windows)
+            if (window.IsOpen) ApplyWindowOpacity(window.WindowName);
     }
 
-    private static void DrawFontStatus(bool loading)
+    private void DrawFontStatus(bool loading)
     {
-        Dalamud.Bindings.ImGui.ImGui.SetNextWindowSize(new System.Numerics.Vector2(460f*ImGuiHelpers.GlobalScale,0f));
-        if(Dalamud.Bindings.ImGui.ImGui.Begin("Botology##FontStatus",Dalamud.Bindings.ImGui.ImGuiWindowFlags.AlwaysAutoResize))
-            Dalamud.Bindings.ImGui.ImGui.TextWrapped(UiText.T(loading?"Loading UI fonts...":"UI fonts failed to load. See the plugin log."));
-        Dalamud.Bindings.ImGui.ImGui.End();
+        using var statusPalette = MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, MaterialStyleMode.ColorsOnly);
+        using var statusChrome = MaterialWindowChrome.Push();
+        ImGui.SetNextWindowSize(new Vector2(460 * ImGuiHelpers.GlobalScale, 0), ImGuiCond.Always);
+        fontStatusFold.PreDraw("Botology##FontStatus", null, null, reducedMotion: false,
+            prepareDecorations: fontStatusDecorations.Prepare);
+        try
+        {
+            if (ImGui.Begin("Botology##FontStatus", ImGuiWindowFlags.AlwaysAutoResize))
+            {
+                fontStatusDecorations.Paint();
+                MaterialText.TextWrapped(UiText.T(loading ? "Loading UI fonts..." : "UI fonts failed to load. See the plugin log."));
+            }
+        }
+        finally
+        {
+            ImGui.End();
+            fontStatusDecorations.Paint();
+            fontStatusFold.PostDraw();
+            ApplyWindowOpacity("Botology##FontStatus");
+        }
     }
 
     private void ApplyAppearance()
@@ -176,14 +215,15 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
             var color=BotologyPresentation.Rgb(appliedAccent);
             accentDraft=new(color.X,color.Y,color.Z);
         }
+        uiTheme.Density = Configuration.UiCompact ? MaterialDensity.Compact : MaterialDensity.Standard;
     }
 
     public void DrawAppearanceSelector()
     {
         var language=appliedLanguage;
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(28,18));
-        var changed=MaterialAppearanceSelector.Draw("appearance",ref accentDraft,ref language,languageOptions,
-            new(UiText.T("Color"),UiText.T("Language"),UiText.T("Teal"),UiText.T("Blue"),UiText.T("Pink"),UiText.T("Custom RGB")));
+        var changed = new MaterialAppearanceChange(false,
+            MaterialAppearanceSelector.DrawLanguage("appearance", ref language, languageOptions));
         if(changed.AccentChanged) Configuration.UiAccentRgb=((uint)Math.Clamp((int)MathF.Round(accentDraft.X*255),0,255)<<16)
             |((uint)Math.Clamp((int)MathF.Round(accentDraft.Y*255),0,255)<<8)|(uint)Math.Clamp((int)MathF.Round(accentDraft.Z*255),0,255);
         if(changed.LanguageChanged) Configuration.UiLanguage=language;
@@ -955,5 +995,70 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
         }
 
         ToastGui.ShowNormal(payload);
+    }
+
+    private void ApplyWindowOpacity(string windowName)
+    {
+        if (!windowOpacities.TryGetValue(windowName, out var opacity))
+            windowOpacities.Add(windowName, opacity = new MaterialWindowOpacity());
+        opacity.Apply(windowName, Configuration.UiWindowOpacityPercent / 100f,
+            Configuration.UiTransparencyEnabled, Configuration.UiAutoFade,
+            Configuration.UiFadedOpacityPercent / 100f, Configuration.UiUnfocusedDelaySeconds);
+    }
+
+    internal void DrawTransparencyToggle()
+    {
+        var enabled = Configuration.UiTransparencyEnabled;
+        if (UiGui.Checkbox("Transparency##MainWindow", ref enabled))
+        { Configuration.UiTransparencyEnabled = enabled; Configuration.Save(); }
+    }
+
+    public void DrawWindowAppearanceSettings()
+    {
+        if (!MaterialText.CollapsingHeader(UiText.T("Window appearance") + "###UiWindowAppearance")) return;
+        var compact = Configuration.UiCompact;
+        if (UiGui.Checkbox("Compact mode", ref compact))
+        { Configuration.UiCompact = compact; Configuration.Save(); }
+        using (MaterialControls.Push(BotologyPresentation.Controls(28, 18)))
+        {
+            if (MaterialAppearanceSelector.DrawAccent("appearance", ref accentDraft,
+                new(UiText.T("Color"), UiText.T("Language"), UiText.T("Teal"), UiText.T("Blue"), UiText.T("Pink"), UiText.T("Custom RGB"))))
+            {
+                Configuration.UiAccentRgb = ((uint)Math.Clamp((int)MathF.Round(accentDraft.X * 255), 0, 255) << 16)
+                    | ((uint)Math.Clamp((int)MathF.Round(accentDraft.Y * 255), 0, 255) << 8)
+                    | (uint)Math.Clamp((int)MathF.Round(accentDraft.Z * 255), 0, 255);
+                Configuration.Save();
+            }
+        }
+        DrawAppearanceSelector();
+        var compactVisible = Configuration.UiCompactVisibleOnMainWindow;
+        if (UiGui.Checkbox("Compact visible on main window", ref compactVisible))
+        { Configuration.UiCompactVisibleOnMainWindow = compactVisible; Configuration.Save(); }
+        var languageVisible = Configuration.UiLanguageVisibleOnMainWindow;
+        if (UiGui.Checkbox("Language visible on main window", ref languageVisible))
+        { Configuration.UiLanguageVisibleOnMainWindow = languageVisible; Configuration.Save(); }
+        var enabled = Configuration.UiTransparencyEnabled;
+        if (UiGui.Checkbox("Transparency", ref enabled))
+        { Configuration.UiTransparencyEnabled = enabled; Configuration.Save(); }
+        MaterialText.Text(UiText.T("Opacity (%)"));
+        ImGui.SetNextItemWidth(MaterialLayout.FitNextItemWidth(160 * MaterialTheme.Metrics.Scale, 80 * MaterialTheme.Metrics.Scale));
+        var normalOpacity = Configuration.UiWindowOpacityPercent;
+        if (ImGui.InputInt("##UiWindowOpacityPercent", ref normalOpacity))
+        { Configuration.UiWindowOpacityPercent = normalOpacity; Configuration.Save(); }
+        var autoFade = Configuration.UiAutoFade;
+        if (UiGui.Checkbox("Auto-fade when unfocused", ref autoFade))
+        { Configuration.UiAutoFade = autoFade; Configuration.Save(); }
+        ImGui.BeginDisabled(!autoFade);
+        MaterialText.Text(UiText.T("Unfocused opacity (%)"));
+        ImGui.SetNextItemWidth(MaterialLayout.FitNextItemWidth(160 * MaterialTheme.Metrics.Scale, 80 * MaterialTheme.Metrics.Scale));
+        var fadedOpacity = Configuration.UiFadedOpacityPercent;
+        if (ImGui.InputInt("##UiFadedOpacityPercent", ref fadedOpacity))
+        { Configuration.UiFadedOpacityPercent = fadedOpacity; Configuration.Save(); }
+        MaterialText.Text(UiText.T("Unfocused delay (seconds)"));
+        ImGui.SetNextItemWidth(MaterialLayout.FitNextItemWidth(160 * MaterialTheme.Metrics.Scale, 80 * MaterialTheme.Metrics.Scale));
+        var delay = Configuration.UiUnfocusedDelaySeconds;
+        if (ImGui.InputInt("##UiUnfocusedDelaySeconds", ref delay))
+        { Configuration.UiUnfocusedDelaySeconds = delay; Configuration.Save(); }
+        ImGui.EndDisabled();
     }
 }

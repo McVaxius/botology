@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -200,4 +200,31 @@
   <data name="UI fonts failed to load. See the plugin log." xml:space="preserve"><value>Error al cargar fuentes. Consulte el registro del plugin.</value></data>
   <data name="Unavailable for current Dalamud API {0} (manifest API {1})." xml:space="preserve"><value>No disponible para la API de Dalamud actual {0} (API del manifiesto {1}).</value></data>
   <data name="Ignore" xml:space="preserve"><value>Ignorar</value></data>
+  <data name="Compact mode" xml:space="preserve">
+    <value>Modo compacto</value>
+  </data>
+  <data name="Window appearance" xml:space="preserve">
+    <value>Apariencia de la ventana</value>
+  </data>
+  <data name="Compact visible on main window" xml:space="preserve">
+    <value>Mostrar el modo compacto en la ventana principal</value>
+  </data>
+  <data name="Language visible on main window" xml:space="preserve">
+    <value>Mostrar el idioma en la ventana principal</value>
+  </data>
+  <data name="Transparency" xml:space="preserve">
+    <value>Transparencia</value>
+  </data>
+  <data name="Opacity (%)" xml:space="preserve">
+    <value>Opacidad (%)</value>
+  </data>
+  <data name="Auto-fade when unfocused" xml:space="preserve">
+    <value>Atenuar automáticamente sin foco</value>
+  </data>
+  <data name="Unfocused opacity (%)" xml:space="preserve">
+    <value>Opacidad sin foco (%)</value>
+  </data>
+  <data name="Unfocused delay (seconds)" xml:space="preserve">
+    <value>Espera sin foco (segundos)</value>
+  </data>
 </root>

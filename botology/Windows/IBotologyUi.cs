@@ -7,6 +7,7 @@ internal interface IBotologyUi
 {
     Configuration Configuration { get; }
     void DrawAppearanceSelector();
+    void DrawWindowAppearanceSettings();
     IReadOnlyList<PluginAssessmentRow> CaptureRows();
     IReadOnlyList<DtrEntrySnapshot> CaptureDtrEntries();
     IReadOnlyList<PluginCatalogEntry> CaptureCatalogEditorEntries();

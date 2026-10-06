@@ -57,7 +57,7 @@ size/scale/accent/state cases, font coverage, configuration compatibility and
 native behavior. PNG regression baselines use channel tolerance 2; initial
 reference geometry/colours are checked independently within ±2 logical pixels
 and ±6 RGB. Baselines are reviewed diagnostic renders, not GPU evidence.
-Game visual acceptance remains pending until David supplies a screenshot using
+Game visual acceptance remains pending until mcvaxius supplies a screenshot using
 the reference column set and a stated scale, and accepts the reviewed result.
 
 Local builds require the sibling checkout at `Z:\aethertekUI`. From that folder,
@@ -69,7 +69,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ". .\eng\Enter-RepoEn
 ```
 
 `AethertekUI.dll` copies beside `botology.dll`; Dalamud assemblies remain host-owned.
-The existing release workflow checks out only Botology, so David must choose how
+The existing release workflow checks out only Botology, so mcvaxius must choose how
 to provide AethertekUI there before releasing this integration.
 
 Run the existing feature/visual harness after a packaging-disabled build using
@@ -96,3 +96,5 @@ against the design, and deliberately adopt reviewed PNGs as a Git change.
 - Attribution is frozen from Aetherfeed's `https://raw.githubusercontent.com/Aetherfeed/aetherfeed.github.io/main/public/data/plugins.json` snapshot dated 2026-07-22, SHA-256 `28e98ec13f5c2feabd9166c8a4cd3749ee42b81b6a9638175106da97ec27f7f5`. Botology does not continuously synchronize this field.
 - `Patch Notes` shows the newest-first catalog release history from the last valid remote response or local cache. A failed or invalid notes fetch keeps the previous cache and does not block catalog refresh.
 - The compatible `ToastOnMasterCatalogChange` setting is shown as “Toast for catalog notes affecting installed plugins.” A release is evaluated once and only produces a toast when one of its affected catalog rows matches an installed plugin; disabled plugins still count as installed.
+
+Compact mode is available from the main header?s **C** checkbox and in Settings. `UiCompact` defaults to false, uses the existing save path, and shares reduced padding and control/card/row density across windows. Body text remains readable; optional columns and saved widths are preserved.

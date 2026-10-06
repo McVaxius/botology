@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -200,4 +200,31 @@
   <data name="UI fonts failed to load. See the plugin log." xml:space="preserve"><value>Не удалось загрузить шрифты. См. журнал плагина.</value></data>
   <data name="Unavailable for current Dalamud API {0} (manifest API {1})." xml:space="preserve"><value>Недоступно для текущего API Dalamud {0} (API манифеста {1}).</value></data>
   <data name="Ignore" xml:space="preserve"><value>Игнорировать</value></data>
+  <data name="Compact mode" xml:space="preserve">
+    <value>Компактный режим</value>
+  </data>
+  <data name="Window appearance" xml:space="preserve">
+    <value>Внешний вид окна</value>
+  </data>
+  <data name="Compact visible on main window" xml:space="preserve">
+    <value>Показывать компактный режим в главном окне</value>
+  </data>
+  <data name="Language visible on main window" xml:space="preserve">
+    <value>Показывать выбор языка в главном окне</value>
+  </data>
+  <data name="Transparency" xml:space="preserve">
+    <value>Прозрачность</value>
+  </data>
+  <data name="Opacity (%)" xml:space="preserve">
+    <value>Непрозрачность (%)</value>
+  </data>
+  <data name="Auto-fade when unfocused" xml:space="preserve">
+    <value>Автоматически затемнять без фокуса</value>
+  </data>
+  <data name="Unfocused opacity (%)" xml:space="preserve">
+    <value>Непрозрачность без фокуса (%)</value>
+  </data>
+  <data name="Unfocused delay (seconds)" xml:space="preserve">
+    <value>Задержка без фокуса (секунды)</value>
+  </data>
 </root>

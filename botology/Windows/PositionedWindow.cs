@@ -8,6 +8,7 @@ namespace botology.Windows;
 
 public abstract class PositionedWindow : Window
 {
+    protected readonly AethertekUI.Dalamud.MaterialWindowMotion windowMotion = new();
     private Vector2? pendingWindowPosition;
     private bool pendingPositionConditionReset;
 
@@ -24,14 +25,18 @@ public abstract class PositionedWindow : Window
 
     public override void PreDraw()
     {
-        if (!pendingWindowPosition.HasValue)
-            return;
-
-        Position = pendingWindowPosition.Value;
-        PositionCondition = ImGuiCond.Always;
-        pendingWindowPosition = null;
-        pendingPositionConditionReset = true;
+        if (pendingWindowPosition.HasValue)
+        {
+            Position = pendingWindowPosition.Value;
+            PositionCondition = ImGuiCond.Always;
+            pendingWindowPosition = null;
+            pendingPositionConditionReset = true;
+        }
+        windowMotion.Prepare(this, reducedMotion: false, roundedCorners: true);
     }
+
+    public override void PostDraw()
+        => windowMotion.Restore(this);
 
     protected void FinalizePendingWindowPlacement()
     {

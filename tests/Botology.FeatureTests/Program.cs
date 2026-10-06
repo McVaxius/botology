@@ -6,6 +6,8 @@ using botology.Models;
 using botology.Services;
 using botology.Windows;
 
+Console.OutputEncoding = new UTF8Encoding(false);
+
 var failures = new List<string>();
 
 void Check(bool condition, string message)

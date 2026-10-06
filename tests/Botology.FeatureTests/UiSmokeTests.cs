@@ -13,12 +13,17 @@ namespace AethertekUI.Tests;
 internal static class BotologyUiSmoke
 {
     private sealed record Scenario(string Name,string Window,int Width=1472,int Height=996,float Scale=1,uint Accent=0x1CC9E6,
-        bool Extras=false,bool Empty=false,bool Detailed=false,string? Popup=null,bool Editable=false,bool Ignored=false,bool Unavailable=false);
+        bool Extras=false,bool Empty=false,bool Detailed=false,string? Popup=null,bool Editable=false,bool Ignored=false,bool Unavailable=false,bool Compact=false);
 
     public static void Run()
     {
         CheckPreferencesAndResources();
-        CheckNativeLocalizedControls();
+        CheckHindiNativeControls();
+        if(Environment.GetEnvironmentVariable("BOTOLOGY_HINDI_ONLY")!="1")
+        {
+            CheckNativeLocalizedControls();
+            CheckReadableFields();
+        }
         var originalCulture=CultureInfo.CurrentCulture;
         var rendered=0;
         foreach(var language in UiText.Languages.Select(l=>l.Code))
@@ -26,6 +31,7 @@ internal static class BotologyUiSmoke
             var scenarios=new List<Scenario>
             {
                 new("main","main"), new("settings","settings",1000,850),
+                new("compact","main",Compact:true),new("compact-settings","settings",1000,850,Compact:true),
                 new("catalog-readonly","catalog",1500,1000),new("catalog-editable","catalog",1500,1000,Editable:true),
                 new("dtr-populated","dtr",900,700),new("dtr-empty","dtr",900,700,Empty:true),
             };
@@ -44,6 +50,7 @@ internal static class BotologyUiSmoke
                 if(Environment.GetEnvironmentVariable("BOTOLOGY_VISUAL_CASE") is { Length:>0 } selected && !selected.Split(',').Contains(language+"/"+scenario.Name,StringComparer.Ordinal)) continue;
                 using var host=new NativeTestContext(scenario.Width,scenario.Height,scenario.Scale,language);
                 var backend=new SnapshotUi(scenario.Empty,scenario.Accent,language,scenario.Ignored,scenario.Unavailable);
+                backend.Configuration.UiCompact=scenario.Compact;
                 backend.Configuration.ShowAiColumn=backend.Configuration.ShowRepoColumn=scenario.Extras && scenario.Popup!="rule";
                 backend.Configuration.ShowIgnoreColumn=scenario.Extras;
                 backend.Configuration.ShowDetailedNotes=scenario.Detailed;
@@ -54,9 +61,19 @@ internal static class BotologyUiSmoke
                 var settings=new ConfigWindow(backend);
                 var catalog=new CatalogEditorWindow(backend);
                 if(backend.Entries.Length>0) catalog.DiagnosticSelect(backend.Entries[0],scenario.Editable);
+                object? hindiDraft=null;
+                const string hindiNotes="क्षेत्र\r\nखोजें🙂";
+                const string hindiDescription="प्रार्थना\r\nअनुवाद";
+                if(language=="hi" && scenario.Name=="catalog-editable")
+                {
+                    hindiDraft=typeof(CatalogEditorWindow).GetField("draft",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(catalog)!;
+                    hindiDraft.GetType().GetField("Notes")!.SetValue(hindiDraft,hindiNotes);
+                    hindiDraft.GetType().GetField("Description")!.SetValue(hindiDraft,hindiDescription);
+                }
                 var dtr=new DtrManagerWindow(backend);
                 var text=new UiText(language,host.PushFont);
                 var theme=BotologyPresentation.Theme(scenario.Accent);
+                theme.Density=scenario.Compact?MaterialDensity.Compact:MaterialDensity.Standard;
                 theme.Motion.Enabled=false;
                 void Draw()
                 {
@@ -74,12 +91,35 @@ internal static class BotologyUiSmoke
                         case "dtr": dtr.Draw(); break;
                         default: main.Draw(); break;
                     }
+                    using(UiText.Font(UiFontRole.Body))
+                    {
+                    var minimumSource=new[]{"master","local override","local only","hidden master"}.Max(l=>MaterialText.Measure(UiText.T(l)).X+2*MaterialTheme.Metrics.Gap)+32*scenario.Scale;
+                    bounds["source-minimum"]=(new(minimumSource,0),new(minimumSource,0));
+                    foreach(var row in backend.CaptureRows())
+                        if(bounds.TryGetValue("source-"+row.Entry.Id,out var badge) && badge.Max.X-badge.Min.X<MaterialText.Measure(UiText.T(row.Entry.SourceLabel)).X+2*MaterialTheme.Metrics.Gap-.5f)
+                            throw new InvalidOperationException("Source badge clipped: "+language+"/"+scenario.Name+" width="+(badge.Max.X-badge.Min.X)+" required="+(MaterialText.Measure(UiText.T(row.Entry.SourceLabel)).X+2*MaterialTheme.Metrics.Gap));
+                    }
+                    using(UiText.Font(UiFontRole.BodyStrong))
+                    foreach(var column in new[]{"Source","Installed","Update","Enabled"})
+                        if(bounds.TryGetValue("column-"+column,out var cell) && cell.Max.X-cell.Min.X<MaterialText.Measure(UiText.T(column)).X+48*scenario.Scale-.5f)
+                            throw new InvalidOperationException("Translated table header clipped: "+language+"/"+column);
                     if(scenario.Window=="main" && ImGui.GetCursorPosY()>scenario.Height-8*scenario.Scale)
                         throw new InvalidOperationException("Footer overflow: "+language+"/"+scenario.Name);
                     ImGui.End(); ImGui.PopStyleVar();
                 }
                 ImGui.GetIO().AddMousePosEvent(-1000,-1000);
-                for(var frame=0;frame<4;frame++) host.Frame(Draw);
+                // Native child scrollbars can change available width over several frames.
+                // Wait for three matching geometry samples before choosing a click position.
+                string? priorGeometry=null;
+                var stableFrames=0;
+                for(var frame=0;frame<12 && stableFrames<3;frame++)
+                {
+                    host.Frame(Draw);
+                    var geometry=string.Join(";",bounds.OrderBy(pair=>pair.Key,StringComparer.Ordinal).Select(pair=>(pair.Key,pair.Value.Min,pair.Value.Max)));
+                    stableFrames=geometry==priorGeometry?stableFrames+1:1;
+                    priorGeometry=geometry;
+                }
+                if(stableFrames<3) throw new InvalidOperationException("Window geometry did not settle: "+language+"/"+scenario.Name);
                 if(scenario.Popup is "columns" or "patch" or "description" or "rule" or "color" or "language")
                 {
                     Vector2 Center(string key)=>(bounds[key].Min+bounds[key].Max)*.5f;
@@ -91,8 +131,20 @@ internal static class BotologyUiSmoke
                     ImGui.GetIO().AddMousePosEvent(-1000,-1000);
                     for(var frame=0;frame<3;frame++) host.Frame(Draw);
                 }
-                if(scenario.Popup is not null) CheckPopup(scenario.Popup,scenario.Width,scenario.Height,scenario.Scale);
+                if(scenario.Popup is not null)
+                {
+                    try { CheckPopup(scenario.Popup,scenario.Width,scenario.Height,scenario.Scale); }
+                    catch(Exception exception)
+                    {
+                        var output=Environment.GetEnvironmentVariable("AETHERTEKUI_CANDIDATE_DIR") ?? Path.Combine(AppContext.BaseDirectory,"artifacts");
+                        SoftwarePreview.Save(Path.Combine(output,language+"-"+scenario.Name+"-failed.png"),host);
+                        throw new InvalidOperationException(language+"/"+scenario.Name+": "+exception.Message,exception);
+                    }
+                }
                 if(ImGui.GetDrawData().TotalVtxCount<100) throw new InvalidOperationException("No rendered window.");
+                if(hindiDraft is not null && ((string)hindiDraft.GetType().GetField("Notes")!.GetValue(hindiDraft)! != hindiNotes
+                    || (string)hindiDraft.GetType().GetField("Description")!.GetValue(hindiDraft)! != hindiDescription))
+                    throw new InvalidOperationException("Actual catalog multiline editors changed retained Hindi/CRLF/Unicode data.");
                 var name=language+"-"+scenario.Name;
                 if(language=="en" && scenario.Name=="main") CheckDesign(host,bounds);
                 SoftwarePreview.Verify(name,host,Path.Combine(AppContext.BaseDirectory,"Baselines"),Path.Combine(AppContext.BaseDirectory,"artifacts"));
@@ -157,10 +209,13 @@ internal static class BotologyUiSmoke
         try
         {
             property.SetValue(null,save);
-            configuration.UiLanguage="ja";configuration.UiAccentRgb=0xC98542;configuration.Save();
-            var saved=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(((ConfigurationSaveProxy)save).Json!)!;
-            if(saved.UiLanguage!="ja" || saved.UiAccentRgb!=0xC98542 || saved.Version!=1 || saved.PluginEnabled || saved.IgnoredPluginIds.Single()!="fixture")
-                throw new InvalidOperationException("UI preferences did not use the existing save path.");
+            foreach(var language in UiText.Languages)
+            {
+                configuration.UiLanguage=language.Code;configuration.UiAccentRgb=0xC98542;configuration.Save();
+                var saved=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(((ConfigurationSaveProxy)save).Json!)!;
+                if(saved.UiLanguage!=language.Code || saved.UiAccentRgb!=0xC98542 || saved.Version!=1 || saved.PluginEnabled || !saved.ShowAuthorColumn || saved.IgnoredPluginIds.Single()!="fixture")
+                    throw new InvalidOperationException("UI preferences did not use the existing save path: "+language.Code);
+            }
         }
         finally { property.SetValue(null,previous); }
         using var english=new UiText("en",_=>throw new InvalidOperationException());
@@ -177,7 +232,7 @@ internal static class BotologyUiSmoke
                 System.Text.CompositeFormat.Parse(translated[key]);
             }
         }
-        Console.WriteLine("Existing configuration defaults/save path and all nine keyed resource/placeholder sets passed.");
+        Console.WriteLine($"Existing configuration defaults/save path and all {UiText.Languages.Length} keyed resource/placeholder sets passed.");
     }
 
     private static unsafe void CheckNativeLocalizedControls()
@@ -197,7 +252,7 @@ internal static class BotologyUiSmoke
             if(ImGui.GetCurrentContext().LastItemData.ID!=expected) throw new InvalidOperationException("Translated checkbox changed its ID.");
             var min=ImGui.GetItemRectMin();var max=ImGui.GetItemRectMax();
             checkbox=new(max.X-3,(min.Y+max.Y)*.5f);
-            if(max.X-min.X<ImGui.GetFrameHeight()+ImGui.CalcTextSize(UiText.T("Show DTR bar entry")).X) throw new InvalidOperationException("Translated checkbox hit area is too short.");
+            if(max.X-min.X<ImGui.GetFrameHeight()+MaterialText.Measure(UiText.T("Show DTR bar entry")).X) throw new InvalidOperationException("Translated checkbox hit area is too short.");
             ImGui.BeginDisabled(disabled);
             expected=ImGui.GetID("Reload master now");
             clicked|=UiGui.Button("Reload master now");
@@ -217,6 +272,126 @@ internal static class BotologyUiSmoke
         Console.WriteLine("Localized native IDs, translated hit areas, and disabled interactions passed.");
     }
 
+    private static void CheckReadableFields()
+    {
+        var checkedFields=0;
+        foreach(var language in UiText.Languages.Select(l=>l.Code))
+        {
+            using var host=new NativeTestContext(1400,950,1,language);
+            using var text=new UiText(language,host.PushFont);
+            foreach(var compact in new[]{false,true})
+            foreach(var scale in new[]{1f,1.25f,1.5f})
+            {
+                ImGui.GetIO().FontGlobalScale=scale;
+                var theme=BotologyPresentation.Theme(0x1CC9E6);
+                theme.Density=compact?MaterialDensity.Compact:MaterialDensity.Standard;
+                void Draw()
+                {
+                    using var locale=text.Enter();
+                    using var material=MaterialTheme.Push(theme,scale);
+                    using var font=UiText.Font(UiFontRole.Body);
+                    using var controls=MaterialControls.Push(BotologyPresentation.Controls(34));
+                    ImGui.SetNextWindowPos(Vector2.Zero);ImGui.SetNextWindowSize(new(600*scale,600*scale));
+                    ImGui.Begin("Readable fields",ImGuiWindowFlags.NoSavedSettings|ImGuiWindowFlags.HorizontalScrollbar);
+                    var original=42;
+                    ImGui.InputInt("Master catalog check interval (minutes)",ref original,1,100);
+                    var groupId=ImGui.GetCurrentContext().LastItemData.ID;
+                    var number=42;ImGui.SetNextItemWidth(1);
+                    UiGui.InputInt("Master catalog check interval (minutes)",ref number,1,100);
+                    var editor=ImGui.GetItemRectSize().X-2*(ImGui.GetFrameHeight()+ImGui.GetStyle().ItemInnerSpacing.X);
+                    var minimum=Math.Max(80*scale,ImGui.CalcTextSize("00000000").X+2*ImGui.GetStyle().FramePadding.X);
+                    if(number!=42 || editor<minimum-.1f || ImGui.GetCurrentContext().LastItemData.ID!=groupId)
+                        throw new InvalidOperationException("Numeric editor/steps/identity: "+language);
+                    if(ImGuiP.GetCurrentWindow().DC.CursorPosPrevLine.X>ImGui.GetItemRectMax().X+.1f)
+                        throw new InvalidOperationException("Hidden field label still expands content.");
+                    var raw="raw 0007";var id=ImGui.GetID("DTR enabled glyph");ImGui.SetNextItemWidth(1);
+                    UiGui.InputText("DTR enabled glyph",ref raw,64);
+                    if(raw!="raw 0007" || ImGui.GetItemRectSize().X<minimum-.1f || ImGui.GetCurrentContext().LastItemData.ID!=id)
+                        throw new InvalidOperationException("Text field width/raw identity: "+language);
+                    var choice=1;id=ImGui.GetID("DTR mode");ImGui.SetNextItemWidth(1);
+                    UiGui.Combo("DTR mode",ref choice,["Text only","Icon + text","Icon only"],3);
+                    if(choice!=1 || ImGui.GetCurrentContext().LastItemData.ID!=id || ImGui.GetItemRectSize().X<MaterialText.Measure(UiText.T("Icon + text")).X+ImGui.GetFrameHeight()+2*ImGui.GetStyle().FramePadding.X-.1f)
+                        throw new InvalidOperationException("Translated combo preview/identity: "+language);
+                    checkedFields+=3;
+                    ImGui.End();
+                }
+                host.Frame(Draw);host.Frame(Draw);
+            }
+            ImGui.GetIO().FontGlobalScale=1;
+            var numberValue=42;var plus=Vector2.Zero;
+            for(var frame=0;frame<5;frame++)
+            {
+                ImGui.GetIO().AddMousePosEvent(plus.X,plus.Y);ImGui.GetIO().AddMouseButtonEvent(0,frame is 2 or 3);
+                host.Frame(()=>
+                {
+                    using var locale=text.Enter();using var material=MaterialTheme.Push(BotologyPresentation.Theme(0x1CC9E6));
+                    using var font=UiText.Font(UiFontRole.Body);
+                    ImGui.SetNextWindowPos(Vector2.Zero);ImGui.SetNextWindowSize(new(600,400));
+                    ImGui.Begin("Step identity",ImGuiWindowFlags.NoSavedSettings);
+                    ImGui.SetNextItemWidth(70);
+                    if(frame<3) ImGui.InputInt("##MasterInterval",ref numberValue,1,100);
+                    else UiGui.InputInt("##MasterInterval",ref numberValue,1,100);
+                    plus=new(ImGui.GetItemRectMax().X-ImGui.GetFrameHeight()*.5f,(ImGui.GetItemRectMin().Y+ImGui.GetItemRectMax().Y)*.5f);
+                    ImGui.End();
+                });
+            }
+            if(numberValue!=43) throw new InvalidOperationException("Original numeric step press lost on wrapper release: "+language);
+        }
+        Console.WriteLine($"Readable fields: {checkedFields} font-checked checks across {UiText.Languages.Length} locales, both densities, three scales; original native step press/release retained.");
+    }
+
+    private static void CheckHindiNativeControls()
+    {
+        using var host=new NativeTestContext(1100,800,1,"hi");
+        using var text=new UiText("hi",host.PushFont);
+        var value="क्षेत्र🙂\uE101";
+        var toggle=false;
+        var presses=0;
+        var bounds=new Dictionary<string,Vector2>();
+        void Draw()
+        {
+            using var locale=text.Enter();
+            using var theme=MaterialTheme.Push(BotologyPresentation.Theme(0x1CC9E6));
+            using var font=UiText.Font(UiFontRole.Body);
+            ImGui.SetNextWindowPos(Vector2.Zero);ImGui.SetNextWindowSize(new(1100,800));
+            ImGui.Begin("Hindi retained controls",ImGuiWindowFlags.NoSavedSettings|ImGuiWindowFlags.NoTitleBar);
+            void Identity(string label)
+            {
+                if(ImGui.GetCurrentContext().LastItemData.ID!=ImGui.GetID(label))
+                    throw new InvalidOperationException("Hindi native identity changed: "+label);
+                bounds[label]=(ImGui.GetItemRectMin()+ImGui.GetItemRectMax())*.5f;
+            }
+            if(UiGui.Button("Save local changes")) presses++;
+            Identity("Save local changes");
+            if(ImGui.GetItemRectSize().Y<MaterialText.Measure(UiText.T("Save local changes")).Y)
+                throw new InvalidOperationException("Hindi action height is too small.");
+            UiGui.Checkbox("Compact mode",ref toggle);Identity("Compact mode");
+            if(UiGui.Selectable("Text only",false)) presses++;
+            Identity("Text only");
+            ImGui.SetNextItemWidth(400);
+            UiGui.InputText("Category",ref value,128);Identity("Category");
+            if(ImGui.GetItemRectSize().Y<MaterialText.Measure(value).Y)
+                throw new InvalidOperationException("Hindi editor height is too small.");
+            var disabled=false;
+            ImGui.BeginDisabled();
+            try { if(UiGui.Checkbox("Transparency",ref disabled) || disabled) throw new InvalidOperationException("Disabled Hindi control acted."); }
+            finally { ImGui.EndDisabled(); }
+            ImGui.End();
+        }
+        host.Frame(Draw);host.Frame(Draw);
+        host.Click(bounds["Save local changes"],Draw);
+        host.Click(bounds["Compact mode"],Draw);
+        host.Click(bounds["Text only"],Draw);
+        if(presses!=2 || !toggle || value!="क्षेत्र🙂\uE101")
+            throw new InvalidOperationException("Hindi retained actions or raw input preservation failed.");
+        host.Click(bounds["Category"],Draw);
+        ImGui.GetIO().AddInputCharacter('x');host.Frame(Draw);
+        if(!value.Contains('x') || !value.Contains("🙂\uE101",StringComparison.Ordinal))
+            throw new InvalidOperationException("Hindi input edit lost Unicode data.");
+        SoftwarePreview.Capture(host);
+        Console.WriteLine("Hindi retained IDs, action/checkbox/selectable presses, shaped heights, Unicode edits and disabled behavior passed.");
+    }
+
     private static void CheckDesign(NativeTestContext host,Dictionary<string,(Vector2 Min,Vector2 Max)> bounds)
     {
         void Near(string region,float actual,float expected)
@@ -230,7 +405,9 @@ internal static class BotologyUiSmoke
         Near("status/filters gap",bounds["filters"].Min.Y-bounds["status"].Max.Y,20);
         Near("filters/table gap",bounds["table-header"].Min.Y-bounds["filters"].Max.Y,16);
         Near("table header",bounds["table-header"].Max.Y-bounds["table-header"].Min.Y,44);
-        foreach(var (name,width) in new[]{("Category",286f),("Source",114f),("Installed",128f),("Update",122f),("Enabled",120f),("Dtr",124f),("Author",200f),("Notes",346f)})
+        // The approved feedback widens Source beyond the original 114px to fit actual provenance labels.
+        var sourceWidth=Math.Max(114,bounds["source-minimum"].Min.X);
+        foreach(var (name,width) in new[]{("Category",286f),("Source",sourceWidth),("Installed",128f),("Update",122f),("Enabled",120f),("Dtr",124f),("Author",200f),("Notes",346f)})
             Near("column "+name,bounds["column-"+name].Max.X-bounds["column-"+name].Min.X,width);
         foreach(var name in bounds.Keys.Where(n=>n.StartsWith("row-",StringComparison.Ordinal)))
             Near(name,bounds[name].Max.Y-bounds[name].Min.Y,74);
@@ -290,6 +467,7 @@ internal sealed class SnapshotUi : IBotologyUi
         if(unavailable && Rows.Length>0) Rows[0]=Plugin.ApplyPatchCompatibilityAssessment(Rows[0] with { Metadata=Rows[0].Metadata! with { DalamudApiLevel=14 } });
         DtrEntries=empty?[]:[new("Sample A","Sample","",true,false,false,0,"sample-0"),new("Sample B","Sample","",true,true,false,1,"sample-1")];
     }
+    public void DrawWindowAppearanceSettings() => DrawAppearanceSelector();
     public void DrawAppearanceSelector()
     {
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(28,18));
@@ -342,14 +520,23 @@ internal sealed unsafe class NativeTestContext : IDisposable
 {
     private readonly ImGuiContextPtr context;
     private readonly System.Runtime.InteropServices.GCHandle glyphPin;
-    private readonly ImFontPtr[] fonts=new ImFontPtr[6];
+    private readonly ImFontPtr[] fonts=new ImFontPtr[Enum.GetValues<UiFontRole>().Length];
     private SoftwarePreview.Texture[] textures=[];
+    private readonly MaterialTextRenderer shapedText;
+    private readonly Dictionary<ulong,RegisteredTextTexture> textTextures=[];
+    private nint nextTextTextureId=0x100000;
     public byte* Pixels { get; private set; }
     public int AtlasWidth { get; private set; }
     public int AtlasHeight { get; private set; }
     public NativeTestContext(int width,int height,float scale,string language)
     {
         context=ImGui.CreateContext();
+        shapedText=new MaterialTextRenderer(bitmap=>
+        {
+            var texture=new RegisteredTextTexture(this,nextTextTextureId++,bitmap);
+            textTextures.Add(texture.Id.Handle,texture);
+            return new MaterialTextTexture(texture.Id,texture);
+        });
         var io=ImGui.GetIO();io.IniFilename=null;io.LogFilename=null;io.DisplaySize=new(width,height);io.DeltaTime=1f/60;io.FontGlobalScale=scale;
         io.Fonts.AddFontDefault();
         using var text=new UiText(language,_=>throw new InvalidOperationException());
@@ -376,9 +563,11 @@ internal sealed unsafe class NativeTestContext : IDisposable
         }
         RefreshAtlas();io.Fonts.SetTexID(0,new ImTextureID((nint)1));
         foreach(var font in fonts)
-            foreach(var value in UiText.Values(text.Resources).Concat(UiText.Languages.Select(l=>l.Name)))
+            foreach(var value in UiText.Values(text.Resources).Concat(UiText.Languages.Select(l=>l.Name)).Select(MaterialText.NativeGlyphText))
                 foreach(var character in value.Where(c=>!char.IsControl(c)))
                     if(ImGui.FindGlyphNoFallback(font,character).Handle==null) throw new InvalidOperationException("Missing glyph "+((int)character).ToString("X4")+" in "+language);
+        foreach(var role in Enum.GetValues<UiFontRole>())
+            shapedText.CheckGlyphs(text.RequiredText,BotologyPresentation.AtlasHeight(role)*scale);
     }
     internal IDisposable PushFont(UiFontRole role) { ImGui.PushFont(fonts[(int)role]);return new FontScope(); }
     private sealed class FontScope : IDisposable { public void Dispose()=>ImGui.PopFont(); }
@@ -397,13 +586,33 @@ internal sealed unsafe class NativeTestContext : IDisposable
         }
     }
     public SoftwarePreview.Texture Texture(ImTextureID id)
-        => id.Handle>=1 && id.Handle<=(ulong)textures.Length ? textures[(int)id.Handle-1] : throw new InvalidOperationException("Unknown diagnostic texture.");
-    public void Frame(Action draw) { ImGui.NewFrame();draw();ImGui.Render(); }
+        => id.Handle>=1 && id.Handle<=(ulong)textures.Length ? textures[(int)id.Handle-1]
+            : textTextures.TryGetValue(id.Handle,out var text) ? text.Texture : throw new InvalidOperationException("Unknown diagnostic texture.");
+    private sealed class RegisteredTextTexture : IDisposable
+    {
+        private readonly NativeTestContext owner;
+        private System.Runtime.InteropServices.GCHandle pixels;
+        private bool disposed;
+        public ImTextureID Id { get; }
+        public SoftwarePreview.Texture Texture { get; }
+        public RegisteredTextTexture(NativeTestContext owner,nint id,MaterialTextBitmap bitmap)
+        {
+            this.owner=owner;Id=new ImTextureID(id);
+            pixels=System.Runtime.InteropServices.GCHandle.Alloc(bitmap.Rgba,System.Runtime.InteropServices.GCHandleType.Pinned);
+            Texture=new(pixels.AddrOfPinnedObject(),bitmap.Width,bitmap.Height);
+        }
+        public void Dispose()
+        {
+            if(disposed) return;
+            disposed=true;owner.textTextures.Remove(Id.Handle);pixels.Free();
+        }
+    }
+    public void Frame(Action draw) { ImGui.NewFrame();using(shapedText.Push()) draw();ImGui.Render(); }
     public void Click(Vector2 position,Action draw)
     {
         ImGui.GetIO().AddMousePosEvent(position.X,position.Y);Frame(draw);
         ImGui.GetIO().AddMouseButtonEvent(0,true);Frame(draw);
         ImGui.GetIO().AddMouseButtonEvent(0,false);Frame(draw);
     }
-    public void Dispose() { ImGui.DestroyContext(context);glyphPin.Free(); }
+    public void Dispose() { shapedText.Dispose();ImGui.DestroyContext(context);glyphPin.Free(); }
 }

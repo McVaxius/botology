@@ -48,7 +48,7 @@ jobs:
         working-directory: botology
         run: |
           $dalamudLibPath = "$env:AppData/XIVLauncher/addon/Hooks/dev"
-          dotnet restore "botology/botology.csproj" -p:Platform=x64 -p:DalamudLibPath="$dalamudLibPath"
+          dotnet restore "botology/botology.csproj" -p:Configuration=Release -p:Platform=x64 -p:DalamudLibPath="$dalamudLibPath"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet build "botology/botology.csproj" --configuration Release --no-restore -p:Platform=x64 -p:DalamudLibPath="$dalamudLibPath"
         env:

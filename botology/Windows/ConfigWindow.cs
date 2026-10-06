@@ -1,3 +1,4 @@
+using AethertekUI;
 using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
@@ -13,7 +14,7 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
     public ConfigWindow(Plugin plugin) : this((IBotologyUi)plugin) { }
 
     internal ConfigWindow(IBotologyUi plugin)
-        : base($"{PluginInfo.DisplayName} Settings##Config")
+        : base($"{PluginInfo.DisplayName} Settings##Config",ImGuiWindowFlags.HorizontalScrollbar)
     {
         this.plugin = plugin;
         SizeConstraints = new WindowSizeConstraints
@@ -29,10 +30,11 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
 
     public override void Draw()
     {
+        windowMotion.DrawChrome();
         UiGui.Title(PluginInfo.DisplayName+" Settings",PluginInfo.DisplayName+" "+UiText.T("Settings"));
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
-        plugin.DrawAppearanceSelector();
+        plugin.DrawWindowAppearanceSettings();
         ImGui.Separator();
         var cfg = plugin.Configuration;
 
@@ -140,12 +142,12 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
 
         ImGui.Separator();
         var refreshInfo = plugin.GetCatalogRefreshInfo();
-        ImGui.TextWrapped(UiText.T("The grid uses live installed, enabled, update-available, and DTR detection from Dalamud. Direct plugin DTR config is used first; live DTR entries use the same Server Info Bar visibility data as XLSettings."));
-        ImGui.TextWrapped(UiText.T("Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows."));
-        ImGui.TextWrapped(UiText.T("Special thanks to Canto who cooked most of the initial dataset and proposed categorizations. "));
-        //ImGui.TextWrapped($"Master source: {refreshInfo.SourceUrl ?? "Unknown"}");
-        ImGui.TextWrapped(UiText.F("Last master check: {0}",UiText.Date(refreshInfo.LastCheckedUtc)));
-        ImGui.TextWrapped(UiText.F("Last master update: {0}",UiText.Date(refreshInfo.LastUpdatedUtc)));
+        MaterialText.TextWrapped(UiText.T("The grid uses live installed, enabled, update-available, and DTR detection from Dalamud. Direct plugin DTR config is used first; live DTR entries use the same Server Info Bar visibility data as XLSettings."));
+        MaterialText.TextWrapped(UiText.T("Ignore flags remove rows from alert calculations but keep them visible in the grid as blue rows."));
+        MaterialText.TextWrapped(UiText.T("Special thanks to Canto who cooked most of the initial dataset and proposed categorizations. "));
+        //MaterialText.TextWrapped($"Master source: {refreshInfo.SourceUrl ?? "Unknown"}");
+        MaterialText.TextWrapped(UiText.F("Last master check: {0}",UiText.Date(refreshInfo.LastCheckedUtc)));
+        MaterialText.TextWrapped(UiText.F("Last master update: {0}",UiText.Date(refreshInfo.LastUpdatedUtc)));
 
         FinalizePendingWindowPlacement();
     }

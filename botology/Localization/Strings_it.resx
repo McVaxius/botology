@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -200,4 +200,31 @@
   <data name="UI fonts failed to load. See the plugin log." xml:space="preserve"><value>Caricamento caratteri fallito. Consulta il log.</value></data>
   <data name="Unavailable for current Dalamud API {0} (manifest API {1})." xml:space="preserve"><value>Non disponibile per l’API Dalamud attuale {0} (API del manifest {1}).</value></data>
   <data name="Ignore" xml:space="preserve"><value>Ignora</value></data>
+  <data name="Compact mode" xml:space="preserve">
+    <value>Modalità compatta</value>
+  </data>
+  <data name="Window appearance" xml:space="preserve">
+    <value>Aspetto della finestra</value>
+  </data>
+  <data name="Compact visible on main window" xml:space="preserve">
+    <value>Mostra la modalità compatta nella finestra principale</value>
+  </data>
+  <data name="Language visible on main window" xml:space="preserve">
+    <value>Mostra la lingua nella finestra principale</value>
+  </data>
+  <data name="Transparency" xml:space="preserve">
+    <value>Trasparenza</value>
+  </data>
+  <data name="Opacity (%)" xml:space="preserve">
+    <value>Opacità (%)</value>
+  </data>
+  <data name="Auto-fade when unfocused" xml:space="preserve">
+    <value>Sfuma automaticamente senza focus</value>
+  </data>
+  <data name="Unfocused opacity (%)" xml:space="preserve">
+    <value>Opacità senza focus (%)</value>
+  </data>
+  <data name="Unfocused delay (seconds)" xml:space="preserve">
+    <value>Ritardo senza focus (secondi)</value>
+  </data>
 </root>

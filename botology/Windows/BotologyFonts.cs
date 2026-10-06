@@ -16,14 +16,16 @@ internal sealed class BotologyFonts : IDisposable
             size=BotologyPresentation.AtlasHeight((UiFontRole)index);
             var config=new SafeFontConfig { SizePx=size, GlyphRanges=ranges };
             build.Font=build.AddFontFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts),BotologyPresentation.FontFiles[index]),config);
-            // The language selector always displays all nine native names. Host-managed merges cover these too.
+            build.AddFontFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "seguisym.ttf"),
+                new SafeFontConfig { SizePx=size, MergeFont=build.Font, GlyphRanges=ranges });
+            // Host-managed merges also cover every advertised native language name.
             foreach(var locale in UiText.CjkLanguages(language))
                 build.AddDalamudAssetFont(DalamudAsset.NotoSansCjkRegular,new SafeFontConfig
                 {
                     SizePx=size, MergeFont=build.Font, GlyphRanges=ranges,
-                    // Dalamud's bundled TTC faces: Japanese, Traditional Chinese,
-                    // Simplified Chinese, Korean. Keep the selected locale first.
-                    FontNo=locale switch { "ja"=>0, "zh-Hans"=>2, "ko"=>3, _=>0 },
+                    // Verified bundled TTC faces: JP=0, KR=1, SC=2, TC=3.
+                    // Keep the selected locale first for region-specific ideographs.
+                    FontNo=locale switch { "ja"=>0, "zh-Hans"=>2, "ko"=>1, _=>0 },
                 });
             build.AttachExtraGlyphsForDalamudLanguage(new SafeFontConfig { SizePx=size, MergeFont=build.Font });
             build.AddGameSymbol(new SafeFontConfig { SizePx=size,MergeFont=build.Font });
@@ -35,13 +37,13 @@ internal sealed class BotologyFonts : IDisposable
     internal Exception? LoadException => handles.FirstOrDefault(h=>h.LoadException is not null)?.LoadException;
     internal unsafe void CheckGlyphs(IEnumerable<string> strings)
     {
-        foreach(var handle in handles)
+        for(var index=0; index<handles.Length; index++)
         {
-            using var font=handle.Lock();
+            using var font=handles[index].Lock();
             foreach(var text in strings)
                 foreach(var character in text.Where(c=>!char.IsControl(c)))
                     if(ImGui.FindGlyphNoFallback(font.ImFont,character).Handle==null)
-                        throw new InvalidOperationException("Required UI glyph missing: U+"+((int)character).ToString("X4"));
+                        throw new InvalidOperationException("Required UI glyph missing: U+"+((int)character).ToString("X4")+" in "+(UiFontRole)index);
         }
     }
     internal IDisposable Push(UiFontRole role)
