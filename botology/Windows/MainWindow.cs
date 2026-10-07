@@ -312,9 +312,11 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     {
         var s=MaterialTheme.Metrics.Scale;
         using var font=UiText.Font(UiFontRole.Action);
-        using var controls=MaterialControls.Push(BotologyPresentation.Controls(BotologyPresentation.ActionHeight,28));
-        var width=ImGui.GetContentRegionAvail().X;
         var labels=new[]{"DTR","Catalog","Data","Patch Notes","Reload","Status"};
+        var textHeight=labels.Max(label=>MaterialText.Measure(UiText.T(label)).Y);
+        var toolbar=MaterialControlMetrics.Measure(MaterialTheme.Metrics,Math.Max(Math.Max(ImGui.GetTextLineHeight(),textHeight),28*s),MaterialControlContext.Toolbar);
+        using var controls=MaterialControls.Push(BotologyPresentation.Controls(BotologyPresentation.ActionHeight,28) with { Height=toolbar.Height,Padding=toolbar.Padding });
+        var width=ImGui.GetContentRegionAvail().X;
         var icons=new[]{MaterialIcon.Document,MaterialIcon.Grid,MaterialIcon.Database,MaterialIcon.Document,MaterialIcon.Refresh,MaterialIcon.Chart};
         var ids=new[]{"dtr-manager","catalog","data","patch-notes","reload","status"};
         float[] proportions=[213,220,224,257,236,236];
@@ -326,7 +328,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         {
             if(i%columns!=0) ImGui.SameLine();
             var actionWidth=columns==6 ? proportions[i]*(width-50*s)/proportions.Sum()/s : tileWidth;
-            var clicked=MaterialButton.Draw(ids[i],UiText.T(labels[i]),BotologyPresentation.Action(i==0),new(actionWidth,BotologyPresentation.ActionHeight),leading:icons[i]);
+            var clicked=MaterialButton.Draw(ids[i],UiText.T(labels[i]),BotologyPresentation.Action(i==0),new(actionWidth,toolbar.Height/s),leading:icons[i]);
             MeasureBounds?.Invoke("action-"+i,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
             if(!clicked) continue;
             switch(i)
@@ -457,8 +459,11 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         ImGui.EndGroup();
         ImGui.SetCursorScreenPos(positions[4]+new Vector2(0,21*s));
         BotologyPresentation.Separator(positions[4]-new Vector2(12*s,0),84*s);
-        if(MaterialButton.Draw("columns",UiText.T("Columns"),BotologyPresentation.Action(),new(columnWidth/s,BotologyPresentation.Compact ? 38 : 40),leading:MaterialIcon.Table,trailing:MaterialIcon.ChevronDown)) ImGui.OpenPopup(ColumnSelectionPopupId);
-        MeasureBounds?.Invoke("columns-button",ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
+        using(var buttonControls=MaterialControls.Push(MaterialControlMetrics.Measure(MaterialTheme.Metrics,Math.Max(Math.Max(ImGui.GetTextLineHeight(),MaterialText.Measure(UiText.T("Columns")).Y),20*s),MaterialControlContext.Toolbar) with { IconSize=20*s }))
+        {
+            if(MaterialButton.Draw("columns",UiText.T("Columns"),BotologyPresentation.Action(),new(columnWidth/s,0),leading:MaterialIcon.Table,trailing:MaterialIcon.ChevronDown)) ImGui.OpenPopup(ColumnSelectionPopupId);
+            MeasureBounds?.Invoke("columns-button",ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
+        }
         ImGui.SetCursorScreenPos(positions[5]); ImGui.BeginGroup();
         BotologyPresentation.Separator(positions[5]-new Vector2(12*s,0),84*s);
         MaterialText.Text(UiText.T("Color filter"));
@@ -477,13 +482,15 @@ public sealed class MainWindow : PositionedWindow, IDisposable
 
     private void DrawFooter(float height)
     {
-        using var controls=MaterialControls.Push(BotologyPresentation.Controls(height,24));
         var origin=ImGui.GetCursorScreenPos(); var s=MaterialTheme.Metrics.Scale;
-        if(MaterialButton.Draw("xlsettings","XLSETTINGS",BotologyPresentation.Action(),new(176,height),leading:MaterialIcon.Download)) plugin.RunTextCommand("/xlsettings");
+        var toolbar=MaterialControlMetrics.Measure(MaterialTheme.Metrics,Math.Max(ImGui.GetTextLineHeight(),24*s),MaterialControlContext.Toolbar);
+        using var controls=MaterialControls.Push(BotologyPresentation.Controls(height,24) with { Height=toolbar.Height,Padding=toolbar.Padding });
+        var buttonHeight=toolbar.Height/s;
+        if(MaterialButton.Draw("xlsettings","XLSETTINGS",BotologyPresentation.Action(),new(176,buttonHeight),leading:MaterialIcon.Download)) plugin.RunTextCommand("/xlsettings");
         ImGui.SameLine(0,32*s); BotologyPresentation.Separator(origin+new Vector2(192*s,13*s),26*s);
-        if(MaterialButton.Draw("xlplugins","XLPLUGINS",BotologyPresentation.Action(),new(170,height),leading:MaterialIcon.Download)) plugin.RunTextCommand("/xlplugins");
+        if(MaterialButton.Draw("xlplugins","XLPLUGINS",BotologyPresentation.Action(),new(170,buttonHeight),leading:MaterialIcon.Download)) plugin.RunTextCommand("/xlplugins");
         ImGui.SameLine(0,32*s); BotologyPresentation.Separator(origin+new Vector2(394*s,13*s),26*s);
-        if(MaterialButton.Draw("xllog","XLLOG",BotologyPresentation.Action(),new(122,height),leading:MaterialIcon.Document)) plugin.RunTextCommand("/xllog");
+        if(MaterialButton.Draw("xllog","XLLOG",BotologyPresentation.Action(),new(122,buttonHeight),leading:MaterialIcon.Document)) plugin.RunTextCommand("/xllog");
         MeasureBounds?.Invoke("footer",ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
     }
 

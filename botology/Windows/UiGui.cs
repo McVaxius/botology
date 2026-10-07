@@ -29,6 +29,8 @@ internal static class UiGui
     internal static bool Button(string label,string? display=null)
     {
         var translated=display ?? UiText.T(label.Split("##",2)[0]);
+        using var controls = ImGui.GetStyle().FramePadding.Y == 0 || MaterialControls.Context == MaterialControlContext.Dense
+            ? default(MaterialControls.ControlScope) : MaterialControls.Push(MaterialControlContext.Toolbar);
         using var height=MaterialText.PushLineHeight(translated);
         var width=MaterialLayout.FitNextItemWidth(0,MaterialText.Measure(translated).X+2*ImGui.GetStyle().FramePadding.X);
         var foreground=ImGui.GetStyle().Colors[(int)ImGuiCol.Text];
