@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased - Managed CJK font atlas
+## 2026-10-07 - Managed CJK font atlas
 
 - Merge one bundled CJK face per font role, selecting the active language's regional forms. Set both managed atlas dimensions to 4096 on every rebuild; preserve font heights, required glyph ranges, symbol merges and host-language coverage.
 - Current compilation and guarded production callback/rebuild checks pass, together with bounded native glyph checks for the checked text. Managed-host readiness, complete displayed glyph coverage, language/scale host rebuilds and game/GPU acceptance remain unverified.
 
-## Unreleased - Native titlebar shortcuts
+## 2026-10-07 - Native titlebar shortcuts
 
 - Add Settings and the existing assessment-alert enable toggle to the native main titlebar, retaining every body control and the current configuration/save path.
 - Reserve title and button space before window motion and keep custom title text clear of native buttons.
 - Validate the current Debug/x64 build through the unchanged launcher: zero warnings and errors. Focused English installed-host checks pass 430 assertions and 16 native pointer presses across both densities/scales and settled collapsed/expanded windows. Settings invokes the supplied existing UI contract; Enabled uses the actual retained save/feedback handler. Actual catalog refresh, managed-icon, GPU and game acceptance remain separate.
 
-## Unreleased - Community invite
+## 2026-10-07 - Community invite
 
 - Update the existing Discord community button and current README link to https://discord.gg/ac6gjDvR8R.
 
