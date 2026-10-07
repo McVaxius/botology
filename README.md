@@ -13,7 +13,7 @@ https://aethertek.io/x.json
 
 ---
 
-[Join the Discord](https://discord.gg/VsXqydsvpu)
+[Join the Discord](https://discord.gg/ac6gjDvR8R)
 
 Scroll down to "The Dumpster Fire" channel to discuss issues / suggestions for specific plugins.
 

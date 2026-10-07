@@ -1,6 +1,7 @@
 using System.Numerics;
 using AethertekUI;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Windowing;
 
 namespace botology.Windows;
 
@@ -148,6 +149,32 @@ internal static class UiGui
         finally { ImGui.PopID(); }
     }
     internal static void Title(string original,string translated)
+        => TitleWithButtons(original, translated, null);
+
+    internal static void ReserveTitleSpace(Window owner, string visible, float minimumWidth)
+    {
+        var style = ImGui.GetStyle();
+        var fontSize = ImGui.GetFontSize();
+        var collapse = (owner.Flags & (ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.Modal)) == 0
+            && style.WindowMenuButtonPosition != ImGuiDir.None;
+        var controls = AdditionalTitleButtonWidth(owner, fontSize)
+            + ((owner.ShowCloseButton ? 1 : 0) + (collapse ? 1 : 0)) * (fontSize + style.ItemInnerSpacing.X);
+        var required = (MaterialText.Measure(visible).X + controls + style.FramePadding.X * 2 + style.ItemInnerSpacing.X)
+            / ImGui.GetIO().FontGlobalScale;
+        var bounds = owner.SizeConstraints ?? new WindowSizeConstraints();
+        bounds.MinimumSize = new(Math.Max(minimumWidth, required), bounds.MinimumSize.Y);
+        owner.SizeConstraints = bounds;
+    }
+
+    private static float AdditionalTitleButtonWidth(Window? owner, float fontSize)
+    {
+        if (owner is null) return 0;
+        var count = owner.TitleBarButtons.Count(button => !owner.IsClickthrough || button.AvailableClickthrough);
+        if (owner.AllowPinning || owner.AllowClickthrough || owner.AllowBackgroundBlur) count++;
+        return count * (fontSize + ImGui.GetStyle().ItemInnerSpacing.X);
+    }
+
+    internal static void TitleWithButtons(string original,string translated, Window? owner)
     {
         var s=ImGui.GetStyle(); var size=ImGui.GetFontSize();var height=ImGui.GetFrameHeight();
         var flags=ImGuiP.GetCurrentWindow().Flags;
@@ -160,6 +187,7 @@ internal static class UiGui
         var rightButtons=size+s.FramePadding.X*2;
         if((flags & ImGuiWindowFlags.NoCollapse)==0 && s.WindowMenuButtonPosition==ImGuiDir.Right)
             rightButtons+=size+s.ItemInnerSpacing.X;
+        rightButtons += AdditionalTitleButtonWidth(owner, size);
         dl.PushClipRect(position,ImGui.GetWindowPos()+new Vector2(Math.Max(0,ImGui.GetWindowSize().X-rightButtons),height),false);
         try
         {

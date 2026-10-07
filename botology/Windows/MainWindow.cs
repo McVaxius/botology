@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Reflection;
 using AethertekUI;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using botology.Models;
 using botology.Services;
@@ -58,16 +59,34 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             MinimumSize = new Vector2(1240f, 640f),
             MaximumSize = new Vector2(1880f, 1400f),
         };
+        TitleBarButtons.Add(new()
+        {
+            Icon = FontAwesomeIcon.Cog, Priority = 0, IconOffset = new(2, 1),
+            Click = button => { if (button == ImGuiMouseButton.Left) plugin.OpenConfigUi(); },
+            ShowTooltip = () => MaterialText.SetTooltip(UiText.T("Settings")),
+        });
+        TitleBarButtons.Add(new()
+        {
+            Icon = FontAwesomeIcon.PowerOff, Priority = -10, IconOffset = new(2, 1),
+            Click = button => { if (button == ImGuiMouseButton.Left) plugin.SetPluginEnabled(!plugin.Configuration.PluginEnabled, printStatus: true); },
+            ShowTooltip = () => MaterialText.SetTooltip(UiText.T(plugin.Configuration.PluginEnabled ? "Disable plugin" : "Enable plugin") + "\n" + UiText.T("Manager enabled")),
+        });
     }
 
     public void Dispose()
     {
     }
 
+    public override void PreDraw()
+    {
+        UiGui.ReserveTitleSpace(this, PluginInfo.DisplayName + " v" + typeof(Plugin).Assembly.GetName().Version, 1240);
+        base.PreDraw();
+    }
+
     public override void Draw()
     {
         windowMotion.DrawChrome();
-        UiGui.Title(PluginInfo.DisplayName,PluginInfo.DisplayName+" v"+Assembly.GetExecutingAssembly().GetName().Version);
+        UiGui.TitleWithButtons(PluginInfo.DisplayName,PluginInfo.DisplayName+" v"+Assembly.GetExecutingAssembly().GetName().Version, this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(34,20));
         DrawContent(plugin.CaptureRows(), plugin.CaptureDtrEntries(), plugin.GetCatalogRefreshInfo());
