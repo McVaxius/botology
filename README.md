@@ -19,12 +19,12 @@ Scroll down to "The Dumpster Fire" channel to discuss issues / suggestions for s
 
 ## Current Status
 
-Bootstrap scaffold created on 2026-04-07. This repo now has a buildable `Debug x64` shell with a functional compatibility grid: installed state, update availability, repo link, enable toggle, best-effort DTR toggle, ignore flags, rule detail popups, category/plugin/author filters, AI attribution, cached catalog patch notes, and a growing `plugin-repository-links.json` catalog for tracked plugins.
+Botology is public and released as `v2.0.0.1` on 2026-10-07. [Build and Release #34](https://github.com/McVaxius/botology/actions/runs/37602867929) succeeded for commit `7c662c2` and published the package. The plugin provides a functional compatibility grid: installed state, update availability, repo link, enable toggle, best-effort DTR toggle, ignore flags, rule detail popups, category/plugin/author filters, AI attribution, cached catalog patch notes, and a growing `plugin-repository-links.json` catalog for tracked plugins.
 
 - Solution: `Z:\botology\botology.sln`
 - Project: `Z:\botology\botology\botology.csproj`
 - Commands: `/botology`, `/bottist`, `/botologist`
-- Repository target: `Private`
+- Repository target: `Public`
 
 The main window follows the approved AethertekUI mockup with native table sorting,
 captured installed versions, catalog source badges, DTR visibility switches, and
@@ -69,8 +69,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ". .\eng\Enter-RepoEn
 ```
 
 `AethertekUI.dll` copies beside `botology.dll`; Dalamud assemblies remain host-owned.
-The existing release workflow checks out only Botology, so mcvaxius must choose how
-to provide AethertekUI there before releasing this integration.
+The release workflow checks out Botology and `McVaxius/aethertekUI` into sibling
+`botology` and `aethertekUI` directories, with AethertekUI pinned to revision
+`6c193cf06ac67f954c549cafc2033ac0efdd630a`. It builds Botology, uploads the package
+artifacts, and creates the GitHub release.
 
 Run the existing feature/visual harness after a packaging-disabled build using
 the same repository environment:
