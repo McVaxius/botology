@@ -151,6 +151,13 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
                 foreach (var role in Enum.GetValues<UiFontRole>())
                     uiTextHost.Renderer.CheckGlyphs(uiText.RequiredText, BotologyPresentation.AtlasHeight(role) * ImGuiHelpers.GlobalScale);
                 uiFonts.CheckGlyphs(uiText.RequiredText.Select(MaterialText.NativeGlyphText));
+                var hindiLabel = UiText.Languages.Single(l => l.Code == "hi").Name;
+                var hindiAvailable = true;
+                foreach (var size in Enum.GetValues<UiFontRole>())
+                    hindiAvailable &= uiTextHost.Renderer.TryCheckGlyphs([hindiLabel], BotologyPresentation.AtlasHeight(size) * ImGuiHelpers.GlobalScale, out _);
+                languageOptions.Replace(UiText.Languages.Select(l => new MaterialOption<string>(l.Code, l.Code,
+                    l.Code == "hi" && !hindiAvailable ? "Hindi (unavailable)" : l.Name,
+                    l.Code == "hi" && !hindiAvailable)).ToArray());
                 checkedFontGeneration=generation;
             }
             catch(Exception ex) { if(!fontIssueLogged) { Log.Error(ex,"[botology] Required UI glyph coverage failed.");fontIssueLogged=true; } DrawFontStatus(false);return; }
@@ -182,7 +189,13 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
             if (ImGui.Begin("Botology##FontStatus", ImGuiWindowFlags.AlwaysAutoResize))
             {
                 fontStatusDecorations.Paint();
-                MaterialText.TextWrapped(UiText.T(loading ? "Loading UI fonts..." : "UI fonts failed to load. See the plugin log."));
+                ImGui.TextWrapped(appliedLanguage == "hi" && !loading ? "Hindi UI fonts are unavailable. Use English to continue."
+                    : loading ? "Loading UI fonts..." : "UI fonts failed to load. See the plugin log.");
+                if (appliedLanguage == "hi" && !loading && ImGui.Button("Use English"))
+                {
+                    Configuration.UiLanguage = "en";
+                    Configuration.Save();
+                }
             }
         }
         finally

@@ -8,6 +8,17 @@ internal enum UiFontRole { Body, BodyStrong, Title, PluginName, Counter, Action,
 
 internal static class BotologyPresentation
 {
+    // Dalamud owns the shared texture through render submission; callers borrow its wrapper.
+    internal static Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap? OriginalIcon
+        => Plugin.TextureProvider.GetFromManifestResource(typeof(Plugin).Assembly, "botology.images.icon.png").GetWrapOrDefault();
+
+    internal static void DrawPluginIcon(ImDrawListPtr drawList, Vector2 min, Vector2 max)
+    {
+        var texture = OriginalIcon;
+        if (texture is not null)
+            MaterialCanvas.DrawImage(drawList, texture.Handle, new Vector2(texture.Width, texture.Height), min, max);
+    }
+
     private const uint ReferenceAccent=0x1CC9E6;
     internal const float ContentWidth=1440, ContentHeight=942;
     internal static bool Compact => MaterialTheme.Current.Density == MaterialDensity.Compact;

@@ -83,10 +83,15 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         base.PreDraw();
     }
 
+    public override void PostDraw()
+    {
+        base.PostDraw();
+        UiGui.PaintTitleWithImage(this, PluginInfo.DisplayName + " v" + typeof(Plugin).Assembly.GetName().Version);
+    }
+
     public override void Draw()
     {
         windowMotion.DrawChrome();
-        UiGui.TitleWithButtons(PluginInfo.DisplayName,PluginInfo.DisplayName+" v"+Assembly.GetExecutingAssembly().GetName().Version, this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(34,20));
         DrawContent(plugin.CaptureRows(), plugin.CaptureDtrEntries(), plugin.GetCatalogRefreshInfo());
@@ -270,14 +275,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     private static void DrawLogo(float size)
     {
         var p=ImGui.GetCursorScreenPos();
-        var dl=ImGui.GetWindowDrawList();
-        var color=MaterialCanvas.Color(MaterialTheme.Current.Colors.Primary);
-        var background=MaterialCanvas.Color(MaterialTheme.Current.Colors.Background);
-        Vector2[] points=[p+new Vector2(.50f,.05f)*size,p+new Vector2(.90f,.29f)*size,p+new Vector2(.90f,.70f)*size,
-            p+new Vector2(.50f,.96f)*size,p+new Vector2(.10f,.70f)*size,p+new Vector2(.10f,.29f)*size,p+new Vector2(.50f,.54f)*size];
-        for(var i=0;i<6;i++) dl.AddLine(points[i],points[(i+1)%6],color,2*MaterialTheme.Metrics.Scale);
-        foreach(var i in new[]{1,3,5}) dl.AddLine(points[i],points[6],color,2*MaterialTheme.Metrics.Scale);
-        foreach(var point in points) { dl.AddCircleFilled(point,size*.065f,color,16); dl.AddCircleFilled(point,size*.035f,background,16); }
+        BotologyPresentation.DrawPluginIcon(ImGui.GetWindowDrawList(), p, p + new Vector2(size));
         ImGui.Dummy(new(size,size));
     }
 

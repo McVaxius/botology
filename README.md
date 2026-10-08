@@ -19,6 +19,10 @@ Scroll down to "The Dumpster Fire" channel to discuss issues / suggestions for s
 
 ## Current Status
 
+Hindi uses installed shaping fonts. The source now leaves other languages usable when the Hindi menu caption is unavailable, showing a disabled ASCII `Hindi (unavailable)` option. Required text for a selected Hindi UI still requires full validation; on failure, the readable status offers **Use English**, saving English only after an explicit press. Native verification and Linux/Wine acceptance remain pending for this change.
+
+Use Settings for shared colour, UI language, compact spacing and window transparency/fade; the optional Main selectors change the same saved preferences. Main branding and expanded/collapsed titles use the packaged Botology icon in its original colours. Botology's Enabled switch controls assessment alerts; the grid's per-plugin enable and DTR actions remain separate controls for the selected installed plugin.
+
 Botology is public and released as `v2.0.0.1` on 2026-10-07. [Build and Release #34](https://github.com/McVaxius/botology/actions/runs/37602867929) succeeded for commit `7c662c2` and published the package. The plugin provides a functional compatibility grid: installed state, update availability, repo link, enable toggle, best-effort DTR toggle, ignore flags, rule detail popups, category/plugin/author filters, AI attribution, cached catalog patch notes, and a growing `plugin-repository-links.json` catalog for tracked plugins.
 
 - Solution: `Z:\botology\botology.sln`
