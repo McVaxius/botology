@@ -34,8 +34,30 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         UiGui.Title(PluginInfo.DisplayName+" Settings",PluginInfo.DisplayName+" "+UiText.T("Settings"));
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
-        plugin.DrawWindowAppearanceSettings();
-        ImGui.Separator();
+        var settingsRoot = ImGui.GetID("");
+        using var tabs = MaterialTabs.Begin("BotologySettingsTabs", new[] { UiText.T("Settings"), UiText.T("Window appearance") }, ImGuiTabBarFlags.FittingPolicyScroll);
+        if (tabs.Visible)
+        {
+            using (var general = MaterialTabs.Item(UiText.T("Settings") + "###Settings", ImGuiTabItemFlags.NoPushId))
+                if (general.Visible)
+                {
+                    ImGuiP.PushOverrideID(settingsRoot);
+                    try { DrawGeneralSettings(); }
+                    finally { ImGui.PopID(); }
+                }
+            using (var appearance = MaterialTabs.Item(UiText.T("Window appearance") + "###WindowAppearance", ImGuiTabItemFlags.NoPushId))
+                if (appearance.Visible)
+                {
+                    ImGuiP.PushOverrideID(settingsRoot);
+                    try { plugin.DrawWindowAppearanceSettings(); }
+                    finally { ImGui.PopID(); }
+                }
+        }
+        FinalizePendingWindowPlacement();
+    }
+
+    private void DrawGeneralSettings()
+    {
         var cfg = plugin.Configuration;
 
         var enabled = cfg.PluginEnabled;
@@ -149,6 +171,5 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         MaterialText.TextWrapped(UiText.F("Last master check: {0}",UiText.Date(refreshInfo.LastCheckedUtc)));
         MaterialText.TextWrapped(UiText.F("Last master update: {0}",UiText.Date(refreshInfo.LastUpdatedUtc)));
 
-        FinalizePendingWindowPlacement();
     }
 }
