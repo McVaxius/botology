@@ -34,6 +34,7 @@ internal static class BotologyUiSmoke
                 new("compact","main",Compact:true),new("compact-settings","settings",1000,850,Compact:true),
                 new("catalog-readonly","catalog",1500,1000),new("catalog-editable","catalog",1500,1000,Editable:true),
                 new("dtr-populated","dtr",900,700),new("dtr-empty","dtr",900,700,Empty:true),
+                new("compact-dtr","dtr",900,700,Compact:true),
             };
             foreach(var popup in new[]{"columns","patch","blocking","description","rule","color","language"})
                 scenarios.Add(new("popup-"+popup,"main",Width:popup=="rule"?1880:1472,Extras:popup=="rule",Popup:popup));
@@ -49,6 +50,7 @@ internal static class BotologyUiSmoke
             {
                 if(Environment.GetEnvironmentVariable("BOTOLOGY_VISUAL_CASE") is { Length:>0 } selected && !selected.Split(',').Contains(language+"/"+scenario.Name,StringComparer.Ordinal)) continue;
                 using var host=new NativeTestContext(scenario.Width,scenario.Height,scenario.Scale,language);
+                using var originalIcon=new BotologyOriginalIcon(host);
                 var backend=new SnapshotUi(scenario.Empty,scenario.Accent,language,scenario.Ignored,scenario.Unavailable);
                 backend.Configuration.UiCompact=scenario.Compact;
                 backend.Configuration.ShowAiColumn=backend.Configuration.ShowRepoColumn=scenario.Extras && scenario.Popup!="rule";
@@ -84,6 +86,8 @@ internal static class BotologyUiSmoke
                     ImGui.SetNextWindowPos(Vector2.Zero); ImGui.SetNextWindowSize(new(scenario.Width,scenario.Height));
                     ImGui.Begin(scenario.Window switch { "settings"=>"Botology Settings##Config","catalog"=>"Botology Catalog Editor##CatalogEditor",
                         "dtr"=>"Botology DTR Manager##DtrManager",_=>"Botology##Main" },ImGuiWindowFlags.NoSavedSettings);
+                    try
+                    {
                     switch(scenario.Window)
                     {
                         case "settings": settings.Draw(); break;
@@ -105,7 +109,8 @@ internal static class BotologyUiSmoke
                             throw new InvalidOperationException("Translated table header clipped: "+language+"/"+column);
                     if(scenario.Window=="main" && ImGui.GetCursorPosY()>scenario.Height-8*scenario.Scale)
                         throw new InvalidOperationException("Footer overflow: "+language+"/"+scenario.Name);
-                    ImGui.End(); ImGui.PopStyleVar();
+                    }
+                    finally { ImGui.End(); ImGui.PopStyleVar(); }
                 }
                 ImGui.GetIO().AddMousePosEvent(-1000,-1000);
                 // Native child scrollbars can change available width over several frames.
@@ -120,6 +125,17 @@ internal static class BotologyUiSmoke
                     priorGeometry=geometry;
                 }
                 if(stableFrames<3) throw new InvalidOperationException("Window geometry did not settle: "+language+"/"+scenario.Name);
+                if (scenario.Compact && scenario.Window == "main")
+                {
+                    var rows = bounds.Where(pair => pair.Key.StartsWith("row-", StringComparison.Ordinal))
+                        .Select(pair => pair.Value).OrderBy(row => row.Min.Y).ToArray();
+                    for (var index = 1; index < rows.Length; index++)
+                        if (Math.Abs(rows[index].Min.Y - rows[index - 1].Max.Y) > 1.1f * scenario.Scale)
+                            throw new InvalidOperationException("Compact rows are not adjacent: " + language + "/" + scenario.Name);
+                    if (language == "en" && scenario.Name == "compact" &&
+                        (rows.Length < 2 || rows.Any(row => row.Max.Y - row.Min.Y >= 64 * scenario.Scale)))
+                        throw new InvalidOperationException("Compact rows retained the oversized minimum height.");
+                }
                 if(scenario.Popup is "columns" or "patch" or "description" or "rule" or "color" or "language")
                 {
                     Vector2 Center(string key)=>(bounds[key].Min+bounds[key].Max)*.5f;
@@ -146,7 +162,7 @@ internal static class BotologyUiSmoke
                     || (string)hindiDraft.GetType().GetField("Description")!.GetValue(hindiDraft)! != hindiDescription))
                     throw new InvalidOperationException("Actual catalog multiline editors changed retained Hindi/CRLF/Unicode data.");
                 var name=language+"-"+scenario.Name;
-                if(language=="en" && scenario.Name=="main") CheckDesign(host,bounds);
+                if(language=="en" && scenario.Name=="main" && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AETHERTEKUI_CANDIDATE_DIR"))) CheckDesign(host,bounds);
                 SoftwarePreview.Verify(name,host,Path.Combine(AppContext.BaseDirectory,"Baselines"),Path.Combine(AppContext.BaseDirectory,"artifacts"));
                 rendered++;
                 if(Environment.GetEnvironmentVariable("AETHERTEKUI_PREVIEW_DIR") is { Length:>0 } previews)
@@ -156,7 +172,7 @@ internal static class BotologyUiSmoke
             }
         }
         if(CultureInfo.CurrentCulture!=originalCulture) throw new InvalidOperationException("UI changed process culture.");
-        Console.WriteLine($"Botology: {rendered} deterministic font-checked window/state renders.");
+        Console.WriteLine($"Botology: {rendered} deterministic font-checked window/state renders. Candidate mode retains native checks; initial design/baseline approval remains separate.");
     }
 
     private static unsafe void CheckPopup(string name,int width,int height,float scale)
@@ -432,11 +448,58 @@ internal static class BotologyUiSmoke
 public class ConfigurationSaveProxy : DispatchProxy
 {
     internal string? Json;
+    internal Func<MethodInfo,object?[]?,object?>? Handler;
     protected override object? Invoke(MethodInfo? method,object?[]? arguments)
     {
+        if(Handler is not null) return Handler(method!,arguments);
         if(method?.Name!="SavePluginConfig") throw new InvalidOperationException("Unexpected offline service access: "+method?.Name);
         Json=Newtonsoft.Json.JsonConvert.SerializeObject(arguments![0]);return null;
     }
+}
+
+internal sealed class BotologyOriginalIcon : global::Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap
+{
+    private readonly PropertyInfo provider=typeof(Plugin).GetProperty("TextureProvider",BindingFlags.Static|BindingFlags.NonPublic)!;
+    private readonly object? previous;
+    private readonly MaterialTextTexture texture;
+    public ImTextureID Handle=>texture.Id;
+    public int Width { get; }
+    public int Height { get; }
+    public BotologyOriginalIcon(NativeTestContext host)
+    {
+        const string resource="botology.images.icon.png";
+        using var embedded=typeof(Plugin).Assembly.GetManifestResourceStream(resource) ?? throw new InvalidOperationException("Missing original Botology image.");
+        using var png=new MemoryStream();embedded.CopyTo(png);
+        if(!png.ToArray().SequenceEqual(File.ReadAllBytes("Z:/botology/botology/images/icon.png")))
+            throw new InvalidOperationException("Compiled Botology image differs from source.");
+        png.Position=0;
+        var drawing=Assembly.LoadFrom("C:/Program Files/dotnet/shared/Microsoft.WindowsDesktop.App/10.0.5/System.Drawing.Common.dll");
+        var bitmapType=drawing.GetType("System.Drawing.Bitmap",true)!;
+        using var bitmap=(IDisposable)Activator.CreateInstance(bitmapType,png)!;
+        Width=(int)bitmapType.GetProperty("Width")!.GetValue(bitmap)!;Height=(int)bitmapType.GetProperty("Height")!.GetValue(bitmap)!;
+        if(Width<1 || Height<1 || (long)Width*Height>32_000_000) throw new InvalidOperationException("Invalid Botology image dimensions.");
+        var lockMethod=bitmapType.GetMethods().Single(method=>method.Name=="LockBits" && method.GetParameters().Length==3);
+        var arguments=lockMethod.GetParameters();
+        var locked=lockMethod.Invoke(bitmap,new object[]{new System.Drawing.Rectangle(0,0,Width,Height),Enum.Parse(arguments[1].ParameterType,"ReadOnly"),Enum.Parse(arguments[2].ParameterType,"Format32bppArgb")})!;
+        var rgba=new byte[checked(Width*Height*4)];
+        try
+        {
+            var dataType=locked.GetType();var pixels=(nint)dataType.GetProperty("Scan0")!.GetValue(locked)!;var stride=(int)dataType.GetProperty("Stride")!.GetValue(locked)!;
+            for(var y=0;y<Height;y++) System.Runtime.InteropServices.Marshal.Copy(pixels+y*stride,rgba,y*Width*4,Width*4);
+            for(var i=0;i<rgba.Length;i+=4) (rgba[i],rgba[i+2])=(rgba[i+2],rgba[i]);
+        }
+        finally { bitmapType.GetMethod("UnlockBits")!.Invoke(bitmap,new[]{locked}); }
+        texture=host.RegisterBitmap(new MaterialTextBitmap(Width,Height,Vector2.Zero,rgba));
+        previous=provider.GetValue(null);
+        var shared=DispatchProxy.Create<global::Dalamud.Interface.Textures.ISharedImmediateTexture,ConfigurationSaveProxy>();
+        ((ConfigurationSaveProxy)(object)shared).Handler=(method,values)=>method.Name=="GetWrapOrDefault" ? this : throw new InvalidOperationException("Unexpected image access: "+method.Name);
+        var supplied=DispatchProxy.Create<global::Dalamud.Plugin.Services.ITextureProvider,ConfigurationSaveProxy>();
+        ((ConfigurationSaveProxy)(object)supplied).Handler=(method,values)=>method.Name=="GetFromManifestResource" && Equals(values![0],typeof(Plugin).Assembly) && Equals(values[1],resource)
+            ? shared : throw new InvalidOperationException("Unexpected image identity: "+method.Name);
+        provider.SetValue(null,supplied);
+    }
+    public global::Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap CreateWrapSharingLowLevelResource()=>throw new InvalidOperationException("Unexpected image rental.");
+    public void Dispose() { provider.SetValue(null,previous);texture.Dispose(); }
 }
 
 internal sealed class SnapshotUi : IBotologyUi
@@ -531,12 +594,7 @@ internal sealed unsafe class NativeTestContext : IDisposable
     public NativeTestContext(int width,int height,float scale,string language)
     {
         context=ImGui.CreateContext();
-        shapedText=new MaterialTextRenderer(bitmap=>
-        {
-            var texture=new RegisteredTextTexture(this,nextTextTextureId++,bitmap);
-            textTextures.Add(texture.Id.Handle,texture);
-            return new MaterialTextTexture(texture.Id,texture);
-        });
+        shapedText=new MaterialTextRenderer(RegisterBitmap);
         var io=ImGui.GetIO();io.IniFilename=null;io.LogFilename=null;io.DisplaySize=new(width,height);io.DeltaTime=1f/60;io.FontGlobalScale=scale;
         io.Fonts.AddFontDefault();
         using var text=new UiText(language,_=>throw new InvalidOperationException());
@@ -588,6 +646,12 @@ internal sealed unsafe class NativeTestContext : IDisposable
     public SoftwarePreview.Texture Texture(ImTextureID id)
         => id.Handle>=1 && id.Handle<=(ulong)textures.Length ? textures[(int)id.Handle-1]
             : textTextures.TryGetValue(id.Handle,out var text) ? text.Texture : throw new InvalidOperationException("Unknown diagnostic texture.");
+    public MaterialTextTexture RegisterBitmap(MaterialTextBitmap bitmap)
+    {
+        var texture=new RegisteredTextTexture(this,nextTextTextureId++,bitmap);
+        textTextures.Add(texture.Id.Handle,texture);
+        return new MaterialTextTexture(texture.Id,texture);
+    }
     private sealed class RegisteredTextTexture : IDisposable
     {
         private readonly NativeTestContext owner;
@@ -607,7 +671,7 @@ internal sealed unsafe class NativeTestContext : IDisposable
             disposed=true;owner.textTextures.Remove(Id.Handle);pixels.Free();
         }
     }
-    public void Frame(Action draw) { ImGui.NewFrame();using(shapedText.Push()) draw();ImGui.Render(); }
+    public void Frame(Action draw) { ImGui.NewFrame();try { using(shapedText.Push()) draw(); } finally { ImGui.Render(); } }
     public void Click(Vector2 position,Action draw)
     {
         ImGui.GetIO().AddMousePosEvent(position.X,position.Y);Frame(draw);

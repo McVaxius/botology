@@ -54,6 +54,7 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
             ImGuiTableFlags.ScrollY |
             ImGuiTableFlags.SizingFixedFit;
 
+        using var tightRows = BotologyPresentation.Compact ? MaterialTable.PushTightRows() : default;
         if (ImGui.BeginTable("BotologyDtrEntries", 5, tableFlags, new Vector2(-1f, -1f)))
         {
             var scale=AethertekUI.MaterialTheme.Metrics.Scale;

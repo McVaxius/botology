@@ -135,6 +135,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         var visibleColumns = GetVisibleColumns();
         using (var tableControls = MaterialControls.Push(BotologyPresentation.Controls(34,20)))
         {
+            using var tightRows = BotologyPresentation.Compact ? MaterialTable.PushTightRows() : default;
             ImGui.PushStyleColor(ImGuiCol.ChildBg,MaterialTheme.Current.Colors.Background);
             var tableFlags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable |
                 ImGuiTableFlags.ScrollY | ImGuiTableFlags.ScrollX | ImGuiTableFlags.Sortable | ImGuiTableFlags.SizingFixedFit;
@@ -625,7 +626,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         GridColumn[] columns,
         IReadOnlyList<DtrEntrySnapshot> dtrEntries)
     {
-        ImGui.TableNextRow(ImGuiTableRowFlags.None, BotologyPresentation.RowHeight * MaterialTheme.Metrics.Scale);
+        ImGui.TableNextRow(ImGuiTableRowFlags.None, BotologyPresentation.Compact ? 0 : BotologyPresentation.RowHeight * MaterialTheme.Metrics.Scale);
         if (row.IsUnavailableForCurrentPatch)
         {
             var bg = ImGui.ColorConvertFloat4ToU32(new Vector4(0.24f, 0.24f, 0.24f, 0.38f));
@@ -649,7 +650,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                 GridColumn.Installed or GridColumn.Update or GridColumn.Enabled or GridColumn.Dtr or GridColumn.Author => ImGui.GetTextLineHeight(),
                 _ => 0,
             };
-            if(contentHeight>0)
+            if(contentHeight>0 && !BotologyPresentation.Compact)
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY()+Math.Max(0,(BotologyPresentation.RowHeight*s-contentHeight)*.5f-ImGui.GetStyle().CellPadding.Y));
             switch (columns[columnIndex])
             {

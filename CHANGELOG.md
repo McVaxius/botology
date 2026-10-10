@@ -1,3 +1,16 @@
+2026-10-09 - Tight compact plugin and DTR grids (I503/I509)
+
+- Apply the approved adjacent-row table style to compact plugin and DTR lists. Let the tallest retained editor set plugin-row height while preserving sorting, column identities, links, visibility actions and scrolling.
+- Refresh the existing native UI fixture with the actual embedded icon and balanced failure cleanup; keep candidate renders separate from approved baselines and game acceptance.
+
+2026-10-09 - Separate XA Slave log-tools shortcut (I512)
+
+- Add Open XA Slave log tools beside the existing manual support exporter when XA Slave is loaded. The new action opens Utility > XA Mods only; preserve the Copy / ZIP button, its handler and cap warning. No automatic cleanup, provider loading or settings changes.
+
+2026-10-09 - Manual Dalamud support log export (I506)
+
+- Add Copy / ZIP Dalamud log and Open Export Folder to the existing settings/support interface. At 100 MiB or above, warn that logging may have stopped and recent activity may be missing; require another explicit click to export. Exports stay local and can be shared or removed manually. Preserve saved settings and release versions.
+
 2026-10-08 - Dedicated Window appearance settings (I505)
 
 - Move colour, language, compact mode and transparency controls into their own settings tab or sidebar page. Retain the existing controls, native IDs, saved preferences and actions; keep normal settings visible without an appearance block above them. Versions and client configuration are unchanged. Local build checks and game visual acceptance are recorded separately in the selected task checkpoint.
