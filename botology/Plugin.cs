@@ -74,6 +74,7 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
     {
         uiTextHost = new(TextureProvider);
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        if (Configuration.ApplyCompactDefaults()) Configuration.Save();
         ApplyAppearance();
         PluginManagerBridge = new PluginManagerBridge(PluginInterface, CommandManager, Log);
         DtrVisibilityBridge = new DtrVisibilityBridge(PluginInterface, DtrBar, Log);
@@ -1047,6 +1048,9 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
         var compactVisible = Configuration.UiCompactVisibleOnMainWindow;
         if (UiGui.Checkbox("Compact visible on main window", ref compactVisible))
         { Configuration.UiCompactVisibleOnMainWindow = compactVisible; Configuration.Save(); }
+        var transparencyVisible = Configuration.UiTransparencyVisibleOnMainWindow;
+        if (UiGui.Checkbox("Transparency visible on main window", ref transparencyVisible))
+        { Configuration.UiTransparencyVisibleOnMainWindow = transparencyVisible; Configuration.Save(); }
         var languageVisible = Configuration.UiLanguageVisibleOnMainWindow;
         if (UiGui.Checkbox("Language visible on main window", ref languageVisible))
         { Configuration.UiLanguageVisibleOnMainWindow = languageVisible; Configuration.Save(); }

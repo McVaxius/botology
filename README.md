@@ -105,7 +105,7 @@ comparisons to normal baseline runs and explicit image review.
 - `Patch Notes` shows the newest-first catalog release history from the last valid remote response or local cache. A failed or invalid notes fetch keeps the previous cache and does not block catalog refresh.
 - The compatible `ToastOnMasterCatalogChange` setting is shown as “Toast for catalog notes affecting installed plugins.” A release is evaluated once and only produces a toast when one of its affected catalog rows matches an installed plugin; disabled plugins still count as installed.
 
-Compact mode is available from the main header?s **C** checkbox and in Settings. `UiCompact` defaults to false, uses the existing save path, and shares reduced padding and control/card/row density across windows. Body text remains readable; optional columns and saved widths are preserved.
+Compact mode defaults on. The main Compact and Transparency controls start hidden; Settings keeps density, transparency and independent main-control visibility choices. The one-time migration preserves opacity and unrelated preferences, and later loads retain your choices. Body text remains readable; optional columns and saved widths are preserved.
 
 ## Support logs
 

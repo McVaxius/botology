@@ -213,13 +213,13 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         var managerWidth=MaterialText.Measure(UiText.T("Manager enabled")).X+40*s;
         var compactWidth = plugin.Configuration.UiCompactVisibleOnMainWindow
             ? MaterialText.Measure("C").X + ImGui.GetFrameHeight() + 16 * s : 0;
-        var opacityWidth = MaterialText.Measure(UiText.T("Transparency")).X + ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X;
+        var opacityWidth = plugin.Configuration.UiTransparencyVisibleOnMainWindow ? MaterialText.Measure(UiText.T("Transparency")).X + ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X : 0;
         var selectorMetrics = BotologyPresentation.Controls(28, 18);
         var selectedLanguage = UiText.Languages.First(entry => entry.Code == UiText.Current.Language).Name;
         var languageWidth = plugin.Configuration.UiLanguageVisibleOnMainWindow
             ? Math.Max(112 * s, MathF.Ceiling(MaterialText.Measure(selectedLanguage).X + selectorMetrics.Height
                 + 3 * selectorMetrics.Gap + Math.Min(selectorMetrics.IconSize, selectorMetrics.Height))) : 0;
-        var selectorsWidth = compactWidth + opacityWidth + languageWidth + 2 * ImGui.GetStyle().ItemSpacing.X;
+        var selectorsWidth = compactWidth + opacityWidth + languageWidth + ((compactWidth > 0 ? 1 : 0) + (opacityWidth > 0 ? 1 : 0) + (languageWidth > 0 ? 1 : 0)) * ImGui.GetStyle().ItemSpacing.X;
         var linksWidth=new[] { "     Ko-fi","     Discord","AETHERFEED",UiText.T("Settings") }.Sum(l=>MaterialText.Measure(l).X+2*MaterialControls.Metrics.Padding.X)
             +2*(MaterialControls.Metrics.IconSize+MaterialControls.Metrics.Gap)+3*ImGui.GetStyle().ItemSpacing.X;
         var wrapped=identity+managerWidth+selectorsWidth+linksWidth+40*s>width;
@@ -239,10 +239,13 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             if(ImGui.Checkbox("C##CompactMode",ref compact)) { plugin.Configuration.UiCompact=compact; plugin.Configuration.Save(); }
             if(ImGui.IsItemHovered()) MaterialText.SetTooltip(UiText.T("Compact mode"));
         }
-        Next(opacityWidth);
-        var transparency = plugin.Configuration.UiTransparencyEnabled;
-        if (UiGui.Checkbox("Transparency##MainWindow", ref transparency))
-        { plugin.Configuration.UiTransparencyEnabled = transparency; plugin.Configuration.Save(); }
+        if (plugin.Configuration.UiTransparencyVisibleOnMainWindow)
+        {
+            Next(opacityWidth);
+            var transparency = plugin.Configuration.UiTransparencyEnabled;
+            if (UiGui.Checkbox("Transparency##MainWindow", ref transparency))
+            { plugin.Configuration.UiTransparencyEnabled = transparency; plugin.Configuration.Save(); }
+        }
         if (plugin.Configuration.UiLanguageVisibleOnMainWindow)
         {
             Next(languageWidth);
