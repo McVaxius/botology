@@ -1,5 +1,6 @@
 2026-10-09 - Tight compact plugin and DTR grids (I503/I509)
 
+
 - Apply the approved adjacent-row table style to compact plugin and DTR lists. Let the tallest retained editor set plugin-row height while preserving sorting, column identities, links, visibility actions and scrolling.
 - Refresh the existing native UI fixture with the actual embedded icon and balanced failure cleanup; keep candidate renders separate from approved baselines and game acceptance.
 
