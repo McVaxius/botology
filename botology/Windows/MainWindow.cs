@@ -211,46 +211,14 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         var identity=Math.Max(374*s,68*s+MaterialText.Measure(UiText.T("Dalamud Plugin Compatibility Manager")).X+20*s);
         var enabled=plugin.Configuration.PluginEnabled;
         var managerWidth=MaterialText.Measure(UiText.T("Manager enabled")).X+40*s;
-        var compactWidth = plugin.Configuration.UiCompactVisibleOnMainWindow
-            ? MaterialText.Measure("C").X + ImGui.GetFrameHeight() + 16 * s : 0;
-        var opacityWidth = plugin.Configuration.UiTransparencyVisibleOnMainWindow ? MaterialText.Measure(UiText.T("Transparency")).X + ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X : 0;
-        var selectorMetrics = BotologyPresentation.Controls(28, 18);
-        var selectedLanguage = UiText.Languages.First(entry => entry.Code == UiText.Current.Language).Name;
-        var languageWidth = plugin.Configuration.UiLanguageVisibleOnMainWindow
-            ? Math.Max(112 * s, MathF.Ceiling(MaterialText.Measure(selectedLanguage).X + selectorMetrics.Height
-                + 3 * selectorMetrics.Gap + Math.Min(selectorMetrics.IconSize, selectorMetrics.Height))) : 0;
-        var selectorsWidth = compactWidth + opacityWidth + languageWidth + ((compactWidth > 0 ? 1 : 0) + (opacityWidth > 0 ? 1 : 0) + (languageWidth > 0 ? 1 : 0)) * ImGui.GetStyle().ItemSpacing.X;
         var linksWidth=new[] { "     Ko-fi","     Discord","AETHERFEED",UiText.T("Settings") }.Sum(l=>MaterialText.Measure(l).X+2*MaterialControls.Metrics.Padding.X)
             +2*(MaterialControls.Metrics.IconSize+MaterialControls.Metrics.Gap)+3*ImGui.GetStyle().ItemSpacing.X;
-        var wrapped=identity+managerWidth+selectorsWidth+linksWidth+40*s>width;
+        var wrapped=identity+managerWidth+linksWidth+40*s>width;
         var y=wrapped?BotologyPresentation.HeaderHeight*s:(BotologyPresentation.Compact ? 16 : 22)*s;
         var x=wrapped?0:identity;
         BotologyPresentation.Separator(origin+new Vector2(x-16*s,y),36*s);
         ImGui.SetCursorScreenPos(origin+new Vector2(x,y));
-        void Next(float nextWidth)
-        {
-            if (ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + nextWidth <= origin.X + width) ImGui.SameLine();
-        }
         if(MaterialSelection.Checkbox("manager-enabled",UiText.T("Manager enabled"),ref enabled)) plugin.SetPluginEnabled(enabled,printStatus:true);
-        if (plugin.Configuration.UiCompactVisibleOnMainWindow)
-        {
-            Next(compactWidth);
-            var compact=plugin.Configuration.UiCompact;
-            if(ImGui.Checkbox("C##CompactMode",ref compact)) { plugin.Configuration.UiCompact=compact; plugin.Configuration.Save(); }
-            if(ImGui.IsItemHovered()) MaterialText.SetTooltip(UiText.T("Compact mode"));
-        }
-        if (plugin.Configuration.UiTransparencyVisibleOnMainWindow)
-        {
-            Next(opacityWidth);
-            var transparency = plugin.Configuration.UiTransparencyEnabled;
-            if (UiGui.Checkbox("Transparency##MainWindow", ref transparency))
-            { plugin.Configuration.UiTransparencyEnabled = transparency; plugin.Configuration.Save(); }
-        }
-        if (plugin.Configuration.UiLanguageVisibleOnMainWindow)
-        {
-            Next(languageWidth);
-            plugin.DrawAppearanceSelector();
-        }
         var linksY = ImGui.GetItemRectMin().Y - origin.Y;
         if (ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + linksWidth <= origin.X + width)
             ImGui.SetCursorScreenPos(new Vector2(origin.X + Math.Max(ImGui.GetItemRectMax().X - origin.X + 12 * s, width - linksWidth), origin.Y + linksY));

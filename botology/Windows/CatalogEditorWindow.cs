@@ -42,7 +42,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
     public override void Draw()
     {
         windowMotion.DrawChrome();
-        UiGui.Title(PluginInfo.DisplayName+" Catalog Editor",PluginInfo.DisplayName+" "+UiText.T("Catalog Editor"));
+        UiGui.TitleWithButtons(PluginInfo.DisplayName+" Catalog Editor",PluginInfo.DisplayName+" "+UiText.T("Catalog Editor"), this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
         var scale=AethertekUI.MaterialTheme.Metrics.Scale;

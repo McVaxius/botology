@@ -31,7 +31,7 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
     public override void Draw()
     {
         windowMotion.DrawChrome();
-        UiGui.Title(PluginInfo.DisplayName+" DTR Manager",PluginInfo.DisplayName+" "+UiText.T("DTR manager"));
+        UiGui.TitleWithButtons(PluginInfo.DisplayName+" DTR Manager",PluginInfo.DisplayName+" "+UiText.T("DTR manager"), this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
         if (UiGui.SmallButton("XLSettings Server Info Bar"))

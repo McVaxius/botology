@@ -32,7 +32,7 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
     public override void Draw()
     {
         windowMotion.DrawChrome();
-        UiGui.Title(PluginInfo.DisplayName+" Settings",PluginInfo.DisplayName+" "+UiText.T("Settings"));
+        UiGui.TitleWithButtons(PluginInfo.DisplayName+" Settings",PluginInfo.DisplayName+" "+UiText.T("Settings"), this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
         var settingsRoot = ImGui.GetID("");
