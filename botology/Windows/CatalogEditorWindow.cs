@@ -39,6 +39,12 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
     }
     internal void DiagnosticSelect(PluginCatalogEntry entry,bool editable) => LoadDraft(entry,editable);
 
+    public override void PostDraw()
+    {
+        base.PostDraw();
+        UiGui.PaintTitleWithImageAndStatus(this, PluginInfo.DisplayName + " " + UiText.T("Catalog Editor"), status: plugin.TitlebarStatus);
+    }
+
     public override void Draw()
     {
         windowMotion.DrawChrome();

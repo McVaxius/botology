@@ -86,7 +86,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     public override void PostDraw()
     {
         base.PostDraw();
-        UiGui.PaintTitleWithImage(this, PluginInfo.DisplayName + " v" + typeof(Plugin).Assembly.GetName().Version);
+        UiGui.PaintTitleWithImageAndStatus(this, PluginInfo.DisplayName + " v" + typeof(Plugin).Assembly.GetName().Version, status: plugin.TitlebarStatus);
     }
 
     public override void Draw()

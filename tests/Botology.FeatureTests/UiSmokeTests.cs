@@ -217,7 +217,7 @@ internal static class BotologyUiSmoke
     private static void CheckPreferencesAndResources()
     {
         var configuration=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>("{\"Version\":1,\"PluginEnabled\":false,\"ShowAuthorColumn\":true,\"IgnoredPluginIds\":[\"fixture\"]}")!;
-        if(configuration.UiLanguage!="en" || configuration.UiAccentRgb!=0x1CC9E6 || configuration.Version!=1 || configuration.PluginEnabled || !configuration.ShowAuthorColumn || configuration.IgnoredPluginIds.Single()!="fixture")
+        if(!configuration.UiShowTitlebarStatus || !configuration.UiDetailedTitlebarStatus || configuration.UiLanguage!="en" || configuration.UiAccentRgb!=0x1CC9E6 || configuration.Version!=1 || configuration.PluginEnabled || !configuration.ShowAuthorColumn || configuration.IgnoredPluginIds.Single()!="fixture")
             throw new InvalidOperationException("Existing configuration defaults were reset.");
         var property=typeof(Plugin).GetProperty("PluginInterface",BindingFlags.Static|BindingFlags.NonPublic)!;
         var previous=property.GetValue(null);
@@ -227,9 +227,10 @@ internal static class BotologyUiSmoke
             property.SetValue(null,save);
             foreach(var language in UiText.Languages)
             {
-                configuration.UiLanguage=language.Code;configuration.UiAccentRgb=0xC98542;configuration.Save();
+                configuration.UiLanguage=language.Code;configuration.UiAccentRgb=0xC98542;
+                configuration.UiShowTitlebarStatus=false;configuration.UiDetailedTitlebarStatus=false;configuration.Save();
                 var saved=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(((ConfigurationSaveProxy)save).Json!)!;
-                if(saved.UiLanguage!=language.Code || saved.UiAccentRgb!=0xC98542 || saved.Version!=1 || saved.PluginEnabled || !saved.ShowAuthorColumn || saved.IgnoredPluginIds.Single()!="fixture")
+                if(saved.UiShowTitlebarStatus || saved.UiDetailedTitlebarStatus || saved.UiLanguage!=language.Code || saved.UiAccentRgb!=0xC98542 || saved.Version!=1 || saved.PluginEnabled || !saved.ShowAuthorColumn || saved.IgnoredPluginIds.Single()!="fixture")
                     throw new InvalidOperationException("UI preferences did not use the existing save path: "+language.Code);
             }
         }
@@ -504,6 +505,7 @@ internal sealed class BotologyOriginalIcon : global::Dalamud.Interface.Textures.
 
 internal sealed class SnapshotUi : IBotologyUi
 {
+    public AethertekUI.MaterialTitlebarStatus? TitlebarStatus => null;
     public Configuration Configuration { get; } = new() { ShowRepoColumn=false,ShowAiColumn=false,ShowIgnoreColumn=false,
         ShowAuthorColumn=true,ShowDetailedNotes=false,DtrIconEnabled="+",DtrIconDisabled="-" };
     public PluginAssessmentRow[] Rows { get; }

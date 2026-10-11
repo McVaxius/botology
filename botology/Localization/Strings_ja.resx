@@ -252,4 +252,10 @@
   <data name="Opens XA Slave&apos;s Utility &gt; XA Mods panel, which contains Dalamud Log Cleaner." xml:space="preserve"><value>Dalamud Log Cleanerを含むXA SlaveのUtility &gt; XA Modsパネルを開きます。</value></data>
   <data name="XA Slave log tools could not be opened." xml:space="preserve"><value>XA Slaveのログツールを開けませんでした。</value></data>
   <data name="Transparency visible on main window" xml:space="preserve"><value>メインウィンドウに透明度を表示</value></data>
+  <data name="Show titlebar status" xml:space="preserve"><value>タイトルバーに状態を表示</value></data>
+  <data name="Detailed titlebar status" xml:space="preserve"><value>タイトルバーの詳細な状態</value></data>
+  <data name="Alerts on" xml:space="preserve"><value>通知オン</value></data>
+  <data name="Alerts off" xml:space="preserve"><value>通知オフ</value></data>
+  <data name="{0} issues" xml:space="preserve"><value>問題 {0} 件</value></data>
+  <data name="{0} loaded" xml:space="preserve"><value>読込済み {0} 件</value></data>
 </root>

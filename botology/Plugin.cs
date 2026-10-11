@@ -38,6 +38,27 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
 
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
 
+    AethertekUI.MaterialTitlebarStatus? IBotologyUi.TitlebarStatus => TitlebarStatus;
+
+    internal AethertekUI.MaterialTitlebarStatus? TitlebarStatus
+        => Configuration.UiShowTitlebarStatus ? drawPassTitlebarStatus : null;
+
+    private AethertekUI.MaterialTitlebarStatus? drawPassTitlebarStatus;
+
+    private AethertekUI.MaterialTitlebarStatus BuildTitlebarStatus()
+    {
+        var rows = CaptureRows();
+        var state = UiText.T(Configuration.PluginEnabled ? "Alerts on" : "Alerts off");
+        var issues = rows.Count(row => row.IsAssessable && !row.Ignored && row.Assessment.Severity != AssessmentSeverity.Green);
+        var issueText = UiText.F("{0} issues", issues);
+        var loaded = UiText.F("{0} loaded", rows.Count(row => row.IsLoaded));
+        var concise = state + " \u00b7 " + (issues > 0 ? issueText + " \u00b7 " : "") + loaded;
+        var details = state + " \u00b7 " + (issues > 0 ? issueText + " \u00b7 " : "") + loaded;
+        var tooltip = details + "\n" + UiText.Alert(BotologyCatalog.BuildAlertSummary(rows));
+        return new(Configuration.UiDetailedTitlebarStatus ? details : concise, concise, tooltip,
+            issues > 0 ? AethertekUI.MaterialTheme.Current.Colors.Error : AethertekUI.MaterialTheme.Current.Colors.OnSurfaceVariant);
+    }
+
     public Configuration Configuration { get; }
     public PluginManagerBridge PluginManagerBridge { get; }
     public DtrVisibilityBridge DtrVisibilityBridge { get; }
@@ -175,7 +196,12 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
         }
         using var chrome = MaterialWindowChrome.Push();
         PrepareAppearanceTitleBars(WindowSystem);
-        WindowSystem.Draw();
+        try
+        {
+            drawPassTitlebarStatus = Configuration.UiShowTitlebarStatus ? BuildTitlebarStatus() : null;
+            WindowSystem.Draw();
+        }
+        finally { drawPassTitlebarStatus = null; }
         foreach (var titlebar in appearanceTitleBars.Values) titlebar.DrawPopups();
         foreach (var window in WindowSystem.Windows)
             if (window.IsOpen) ApplyWindowOpacity(window.WindowName);
@@ -1033,6 +1059,12 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
     public void DrawWindowAppearanceSettings()
     {
         if (!MaterialText.CollapsingHeader(UiText.T("Window appearance") + "###UiWindowAppearance")) return;
+        var showTitlebarStatus = Configuration.UiShowTitlebarStatus;
+        if (UiGui.Checkbox(UiText.T("Show titlebar status") + "###UiShowTitlebarStatus", ref showTitlebarStatus))
+        { Configuration.UiShowTitlebarStatus = showTitlebarStatus; Configuration.Save(); }
+        var detailedTitlebarStatus = Configuration.UiDetailedTitlebarStatus;
+        if (UiGui.Checkbox(UiText.T("Detailed titlebar status") + "###UiDetailedTitlebarStatus", ref detailedTitlebarStatus))
+        { Configuration.UiDetailedTitlebarStatus = detailedTitlebarStatus; Configuration.Save(); }
         var compact = Configuration.UiCompact;
         if (UiGui.Checkbox("Compact mode", ref compact))
         { Configuration.UiCompact = compact; Configuration.Save(); }

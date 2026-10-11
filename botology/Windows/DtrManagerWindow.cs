@@ -28,6 +28,12 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
     {
     }
 
+    public override void PostDraw()
+    {
+        base.PostDraw();
+        UiGui.PaintTitleWithImageAndStatus(this, PluginInfo.DisplayName + " " + UiText.T("DTR manager"), status: plugin.TitlebarStatus);
+    }
+
     public override void Draw()
     {
         windowMotion.DrawChrome();

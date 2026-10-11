@@ -6,6 +6,7 @@ namespace botology.Windows;
 internal interface IBotologyUi
 {
     Configuration Configuration { get; }
+    AethertekUI.MaterialTitlebarStatus? TitlebarStatus { get; }
     void DrawAppearanceSelector();
     void DrawWindowAppearanceSettings();
     IReadOnlyList<PluginAssessmentRow> CaptureRows();
