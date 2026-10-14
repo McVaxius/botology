@@ -1,3 +1,7 @@
+2026-10-14 - Plugin-specific Discord links (I558)
+
+- Add an optional Discord URL to catalog entries and local editor drafts, preserving existing master/override records and defaults. Show an entry's supplied Discord link beside its repository actions and open it through the existing browser action. Require a valid Discord HTTPS URL, retain case-sensitive invite paths and disable invalid supplied links. Preserve the current body layout and unrelated fields.
+
 2026-10-11 - Native titlebar status (I536)
 
 - Show alert state, loaded plugin count and issue count in native main, settings and auxiliary titles. Reuse one current status snapshot per draw pass across open windows. Keep concise state and available numeric progress when detailed wording is off; hover retains full details.

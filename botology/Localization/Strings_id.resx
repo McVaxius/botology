@@ -256,5 +256,8 @@
   <data name="Alerts off" xml:space="preserve"><value>Peringatan nonaktif</value></data>
   <data name="{0} issues" xml:space="preserve"><value>{0} masalah</value></data>
   <data name="{0} loaded" xml:space="preserve"><value>{0} dimuat</value></data>
+  <data name="Discord URL (optional)" xml:space="preserve"><value>URL Discord (opsional)</value></data>
+  <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Masukkan URL HTTPS Discord yang valid atau biarkan kosong.</value></data>
+  <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Buka Discord plugin: {0}</value></data>
 </root>
 

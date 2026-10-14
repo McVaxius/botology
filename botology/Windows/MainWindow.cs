@@ -770,6 +770,20 @@ public sealed class MainWindow : PositionedWindow, IDisposable
                 : UiText.F("Placeholder repo.json URL: {0}",repoJsonUrl);
             MaterialText.SetTooltip(tooltipText);
         }
+
+        if (!string.IsNullOrWhiteSpace(row.Entry.DiscordUrl))
+        {
+            var discordUrl = RepositoryLinkResolver.NormalizeDiscordUrl(row.Entry.DiscordUrl);
+            if (ImGui.GetItemRectMax().X + MaterialText.Measure(UiText.T("Discord")).X + 2 * MaterialControls.Metrics.Padding.X + ImGui.GetStyle().ItemSpacing.X
+                <= ImGui.GetCursorScreenPos().X + ImGui.GetContentRegionAvail().X)
+                ImGui.SameLine();
+            if (MaterialButton.Draw("plugin-discord", UiText.T("Discord"), 4, MaterialButtonVariant.Text, disabled: discordUrl == null)
+                && discordUrl != null)
+                plugin.OpenUrl(discordUrl);
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                MaterialText.SetTooltip(discordUrl == null ? UiText.T("Enter a valid Discord HTTPS URL or leave it empty.")
+                    : UiText.F("Open plugin Discord: {0}", discordUrl));
+        }
     }
 
     private void DrawEnabledColumn(PluginAssessmentRow row)

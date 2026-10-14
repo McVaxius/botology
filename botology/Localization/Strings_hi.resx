@@ -658,4 +658,7 @@
   <data name="Alerts off" xml:space="preserve"><value>सूचनाएँ बंद</value></data>
   <data name="{0} issues" xml:space="preserve"><value>{0} समस्याएँ</value></data>
   <data name="{0} loaded" xml:space="preserve"><value>{0} लोड हुए</value></data>
+  <data name="Discord URL (optional)" xml:space="preserve"><value>Discord URL (वैकल्पिक)</value></data>
+  <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>मान्य Discord HTTPS URL दर्ज करें या इसे खाली छोड़ दें।</value></data>
+  <data name="Open plugin Discord: {0}" xml:space="preserve"><value>प्लगइन का Discord खोलें: {0}</value></data>
 </root>

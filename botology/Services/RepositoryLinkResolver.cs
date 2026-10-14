@@ -10,6 +10,19 @@ public static class RepositoryLinkResolver
     private const string PlaceholderOwner = "OWNER";
     private const string DefaultBranch = "main";
 
+    public static string? NormalizeDiscordUrl(string? value)
+    {
+        var url = value?.Trim();
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || !uri.IsWellFormedOriginalString()
+            || uri.Scheme != Uri.UriSchemeHttps || !string.IsNullOrEmpty(uri.UserInfo)) return null;
+        var host = uri.IdnHost;
+        return host.Equals("discord.gg", StringComparison.OrdinalIgnoreCase)
+            || host.Equals("discord.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".discord.com", StringComparison.OrdinalIgnoreCase)
+            || host.Equals("discordapp.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".discordapp.com", StringComparison.OrdinalIgnoreCase) ? url : null;
+    }
+
     public static string? ResolveRepoUrl(PluginAssessmentRow row)
         => FirstNonEmpty(row.Entry.RepoUrl, row.RuntimeState?.RepoUrl);
 

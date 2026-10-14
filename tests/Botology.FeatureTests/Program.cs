@@ -108,6 +108,30 @@ if (toStoredEntry != null)
 }
 
 var compareRows = typeof(MainWindow).GetMethod("CompareRows", BindingFlags.Static | BindingFlags.NonPublic)!;
+var discordEntry = affectedEntry with { DiscordUrl = "https://discord.gg/ExampleInvite" };
+Check(affectedEntry.DiscordUrl == null, "Existing catalog entries must default to no Discord URL.");
+foreach (var url in new[] { "https://discord.gg/ExampleInvite", "https://discord.com/invite/ExampleInvite", "https://canary.discord.com/channels/1/2" })
+    Check(RepositoryLinkResolver.NormalizeDiscordUrl("  " + url + "  ") == url, "Supplied Discord URLs must retain invite case and trim surrounding whitespace.");
+foreach (var url in new[] { "", "javascript:alert(1)", "file:///C:/sample", "https://discord.gg.example.com/invite", "https://example.com/discord", "https://user:password@discord.com/invite/test", "http://discord.gg/test" })
+    Check(RepositoryLinkResolver.NormalizeDiscordUrl(url) == null, "Invalid or non-Discord URLs must not become link actions.");
+var catalogOptions = (System.Text.Json.JsonSerializerOptions)typeof(RepositoryLinkCatalog)
+    .GetField("JsonOptions", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+var parseCatalog = typeof(RepositoryLinkCatalog).GetMethod("ParseCatalogEntries", BindingFlags.Static | BindingFlags.NonPublic)!;
+var discordStored = toStoredEntry!.Invoke(null, [discordEntry, true])!;
+var discordJson = System.Text.Json.JsonSerializer.Serialize(new { SchemaVersion = 3, Plugins = new[] { discordStored } }, catalogOptions);
+var restoredDiscord = (IReadOnlyList<PluginCatalogEntry>)parseCatalog.Invoke(null, [discordJson, Array.Empty<PluginCatalogEntry>()])!;
+Check(restoredDiscord.Single().DiscordUrl == discordEntry.DiscordUrl, "Native catalog storage/reload must preserve the optional Discord URL.");
+var compareEntries = typeof(RepositoryLinkCatalog).GetMethod("EntriesEquivalent", BindingFlags.Static | BindingFlags.NonPublic)!;
+Check(!(bool)compareEntries.Invoke(null, [discordEntry, discordEntry with { DiscordUrl = "https://discord.gg/exampleinvite" }])!,
+    "Case-sensitive Discord invite edits must count as catalog changes.");
+var draftType = typeof(CatalogEditorWindow).GetNestedType("CatalogEntryDraft", BindingFlags.NonPublic)!;
+var discordDraft = draftType.GetMethod("FromEntry")!.Invoke(null, [discordEntry, true])!;
+var replacementDraft = draftType.GetMethod("CreateIdReplacement")!.Invoke(null, [discordDraft])!;
+Check((string?)draftType.GetField("DiscordUrl")!.GetValue(replacementDraft) == discordEntry.DiscordUrl,
+    "Replacing an entry ID must preserve the draft's Discord URL.");
+var savedDraft = (PluginCatalogEntry)draftType.GetMethod("ToEntry")!.Invoke(discordDraft, null)!;
+Check(savedDraft.DiscordUrl == discordEntry.DiscordUrl, "Editor save conversion must preserve the supplied Discord URL.");
+
 var gridColumn = typeof(MainWindow).GetNestedType("GridColumn", BindingFlags.NonPublic)!;
 int Compare(PluginAssessmentRow left, PluginAssessmentRow right, string column)
     => (int)compareRows.Invoke(null, [left, right, Enum.Parse(gridColumn, column)])!;

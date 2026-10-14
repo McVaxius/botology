@@ -639,7 +639,8 @@ public static class RepositoryLinkCatalog
                 redIds.Length > 0 ? redIds : null,
                 sourceKind,
                 hasLocalChanges,
-                storedEntry.IsAiAttributed == true));
+                storedEntry.IsAiAttributed == true,
+                FirstNonEmpty(storedEntry.DiscordUrl, fallbackEntry?.DiscordUrl)));
         }
 
         return entries
@@ -866,6 +867,7 @@ public static class RepositoryLinkCatalog
            string.Equals(NormalizeText(left.Notes), NormalizeText(right.Notes), StringComparison.OrdinalIgnoreCase) &&
            string.Equals(NormalizeText(left.RepoUrl), NormalizeText(right.RepoUrl), StringComparison.OrdinalIgnoreCase) &&
            string.Equals(NormalizeText(left.RepoJsonUrl), NormalizeText(right.RepoJsonUrl), StringComparison.OrdinalIgnoreCase) &&
+           string.Equals(NormalizeText(left.DiscordUrl), NormalizeText(right.DiscordUrl), StringComparison.Ordinal) &&
            string.Equals(NormalizeText(left.Description), NormalizeText(right.Description), StringComparison.OrdinalIgnoreCase) &&
            ListsEqual(left.MatchTokens, right.MatchTokens) &&
            ListsEqual(left.RepoJsonUrls, right.RepoJsonUrls) &&
@@ -887,6 +889,7 @@ public static class RepositoryLinkCatalog
             Notes = entry.Notes,
             RepoUrl = entry.RepoUrl,
             RepoJsonUrl = entry.RepoJsonUrl,
+            DiscordUrl = entry.DiscordUrl,
             Description = entry.Description,
             RepoJsonUrls = NormalizeTextList(entry.RepoJsonUrls),
             Green = NormalizeIdList(entry.GreenIds),
@@ -987,6 +990,8 @@ public static class RepositoryLinkCatalog
         public string? RepoUrl { get; init; }
 
         public string? RepoJsonUrl { get; init; }
+
+        public string? DiscordUrl { get; init; }
 
         public string[] RepoJsonUrls { get; init; } = [];
 

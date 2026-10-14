@@ -258,4 +258,7 @@
   <data name="Alerts off" xml:space="preserve"><value>警报关闭</value></data>
   <data name="{0} issues" xml:space="preserve"><value>{0} 个问题</value></data>
   <data name="{0} loaded" xml:space="preserve"><value>已加载 {0} 个</value></data>
+  <data name="Discord URL (optional)" xml:space="preserve"><value>Discord URL（可选）</value></data>
+  <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>请输入有效的 Discord HTTPS URL，或留空。</value></data>
+  <data name="Open plugin Discord: {0}" xml:space="preserve"><value>打开插件 Discord：{0}</value></data>
 </root>

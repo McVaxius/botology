@@ -7,6 +7,7 @@ using System.Text;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using botology.Models;
+using botology.Services;
 
 namespace botology.Windows;
 
@@ -298,6 +299,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         DrawMultilineText("Description", ref draft.Description, 100f);
         UiGui.InputText("Repo URL", ref draft.RepoUrl, 512);
         UiGui.InputText("Repo JSON URL", ref draft.RepoJsonUrl, 512);
+        UiGui.InputText("Discord URL (optional)", ref draft.DiscordUrl, 512);
         DrawRelationEditor(entries, "Green plugins", RelationTarget.Green);
         DrawRelationEditor(entries, "Yellow plugins", RelationTarget.Yellow);
         DrawRelationEditor(entries, "Red plugins", RelationTarget.Red);
@@ -772,6 +774,9 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         if (string.IsNullOrWhiteSpace(entryDraft.DisplayName))
             return "Catalog rows need a display name.";
 
+        if (!string.IsNullOrWhiteSpace(entryDraft.DiscordUrl) && RepositoryLinkResolver.NormalizeDiscordUrl(entryDraft.DiscordUrl) == null)
+            return "Enter a valid Discord HTTPS URL or leave it empty.";
+
         if (entryDraft.GetNormalizedMatchTokens().Length == 0)
             return "Catalog rows need a plugin shortname before they can be saved.";
 
@@ -803,6 +808,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
            string.Equals(NormalizeText(left.Notes), NormalizeText(right.Notes), StringComparison.OrdinalIgnoreCase) &&
            string.Equals(NormalizeText(left.RepoUrl), NormalizeText(right.RepoUrl), StringComparison.OrdinalIgnoreCase) &&
            string.Equals(NormalizeText(left.RepoJsonUrl), NormalizeText(right.RepoJsonUrl), StringComparison.OrdinalIgnoreCase) &&
+           string.Equals(NormalizeText(left.DiscordUrl), NormalizeText(right.DiscordUrl), StringComparison.Ordinal) &&
            string.Equals(NormalizeText(left.Description), NormalizeText(right.Description), StringComparison.OrdinalIgnoreCase) &&
            ListsEqual(left.MatchTokens, right.MatchTokens) &&
            ListsEqual(left.RepoJsonUrls, right.RepoJsonUrls) &&
@@ -909,6 +915,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         public string Notes = string.Empty;
         public string RepoUrl = string.Empty;
         public string RepoJsonUrl = string.Empty;
+        public string DiscordUrl = string.Empty;
         public string Description = string.Empty;
         public string RepoJsonUrlsText = string.Empty;
         public string GreenIdsText = string.Empty;
@@ -945,6 +952,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 Notes = entry.Notes,
                 RepoUrl = entry.RepoUrl ?? string.Empty,
                 RepoJsonUrl = entry.RepoJsonUrl ?? string.Empty,
+                DiscordUrl = entry.DiscordUrl ?? string.Empty,
                 Description = entry.Description ?? string.Empty,
                 RepoJsonUrlsText = string.Join(Environment.NewLine, entry.RepoJsonUrls ?? []),
                 GreenIdsText = string.Join(Environment.NewLine, entry.GreenIds ?? []),
@@ -982,6 +990,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 Notes = source.Notes,
                 RepoUrl = source.RepoUrl,
                 RepoJsonUrl = source.RepoJsonUrl,
+                DiscordUrl = source.DiscordUrl,
                 Description = source.Description,
                 RepoJsonUrlsText = source.RepoJsonUrlsText,
                 GreenIdsText = source.GreenIdsText,
@@ -1037,7 +1046,8 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
                 redIds.Length > 0 ? redIds : null,
                 sourceKind,
                 true,
-                IsAiAttributed);
+                IsAiAttributed,
+                string.IsNullOrWhiteSpace(DiscordUrl) ? null : DiscordUrl.Trim());
         }
     }
 }

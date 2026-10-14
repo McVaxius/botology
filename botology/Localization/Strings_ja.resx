@@ -258,4 +258,7 @@
   <data name="Alerts off" xml:space="preserve"><value>通知オフ</value></data>
   <data name="{0} issues" xml:space="preserve"><value>問題 {0} 件</value></data>
   <data name="{0} loaded" xml:space="preserve"><value>読込済み {0} 件</value></data>
+  <data name="Discord URL (optional)" xml:space="preserve"><value>Discord URL（任意）</value></data>
+  <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>有効な Discord の HTTPS URL を入力するか、空欄にしてください。</value></data>
+  <data name="Open plugin Discord: {0}" xml:space="preserve"><value>プラグインの Discord を開く: {0}</value></data>
 </root>

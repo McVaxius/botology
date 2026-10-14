@@ -19,6 +19,8 @@ Scroll down to "The Dumpster Fire" channel to discuss issues / suggestions for s
 
 ## Current Status
 
+Catalog entries can include an optional plugin-specific Discord HTTPS URL. Set it in the existing catalog editor; the supplied link appears beside that entry's repository actions. Local overrides preserve the URL across reloads, older entries need no change, and invalid supplied links stay disabled. Botology opens a link only when you click it.
+
 Hindi uses installed shaping fonts. The source now leaves other languages usable when the Hindi menu caption is unavailable, showing a disabled ASCII `Hindi (unavailable)` option. Required text for a selected Hindi UI still requires full validation; on failure, the readable status offers **Use English**, saving English only after an explicit press. Native verification and Linux/Wine acceptance remain pending for this change.
 
 Use Settings for shared colour, UI language, compact spacing and window transparency/fade; titlebar appearance actions change the same saved preferences. Main branding and expanded/collapsed titles use the packaged Botology icon in its original colours. Botology's Enabled switch controls assessment alerts; the grid's per-plugin enable and DTR actions remain separate controls for the selected installed plugin.

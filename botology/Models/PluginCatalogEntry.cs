@@ -15,7 +15,8 @@ public sealed record PluginCatalogEntry(
     string[]? RedIds = null,
     CatalogEntrySourceKind SourceKind = CatalogEntrySourceKind.Master,
     bool HasLocalChanges = false,
-    bool IsAiAttributed = false)
+    bool IsAiAttributed = false,
+    string? DiscordUrl = null)
 {
     public string SourceLabel => SourceKind switch
     {

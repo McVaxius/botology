@@ -256,5 +256,8 @@
   <data name="Alerts off" xml:space="preserve"><value>Uyarılar kapalı</value></data>
   <data name="{0} issues" xml:space="preserve"><value>{0} sorun</value></data>
   <data name="{0} loaded" xml:space="preserve"><value>{0} yüklendi</value></data>
+  <data name="Discord URL (optional)" xml:space="preserve"><value>Discord URL’si (isteğe bağlı)</value></data>
+  <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Geçerli bir Discord HTTPS URL’si girin veya boş bırakın.</value></data>
+  <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Eklentinin Discord’unu aç: {0}</value></data>
 </root>
 

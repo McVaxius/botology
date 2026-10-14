@@ -256,5 +256,8 @@
   <data name="Alerts off" xml:space="preserve"><value>Tắt cảnh báo</value></data>
   <data name="{0} issues" xml:space="preserve"><value>{0} vấn đề</value></data>
   <data name="{0} loaded" xml:space="preserve"><value>Đã tải {0}</value></data>
+  <data name="Discord URL (optional)" xml:space="preserve"><value>URL Discord (tùy chọn)</value></data>
+  <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Nhập URL HTTPS Discord hợp lệ hoặc để trống.</value></data>
+  <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Mở Discord của plugin: {0}</value></data>
 </root>
 

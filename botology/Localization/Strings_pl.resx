@@ -256,5 +256,8 @@
   <data name="Alerts off" xml:space="preserve"><value>Alerty wyłączone</value></data>
   <data name="{0} issues" xml:space="preserve"><value>{0} problemów</value></data>
   <data name="{0} loaded" xml:space="preserve"><value>{0} wczytanych</value></data>
+  <data name="Discord URL (optional)" xml:space="preserve"><value>Adres Discord (opcjonalny)</value></data>
+  <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Wpisz prawidłowy adres HTTPS Discord lub pozostaw pole puste.</value></data>
+  <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Otwórz Discord pluginu: {0}</value></data>
 </root>
 
