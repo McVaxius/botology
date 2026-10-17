@@ -26,6 +26,26 @@
     },
     "plugins": [
         {
+            "id": "autohouselottery",
+            "category": "Housing",
+            "displayName": "Auto House Lottery",
+            "matchTokens": [
+                "AutoHouseLottery"
+            ],
+            "notes": "Automates housing lottery entries, result checks, refunds and claims. No compatibility rules are configured for this entry.",
+            "description": "Travels to selected housing plots, enters lotteries and checks their results."
+        },
+        {
+            "id": "autoseller",
+            "category": "Market Bots",
+            "displayName": "Auto Seller",
+            "matchTokens": [
+                "AutoSeller"
+            ],
+            "notes": "Automates retainer listing and repricing with configured minimum prices. No compatibility rules are configured for this entry.",
+            "description": "Visits retainers to list items and adjust market prices without going below the configured price floor."
+        },
+        {
             "id": "artisan",
             "isAiAttributed": true,
             "category": "DOH/L Content Bots",

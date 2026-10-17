@@ -126,6 +126,39 @@ foreach (var url in new[] { "", "javascript:alert(1)", "file:///C:/sample", "htt
 var catalogOptions = (System.Text.Json.JsonSerializerOptions)typeof(RepositoryLinkCatalog)
     .GetField("JsonOptions", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
 var parseCatalog = typeof(RepositoryLinkCatalog).GetMethod("ParseCatalogEntries", BindingFlags.Static | BindingFlags.NonPublic)!;
+var bundledCatalog = (IReadOnlyList<PluginCatalogEntry>)parseCatalog.Invoke(null,
+    [File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "plugin-repository-links.json")), BotologyCatalog.FallbackEntries])!;
+foreach (var (id, internalName, category) in new[]
+{
+    ("autohouselottery", "AutoHouseLottery", "Housing"),
+    ("autoseller", "AutoSeller", "Market Bots"),
+})
+{
+    var matches = bundledCatalog.Where(entry => entry.Id == id).ToArray();
+    Check(matches.Length == 1, "Each selected catalog addition must have one stable ID.");
+    if (matches.Length != 1) continue;
+    var added = matches[0];
+    Check(added.MatchTokens.SequenceEqual([internalName]) && added.Category == category,
+        "Selected catalog entries must match their exact runtime name and functional category.");
+    Check(new PluginSnapshot([Runtime(internalName, internalName, loaded: true)]).FindBestMatch(added.MatchTokens) != null,
+        "Selected catalog entries must recognize the installed runtime name.");
+    Check(added.GreenIds is not { Length: > 0 } && added.YellowIds is not { Length: > 0 }
+        && added.RedIds is not { Length: > 0 }, "Catalog additions must not introduce compatibility rules.");
+    Check(!string.IsNullOrWhiteSpace(added.Description) && !string.IsNullOrWhiteSpace(added.Notes),
+        "Selected catalog entries must retain functional descriptions.");
+}
+var addedIds = new[] { "autohouselottery", "autoseller" };
+var buildMigrationOverlay = typeof(RepositoryLinkCatalog).GetMethod("BuildOverlayEntriesLocked", BindingFlags.Static | BindingFlags.NonPublic)!;
+var migrationAdditions = (IReadOnlyList<PluginCatalogEntry>)buildMigrationOverlay.Invoke(null,
+    [bundledCatalog, bundledCatalog.Where(entry => !addedIds.Contains(entry.Id)).ToArray()])!;
+Check(migrationAdditions.Select(entry => entry.Id).Order().SequenceEqual(addedIds),
+    "Initial catalog migration must preserve exactly the selected additions when the master lacks them.");
+var storedAdditions = migrationAdditions.Select(entry => toStoredEntry!.Invoke(null, [entry, true])).ToArray();
+var restoredAdditions = (IReadOnlyList<PluginCatalogEntry>)parseCatalog.Invoke(null,
+    [System.Text.Json.JsonSerializer.Serialize(new { Plugins = storedAdditions }, catalogOptions), Array.Empty<PluginCatalogEntry>()])!;
+Check(restoredAdditions.Select(entry => entry.Id).Order().SequenceEqual(addedIds)
+    && restoredAdditions.All(entry => entry.MatchTokens.SequenceEqual(bundledCatalog.Single(original => original.Id == entry.Id).MatchTokens)),
+    "Catalog editor storage must round-trip the selected additions and runtime names.");
 var discordStored = toStoredEntry!.Invoke(null, [discordEntry, true])!;
 var discordJson = System.Text.Json.JsonSerializer.Serialize(new { SchemaVersion = 3, Plugins = new[] { discordStored } }, catalogOptions);
 var restoredDiscord = (IReadOnlyList<PluginCatalogEntry>)parseCatalog.Invoke(null, [discordJson, Array.Empty<PluginCatalogEntry>()])!;
