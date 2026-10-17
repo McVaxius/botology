@@ -9,6 +9,21 @@ namespace botology.Windows;
 // This also preserves English-derived helper IDs and existing saved window identities.
 internal static class UiGui
 {
+    // A normal popup retains the dialog's title/ID without a viewport dimmer.
+    internal static bool BeginConfirmationPopup(string name, ImGuiWindowFlags flags)
+    {
+        var context = ImGui.GetCurrentContext();
+        if (!ImGui.IsPopupOpen(name)) { context.NextWindowData.Flags = 0; return false; }
+        if ((context.NextWindowData.Flags & ImGuiNextWindowDataFlags.HasPos) == 0)
+        {
+            var viewport = ImGui.GetWindowViewport();
+            ImGui.SetNextWindowPos(viewport.Pos + viewport.Size * .5f, ImGuiCond.Appearing, new Vector2(.5f));
+        }
+        var visible = ImGui.Begin(name, flags | ImGuiWindowFlags.Popup | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking);
+        if (!visible) ImGui.EndPopup();
+        return visible;
+    }
+
     private static void Label(string original,Vector2 position,Vector4 background,Vector4 foreground,Vector2? clip=null,string? display=null)
     {
         var visible=original.Split("##",2)[0];

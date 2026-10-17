@@ -12,10 +12,145 @@ namespace AethertekUI.Tests;
 
 internal static class BotologyUiSmoke
 {
+    public static unsafe void CheckConfirmationPopups(string[] assemblies)
+    {
+        var checkedPopups = 0;
+        foreach (var path in assemblies)
+        {
+            var assembly = Assembly.LoadFrom(path);
+            var (typeName, textName, names) = assembly.GetName().Name!.ToLowerInvariant() switch
+            {
+                "botology" => ("botology.Windows.UiGui", "botology.UiText", new[] { "BotologyBlockingAlert", "BotologyPatchNotes" }),
+                "dad" => ("dad.Windows.UiGui", "dad.Windows.UiText", new[] { "Confirm unpair##dad-autoparty-unpair", "Confirm deregistration##dad-autoparty-deregister", "Confirm retry failed schedule entry##dad-schedule-retry-confirm", "Confirm delete schedule##dad-delete-schedule" }),
+                "dhoggpt" => ("DhogGPT.Windows.UiGui", "DhogGPT.Windows.UiText", new[] { "New DM###DhogGPTNewDmPopup" }),
+                "dhognav" => ("DhogNav.Ui", "", new[] { "Confirm filter bypass###DhogNav_Bypass" }),
+                "mom" => ("mom.Windows.WindowLayout", "", new[] { "Enable PvP mode?##mom-route-warning" }),
+                "vermaxion" => ("VERMAXION.UiGui", "VERMAXION.UiText", new[] { "Remove fishing-stock item?", "Setup Wizard", "Confirm configuration action", "Confirm personal-list replacement" }),
+                _ => throw new InvalidOperationException("Unexpected selected popup assembly: " + path),
+            };
+            var methods = assembly.GetType(typeName, true)!.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(method => method.Name == "BeginConfirmationPopup").ToArray();
+            foreach (var scale in new[] { 1f, 1.5f })
+            {
+                using var host = new NativeTestContext(1440, 1000, scale, "en");
+                using var text = new UiText("en", host.PushFont);
+                object? foreignText = null;
+                if (textName is not ("" or "botology.UiText"))
+                {
+                    var constructor = assembly.GetType(textName, true)!.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                        .Single(candidate => candidate.GetParameters().Length == 2);
+                    var fontDelegate = constructor.GetParameters()[1].ParameterType;
+                    var role = System.Linq.Expressions.Expression.Parameter(fontDelegate.GetGenericArguments()[0]);
+                    Func<object, IDisposable> push = value => host.PushFont(Enum.Parse<UiFontRole>(value.ToString()!));
+                    var mapped = System.Linq.Expressions.Expression.Lambda(fontDelegate,
+                        System.Linq.Expressions.Expression.Invoke(System.Linq.Expressions.Expression.Constant(push),
+                            System.Linq.Expressions.Expression.Convert(role, typeof(object))), role).Compile();
+                    foreignText = constructor.Invoke(["en", mapped]);
+                }
+                var enter = foreignText?.GetType().GetMethod("Enter", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                try
+                {
+                    foreach (var name in names)
+                    foreach (var normalOpacity in new[] { 1f, .65f })
+                    {
+                        var begin = methods.Single(method => method.GetParameters().Length ==
+                            (methods.Length == 1 ? methods[0].GetParameters().Length : name == "Remove fishing-stock item?" ? 2 : 3));
+                        var opacity = new MaterialWindowOpacity();
+                        var theme = BotologyPresentation.Theme(0x1CC9E6);
+                        theme.Motion.Enabled = false;
+                        var request = true;
+                        var focusOwner = false;
+                        var confirmed = 0;
+                        var cancelled = 0;
+                        var yes = Vector2.Zero;
+                        var no = Vector2.Zero;
+                        ImGuiWindowPtr popup = default;
+                        void Draw()
+                        {
+                            using var locale = text.Enter();
+                            using var foreignLocale = (IDisposable?)enter?.Invoke(foreignText, null);
+                            using var material = MaterialTheme.Push(theme, scale, MaterialStyleMode.ColorsOnly);
+                            ImGui.SetNextWindowPos(new Vector2(120, 100));
+                            ImGui.SetNextWindowSize(new Vector2(1200, 800));
+                            if (focusOwner) { ImGui.SetNextWindowFocus(); focusOwner = false; }
+                            ImGui.Begin("Confirmation owner", ImGuiWindowFlags.NoSavedSettings);
+                            if (request) { ImGui.OpenPopup(name); request = false; }
+                            object[] values = begin.GetParameters().Length == 3
+                                ? [name, true, ImGuiWindowFlags.AlwaysAutoResize]
+                                : [name, ImGuiWindowFlags.AlwaysAutoResize];
+                            if ((bool)begin.Invoke(null, values)!)
+                            {
+                                popup = ImGuiP.GetCurrentWindow();
+                                ImGui.TextUnformatted("Confirmation remains explicit.");
+                                if (ImGui.Button("Yes")) { confirmed++; ImGui.CloseCurrentPopup(); }
+                                yes = (ImGui.GetItemRectMin() + ImGui.GetItemRectMax()) * .5f;
+                                ImGui.SameLine();
+                                if (ImGui.Button("No")) { cancelled++; ImGui.CloseCurrentPopup(); }
+                                no = (ImGui.GetItemRectMin() + ImGui.GetItemRectMax()) * .5f;
+                                ImGui.EndPopup();
+                            }
+                            ImGui.End();
+                            opacity.Apply("Confirmation owner", normalOpacity, true, true, .2f, 0);
+                        }
+                        void CheckFrame()
+                        {
+                            if (popup.IsNull || !popup.Active || (popup.Flags & ImGuiWindowFlags.Modal) != 0
+                                || (popup.Flags & ImGuiWindowFlags.NoTitleBar) != 0)
+                                throw new InvalidOperationException("Missing titled non-dimming popup: " + name);
+                            var peak = 0;
+                            var corners = 0;
+                            for (var index = 0; index < popup.DrawList.VtxBuffer.Size; index++)
+                            {
+                                var vertex = popup.DrawList.VtxBuffer[index];
+                                var alpha = (int)(vertex.Col >> 24);
+                                peak = Math.Max(peak, alpha);
+                                if (alpha == 0) continue;
+                                if (vertex.Pos.X <= 0 && vertex.Pos.Y <= 0) corners |= 1;
+                                if (vertex.Pos.X >= 1440 && vertex.Pos.Y <= 0) corners |= 2;
+                                if (vertex.Pos.X >= 1440 && vertex.Pos.Y >= 1000) corners |= 4;
+                                if (vertex.Pos.X <= 0 && vertex.Pos.Y >= 1000) corners |= 8;
+                            }
+                            if (corners == 15 || Math.Abs(peak - normalOpacity * 255) > 2)
+                                throw new InvalidOperationException($"Viewport dimming or focused-popup fade: {name}; alpha={peak}; expected={normalOpacity * 255}");
+                        }
+                        for (var frame = 0; frame < 8; frame++) { host.Frame(Draw); if (frame >= 2) CheckFrame(); }
+                        if (confirmed != 0 || cancelled != 0) throw new InvalidOperationException("Opening a popup performed an action.");
+                        host.Click(no, Draw);
+                        if (confirmed != 0 || cancelled != 1) throw new InvalidOperationException("Cancel did not retain its native action.");
+                        request = true;
+                        host.Frame(Draw); host.Frame(Draw); host.Frame(Draw);
+                        host.Click(yes, Draw);
+                        if (confirmed != 1 || cancelled != 1) throw new InvalidOperationException("Confirmation did not retain one native action.");
+                        request = true;
+                        host.Frame(Draw); host.Frame(Draw); host.Frame(Draw);
+                        host.Click(new Vector2(10, 10), Draw);
+                        if (confirmed != 1 || cancelled != 1 || ImGui.GetCurrentContext().OpenPopupStack.Size != 0)
+                            throw new InvalidOperationException("Outside dismissal approved an action or left an open popup.");
+                        ImGui.GetIO().AddFocusEvent(false);
+                        host.Frame(Draw); host.Frame(Draw);
+                        var owner = ImGuiP.FindWindowByName("Confirmation owner");
+                        var fadedPeak = 0;
+                        for (var index = 0; index < owner.DrawList.VtxBuffer.Size; index++)
+                            fadedPeak = Math.Max(fadedPeak, (int)(owner.DrawList.VtxBuffer[index].Col >> 24));
+                        if (Math.Abs(fadedPeak - .2f * 255) > 2)
+                            throw new InvalidOperationException("Ordinary unfocused opacity no longer works: " + name);
+                        ImGui.GetIO().AddFocusEvent(true);
+                        focusOwner = true;
+                        host.Frame(Draw); host.Frame(Draw);
+                        checkedPopups++;
+                    }
+                }
+                finally { (foreignText as IDisposable)?.Dispose(); }
+            }
+        }
+        if (checkedPopups == 0) throw new InvalidOperationException("No selected popup assemblies supplied.");
+        Console.WriteLine($"Native confirmation checks passed: {checkedPopups} popup/scale/opacity cases; rendered frame alpha, no viewport dimmer, native Yes/No and outside cancellation.");
+    }
+
     private sealed record Scenario(string Name,string Window,int Width=1472,int Height=996,float Scale=1,uint Accent=0x1CC9E6,
         bool Extras=false,bool Empty=false,bool Detailed=false,string? Popup=null,bool Editable=false,bool Ignored=false,bool Unavailable=false,bool Compact=false);
 
-    public static void Run()
+    public static void Run(bool verifyBaselines = true)
     {
         CheckPreferencesAndResources();
         CheckHindiNativeControls();
@@ -162,8 +297,8 @@ internal static class BotologyUiSmoke
                     || (string)hindiDraft.GetType().GetField("Description")!.GetValue(hindiDraft)! != hindiDescription))
                     throw new InvalidOperationException("Actual catalog multiline editors changed retained Hindi/CRLF/Unicode data.");
                 var name=language+"-"+scenario.Name;
-                if(language=="en" && scenario.Name=="main" && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AETHERTEKUI_CANDIDATE_DIR"))) CheckDesign(host,bounds);
-                SoftwarePreview.Verify(name,host,Path.Combine(AppContext.BaseDirectory,"Baselines"),Path.Combine(AppContext.BaseDirectory,"artifacts"));
+                if(verifyBaselines && language=="en" && scenario.Name=="main" && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AETHERTEKUI_CANDIDATE_DIR"))) CheckDesign(host,bounds);
+                if(verifyBaselines) SoftwarePreview.Verify(name,host,Path.Combine(AppContext.BaseDirectory,"Baselines"),Path.Combine(AppContext.BaseDirectory,"artifacts"));
                 rendered++;
                 if(Environment.GetEnvironmentVariable("AETHERTEKUI_PREVIEW_DIR") is { Length:>0 } previews)
                     SoftwarePreview.Save(Path.Combine(previews,name+".png"),host);
@@ -180,6 +315,8 @@ internal static class BotologyUiSmoke
         var stack=ImGui.GetCurrentContext().OpenPopupStack;
         if(stack.Size!=1 || stack[0].Window==null) throw new InvalidOperationException("Expected rendered popup: "+name);
         var popup=new ImGuiWindowPtr(stack[0].Window);
+        if (name is "blocking" or "patch" && (popup.Flags & ImGuiWindowFlags.Modal) != 0)
+            throw new InvalidOperationException("The actual dialog retained its viewport-dimming modal flag: " + name);
         var minimumWidth=name is "columns" or "blocking" or "description" or "rule"?320:180;
         if(!popup.Active || popup.Size.X<minimumWidth*scale || popup.Size.Y<40*scale ||
             popup.Pos.X<0 || popup.Pos.Y<0 || popup.Pos.X+popup.Size.X>width || popup.Pos.Y+popup.Size.Y>height)

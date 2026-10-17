@@ -972,7 +972,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
             ImGui.OpenPopup(BlockingPopupId);
 
         ImGui.SetNextWindowSize(new Vector2(560f*MaterialTheme.Metrics.Scale,0));
-        if (!ImGui.BeginPopupModal(BlockingPopupId, ImGuiWindowFlags.AlwaysAutoResize))
+        if (!UiGui.BeginConfirmationPopup(BlockingPopupId, ImGuiWindowFlags.AlwaysAutoResize))
             return;
 
         UiGui.Title(BlockingPopupId,UiText.T("Compatibility warning"));
@@ -989,7 +989,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
     private void DrawPatchNotesPopup()
     {
         ImGui.SetNextWindowSize(new Vector2(760f, 560f)*MaterialTheme.Metrics.Scale, ImGuiCond.Appearing);
-        if (!ImGui.BeginPopupModal(PatchNotesPopupId, ImGuiWindowFlags.None))
+        if (!UiGui.BeginConfirmationPopup(PatchNotesPopupId, ImGuiWindowFlags.None))
             return;
         UiGui.Title(PatchNotesPopupId,UiText.T("Patch Notes"));
 

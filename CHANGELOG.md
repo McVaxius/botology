@@ -1,3 +1,7 @@
+2026-10-16 - Confirmation popups without screen dimming (I576)
+
+- Keep compatibility warnings and patch notes in titled native popups without a full-screen dimmer. Preserve dialog IDs, explicit actions and saved window opacity; outside dismissal never acknowledges a warning.
+
 2026-10-14 - Plugin-specific Discord links (I558)
 
 - Add an optional Discord URL to catalog entries and local editor drafts, preserving existing master/override records and defaults. Show an entry's supplied Discord link beside its repository actions and open it through the existing browser action. Require a valid Discord HTTPS URL, retain case-sensitive invite paths and disable invalid supplied links. Preserve the current body layout and unrelated fields.

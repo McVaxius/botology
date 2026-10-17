@@ -8,6 +8,15 @@ using botology.Windows;
 
 Console.OutputEncoding = new UTF8Encoding(false);
 
+if (args.FirstOrDefault() == "--confirmation-popups")
+{
+    AethertekUI.Tests.BotologyUiSmoke.CheckConfirmationPopups(args.Skip(1).ToArray());
+    Environment.SetEnvironmentVariable("BOTOLOGY_VISUAL_CASE", "en/popup-blocking,en/popup-patch");
+    Environment.SetEnvironmentVariable("BOTOLOGY_HINDI_ONLY", "1");
+    AethertekUI.Tests.BotologyUiSmoke.Run(verifyBaselines: false);
+    return 0;
+}
+
 var failures = new List<string>();
 
 void Check(bool condition, string message)
