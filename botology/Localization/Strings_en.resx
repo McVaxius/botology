@@ -261,4 +261,76 @@
   <data name="Discord URL (optional)" xml:space="preserve"><value>Discord URL (optional)</value></data>
   <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Enter a valid Discord HTTPS URL or leave it empty.</value></data>
   <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Open plugin Discord: {0}</value></data>
+  <data name="Discover" xml:space="preserve"><value>Discover</value></data>
+  <data name="Updates" xml:space="preserve"><value>Updates</value></data>
+  <data name="Repositories" xml:space="preserve"><value>Repositories</value></data>
+  <data name="Pinned sources" xml:space="preserve"><value>Pinned sources</value></data>
+  <data name="Compatibility" xml:space="preserve"><value>Compatibility</value></data>
+  <data name="Working..." xml:space="preserve"><value>Working...</value></data>
+  <data name="Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Operation failed" xml:space="preserve"><value>Operation failed</value></data>
+  <data name="Safe mode" xml:space="preserve"><value>Safe mode</value></data>
+  <data name="Collapse pinned sources" xml:space="preserve"><value>Collapse pinned sources</value></data>
+  <data name="Expand pinned sources" xml:space="preserve"><value>Expand pinned sources</value></data>
+  <data name="Authors" xml:space="preserve"><value>Authors</value></data>
+  <data name="Manage pins" xml:space="preserve"><value>Manage pins</value></data>
+  <data name="All plugins" xml:space="preserve"><value>All plugins</value></data>
+  <data name="Not installed" xml:space="preserve"><value>Not installed</value></data>
+  <data name="Repository not added" xml:space="preserve"><value>Repository not added</value></data>
+  <data name="Search plugins, authors or repositories" xml:space="preserve"><value>Search plugins, authors or repositories</value></data>
+  <data name="Cards" xml:space="preserve"><value>Cards</value></data>
+  <data name="Table" xml:space="preserve"><value>Table</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Clear filter" xml:space="preserve"><value>Clear filter</value></data>
+  <data name="{0} plugins" xml:space="preserve"><value>{0} plugins</value></data>
+  <data name="Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Manage" xml:space="preserve"><value>Manage</value></data>
+  <data name="View details" xml:space="preserve"><value>View details</value></data>
+  <data name="Plugin" xml:space="preserve"><value>Plugin</value></data>
+  <data name="Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Action" xml:space="preserve"><value>Action</value></data>
+  <data name="Back to results" xml:space="preserve"><value>Back to results</value></data>
+  <data name="Unpin repository" xml:space="preserve"><value>Unpin repository</value></data>
+  <data name="Pin repository" xml:space="preserve"><value>Pin repository</value></data>
+  <data name="Unpin author" xml:space="preserve"><value>Unpin author</value></data>
+  <data name="Pin author" xml:space="preserve"><value>Pin author</value></data>
+  <data name="Stop preview" xml:space="preserve"><value>Stop preview</value></data>
+  <data name="Play preview" xml:space="preserve"><value>Play preview</value></data>
+  <data name="Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Release notes" xml:space="preserve"><value>Release notes</value></data>
+  <data name="No release notes supplied." xml:space="preserve"><value>No release notes supplied.</value></data>
+  <data name="Plugin status" xml:space="preserve"><value>Plugin status</value></data>
+  <data name="Loaded" xml:space="preserve"><value>Loaded</value></data>
+  <data name="Repository" xml:space="preserve"><value>Repository</value></data>
+  <data name="Adding a repository does not install its plugins." xml:space="preserve"><value>Adding a repository does not install its plugins.</value></data>
+  <data name="Project website" xml:space="preserve"><value>Project website</value></data>
+  <data name="This name is installed from another source." xml:space="preserve"><value>This name is installed from another source.</value></data>
+  <data name="Unavailable for this API" xml:space="preserve"><value>Unavailable for this API</value></data>
+  <data name="Install" xml:space="preserve"><value>Install</value></data>
+  <data name="Disable" xml:space="preserve"><value>Disable</value></data>
+  <data name="Enable" xml:space="preserve"><value>Enable</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>Uninstall</value></data>
+  <data name="Uninstall this plugin? Its settings are retained." xml:space="preserve"><value>Uninstall this plugin? Its settings are retained.</value></data>
+  <data name="Confirm uninstall" xml:space="preserve"><value>Confirm uninstall</value></data>
+  <data name="Discovery failed" xml:space="preserve"><value>Discovery failed</value></data>
+  <data name="Add repository" xml:space="preserve"><value>Add repository</value></data>
+  <data name="Disable repository" xml:space="preserve"><value>Disable repository</value></data>
+  <data name="Enable repository" xml:space="preserve"><value>Enable repository</value></data>
+  <data name="Remove repository" xml:space="preserve"><value>Remove repository</value></data>
+  <data name="Removing a repository does not uninstall its plugins." xml:space="preserve"><value>Removing a repository does not uninstall its plugins.</value></data>
+  <data name="Confirm removal" xml:space="preserve"><value>Confirm removal</value></data>
+  <data name="Pinning a source does not add its repository." xml:space="preserve"><value>Pinning a source does not add its repository.</value></data>
+  <data name="Preview unavailable" xml:space="preserve"><value>Preview unavailable</value></data>
+  <data name="No preview supplied" xml:space="preserve"><value>No preview supplied</value></data>
+  <data name="Repository disabled" xml:space="preserve"><value>Repository disabled</value></data>
+  <data name="Added" xml:space="preserve"><value>Added</value></data>
+  <data name="Removal scheduled" xml:space="preserve"><value>Removal scheduled</value></data>
+  <data name="Update available" xml:space="preserve"><value>Update available</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Not assessed" xml:space="preserve"><value>Not assessed</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>Screenshots</value></data>
+  <data name="View plugins" xml:space="preserve"><value>View plugins</value></data>
+  <data name="Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="No" xml:space="preserve"><value>No</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
 </root>

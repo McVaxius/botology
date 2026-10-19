@@ -261,4 +261,76 @@
   <data name="Discord URL (optional)" xml:space="preserve"><value>URL Discord (facoltativo)</value></data>
   <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Inserisci un URL HTTPS Discord valido oppure lascia il campo vuoto.</value></data>
   <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Apri Discord del plugin: {0}</value></data>
+  <data name="Discover" xml:space="preserve"><value>Scopri</value></data>
+  <data name="Updates" xml:space="preserve"><value>Aggiornamenti</value></data>
+  <data name="Repositories" xml:space="preserve"><value>Repository</value></data>
+  <data name="Pinned sources" xml:space="preserve"><value>Fonti fissate</value></data>
+  <data name="Compatibility" xml:space="preserve"><value>Compatibilità</value></data>
+  <data name="Working..." xml:space="preserve"><value>In corso...</value></data>
+  <data name="Completed" xml:space="preserve"><value>Completato</value></data>
+  <data name="Operation failed" xml:space="preserve"><value>Operazione non riuscita</value></data>
+  <data name="Safe mode" xml:space="preserve"><value>Modalità provvisoria</value></data>
+  <data name="Collapse pinned sources" xml:space="preserve"><value>Comprimi fonti fissate</value></data>
+  <data name="Expand pinned sources" xml:space="preserve"><value>Espandi fonti fissate</value></data>
+  <data name="Authors" xml:space="preserve"><value>Autori</value></data>
+  <data name="Manage pins" xml:space="preserve"><value>Gestisci preferiti</value></data>
+  <data name="All plugins" xml:space="preserve"><value>Tutti i plugin</value></data>
+  <data name="Not installed" xml:space="preserve"><value>Non installato</value></data>
+  <data name="Repository not added" xml:space="preserve"><value>Repository non aggiunto</value></data>
+  <data name="Search plugins, authors or repositories" xml:space="preserve"><value>Cerca plugin, autori o repository</value></data>
+  <data name="Cards" xml:space="preserve"><value>Schede</value></data>
+  <data name="Table" xml:space="preserve"><value>Tabella</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Aggiorna</value></data>
+  <data name="Clear filter" xml:space="preserve"><value>Rimuovi filtro</value></data>
+  <data name="{0} plugins" xml:space="preserve"><value>{0} plugin</value></data>
+  <data name="Name" xml:space="preserve"><value>Nome</value></data>
+  <data name="Manage" xml:space="preserve"><value>Gestisci</value></data>
+  <data name="View details" xml:space="preserve"><value>Mostra dettagli</value></data>
+  <data name="Plugin" xml:space="preserve"><value>Plugin</value></data>
+  <data name="Version" xml:space="preserve"><value>Versione</value></data>
+  <data name="Action" xml:space="preserve"><value>Azione</value></data>
+  <data name="Back to results" xml:space="preserve"><value>Torna ai risultati</value></data>
+  <data name="Unpin repository" xml:space="preserve"><value>Rimuovi repository dai preferiti</value></data>
+  <data name="Pin repository" xml:space="preserve"><value>Fissa repository</value></data>
+  <data name="Unpin author" xml:space="preserve"><value>Rimuovi autore dai preferiti</value></data>
+  <data name="Pin author" xml:space="preserve"><value>Fissa autore</value></data>
+  <data name="Stop preview" xml:space="preserve"><value>Ferma anteprima</value></data>
+  <data name="Play preview" xml:space="preserve"><value>Riproduci anteprima</value></data>
+  <data name="Overview" xml:space="preserve"><value>Panoramica</value></data>
+  <data name="Release notes" xml:space="preserve"><value>Note di rilascio</value></data>
+  <data name="No release notes supplied." xml:space="preserve"><value>Nessuna nota di rilascio fornita.</value></data>
+  <data name="Plugin status" xml:space="preserve"><value>Stato del plugin</value></data>
+  <data name="Loaded" xml:space="preserve"><value>Caricato</value></data>
+  <data name="Repository" xml:space="preserve"><value>Repository</value></data>
+  <data name="Adding a repository does not install its plugins." xml:space="preserve"><value>Aggiungere un repository non installa i suoi plugin.</value></data>
+  <data name="Project website" xml:space="preserve"><value>Sito del progetto</value></data>
+  <data name="This name is installed from another source." xml:space="preserve"><value>Questo nome è già installato da un’altra fonte.</value></data>
+  <data name="Unavailable for this API" xml:space="preserve"><value>Non disponibile per questa API</value></data>
+  <data name="Install" xml:space="preserve"><value>Installa</value></data>
+  <data name="Disable" xml:space="preserve"><value>Disattiva</value></data>
+  <data name="Enable" xml:space="preserve"><value>Attiva</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>Disinstalla</value></data>
+  <data name="Uninstall this plugin? Its settings are retained." xml:space="preserve"><value>Disinstallare questo plugin? Le impostazioni saranno conservate.</value></data>
+  <data name="Confirm uninstall" xml:space="preserve"><value>Conferma disinstallazione</value></data>
+  <data name="Discovery failed" xml:space="preserve"><value>Ricerca non riuscita</value></data>
+  <data name="Add repository" xml:space="preserve"><value>Aggiungi repository</value></data>
+  <data name="Disable repository" xml:space="preserve"><value>Disattiva repository</value></data>
+  <data name="Enable repository" xml:space="preserve"><value>Attiva repository</value></data>
+  <data name="Remove repository" xml:space="preserve"><value>Rimuovi repository</value></data>
+  <data name="Removing a repository does not uninstall its plugins." xml:space="preserve"><value>Rimuovere un repository non disinstalla i suoi plugin.</value></data>
+  <data name="Confirm removal" xml:space="preserve"><value>Conferma rimozione</value></data>
+  <data name="Pinning a source does not add its repository." xml:space="preserve"><value>Fissare una fonte non aggiunge il suo repository.</value></data>
+  <data name="Preview unavailable" xml:space="preserve"><value>Anteprima non disponibile</value></data>
+  <data name="No preview supplied" xml:space="preserve"><value>Nessuna anteprima fornita</value></data>
+  <data name="Repository disabled" xml:space="preserve"><value>Repository disattivato</value></data>
+  <data name="Added" xml:space="preserve"><value>Aggiunto</value></data>
+  <data name="Removal scheduled" xml:space="preserve"><value>Rimozione programmata</value></data>
+  <data name="Update available" xml:space="preserve"><value>Aggiornamento disponibile</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Disattivato</value></data>
+  <data name="Not assessed" xml:space="preserve"><value>Non valutato</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>Schermate</value></data>
+  <data name="View plugins" xml:space="preserve"><value>Visualizza plugin</value></data>
+  <data name="Yes" xml:space="preserve"><value>Sì</value></data>
+  <data name="No" xml:space="preserve"><value>No</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Annulla</value></data>
 </root>

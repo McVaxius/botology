@@ -259,5 +259,77 @@
   <data name="Discord URL (optional)" xml:space="preserve"><value>URL Discord (tùy chọn)</value></data>
   <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Nhập URL HTTPS Discord hợp lệ hoặc để trống.</value></data>
   <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Mở Discord của plugin: {0}</value></data>
+  <data name="Discover" xml:space="preserve"><value>Khám phá</value></data>
+  <data name="Updates" xml:space="preserve"><value>Bản cập nhật</value></data>
+  <data name="Repositories" xml:space="preserve"><value>Kho</value></data>
+  <data name="Pinned sources" xml:space="preserve"><value>Nguồn đã ghim</value></data>
+  <data name="Compatibility" xml:space="preserve"><value>Tương thích</value></data>
+  <data name="Working..." xml:space="preserve"><value>Đang xử lý...</value></data>
+  <data name="Completed" xml:space="preserve"><value>Hoàn tất</value></data>
+  <data name="Operation failed" xml:space="preserve"><value>Thao tác thất bại</value></data>
+  <data name="Safe mode" xml:space="preserve"><value>Chế độ an toàn</value></data>
+  <data name="Collapse pinned sources" xml:space="preserve"><value>Thu gọn nguồn đã ghim</value></data>
+  <data name="Expand pinned sources" xml:space="preserve"><value>Mở rộng nguồn đã ghim</value></data>
+  <data name="Authors" xml:space="preserve"><value>Tác giả</value></data>
+  <data name="Manage pins" xml:space="preserve"><value>Quản lý mục ghim</value></data>
+  <data name="All plugins" xml:space="preserve"><value>Tất cả plugin</value></data>
+  <data name="Not installed" xml:space="preserve"><value>Chưa cài đặt</value></data>
+  <data name="Repository not added" xml:space="preserve"><value>Chưa thêm kho</value></data>
+  <data name="Search plugins, authors or repositories" xml:space="preserve"><value>Tìm plugin, tác giả hoặc kho</value></data>
+  <data name="Cards" xml:space="preserve"><value>Thẻ</value></data>
+  <data name="Table" xml:space="preserve"><value>Bảng</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Làm mới</value></data>
+  <data name="Clear filter" xml:space="preserve"><value>Xóa bộ lọc</value></data>
+  <data name="{0} plugins" xml:space="preserve"><value>{0} plugin</value></data>
+  <data name="Name" xml:space="preserve"><value>Tên</value></data>
+  <data name="Manage" xml:space="preserve"><value>Quản lý</value></data>
+  <data name="View details" xml:space="preserve"><value>Xem chi tiết</value></data>
+  <data name="Plugin" xml:space="preserve"><value>Plugin</value></data>
+  <data name="Version" xml:space="preserve"><value>Phiên bản</value></data>
+  <data name="Action" xml:space="preserve"><value>Thao tác</value></data>
+  <data name="Back to results" xml:space="preserve"><value>Về kết quả</value></data>
+  <data name="Unpin repository" xml:space="preserve"><value>Bỏ ghim kho</value></data>
+  <data name="Pin repository" xml:space="preserve"><value>Ghim kho</value></data>
+  <data name="Unpin author" xml:space="preserve"><value>Bỏ ghim tác giả</value></data>
+  <data name="Pin author" xml:space="preserve"><value>Ghim tác giả</value></data>
+  <data name="Stop preview" xml:space="preserve"><value>Dừng xem trước</value></data>
+  <data name="Play preview" xml:space="preserve"><value>Phát xem trước</value></data>
+  <data name="Overview" xml:space="preserve"><value>Tổng quan</value></data>
+  <data name="Release notes" xml:space="preserve"><value>Ghi chú phát hành</value></data>
+  <data name="No release notes supplied." xml:space="preserve"><value>Không có ghi chú phát hành.</value></data>
+  <data name="Plugin status" xml:space="preserve"><value>Trạng thái plugin</value></data>
+  <data name="Loaded" xml:space="preserve"><value>Đã tải</value></data>
+  <data name="Repository" xml:space="preserve"><value>Kho</value></data>
+  <data name="Adding a repository does not install its plugins." xml:space="preserve"><value>Thêm kho không cài đặt các plugin trong kho.</value></data>
+  <data name="Project website" xml:space="preserve"><value>Trang dự án</value></data>
+  <data name="This name is installed from another source." xml:space="preserve"><value>Tên này đã được cài từ nguồn khác.</value></data>
+  <data name="Unavailable for this API" xml:space="preserve"><value>Không dùng được với API này</value></data>
+  <data name="Install" xml:space="preserve"><value>Cài đặt</value></data>
+  <data name="Disable" xml:space="preserve"><value>Tắt</value></data>
+  <data name="Enable" xml:space="preserve"><value>Bật</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>Gỡ cài đặt</value></data>
+  <data name="Uninstall this plugin? Its settings are retained." xml:space="preserve"><value>Gỡ plugin này? Thiết lập sẽ được giữ lại.</value></data>
+  <data name="Confirm uninstall" xml:space="preserve"><value>Xác nhận gỡ cài đặt</value></data>
+  <data name="Discovery failed" xml:space="preserve"><value>Khám phá thất bại</value></data>
+  <data name="Add repository" xml:space="preserve"><value>Thêm kho</value></data>
+  <data name="Disable repository" xml:space="preserve"><value>Tắt kho</value></data>
+  <data name="Enable repository" xml:space="preserve"><value>Bật kho</value></data>
+  <data name="Remove repository" xml:space="preserve"><value>Xóa kho</value></data>
+  <data name="Removing a repository does not uninstall its plugins." xml:space="preserve"><value>Xóa kho không gỡ các plugin trong kho.</value></data>
+  <data name="Confirm removal" xml:space="preserve"><value>Xác nhận xóa</value></data>
+  <data name="Pinning a source does not add its repository." xml:space="preserve"><value>Ghim nguồn không thêm kho của nguồn đó.</value></data>
+  <data name="Preview unavailable" xml:space="preserve"><value>Không thể xem trước</value></data>
+  <data name="No preview supplied" xml:space="preserve"><value>Không có bản xem trước</value></data>
+  <data name="Repository disabled" xml:space="preserve"><value>Kho đã tắt</value></data>
+  <data name="Added" xml:space="preserve"><value>Đã thêm</value></data>
+  <data name="Removal scheduled" xml:space="preserve"><value>Đã lên lịch xóa</value></data>
+  <data name="Update available" xml:space="preserve"><value>Có bản cập nhật</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Đã tắt</value></data>
+  <data name="Not assessed" xml:space="preserve"><value>Chưa đánh giá</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>Ảnh chụp màn hình</value></data>
+  <data name="View plugins" xml:space="preserve"><value>Xem plugin</value></data>
+  <data name="Yes" xml:space="preserve"><value>Có</value></data>
+  <data name="No" xml:space="preserve"><value>Không</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Hủy</value></data>
 </root>
 

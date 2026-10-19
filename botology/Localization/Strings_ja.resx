@@ -50,7 +50,7 @@
   <data name="Notes / Warnings" xml:space="preserve"><value>説明 / 警告</value></data>
   <data name="Ignore / ?" xml:space="preserve"><value>無視 / ?</value></data>
   <data name="AI attribution" xml:space="preserve"><value>AI 判定</value></data>
-  <data name="Available" xml:space="preserve"><value>更新あり</value></data>
+  <data name="Available" xml:space="preserve"><value>利用可能</value></data>
   <data name="Ignored" xml:space="preserve"><value>無視</value></data>
   <data name="Copy" xml:space="preserve"><value>コピー</value></data>
   <data name="Disable plugin" xml:space="preserve"><value>プラグインを無効化</value></data>
@@ -261,4 +261,76 @@
   <data name="Discord URL (optional)" xml:space="preserve"><value>Discord URL（任意）</value></data>
   <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>有効な Discord の HTTPS URL を入力するか、空欄にしてください。</value></data>
   <data name="Open plugin Discord: {0}" xml:space="preserve"><value>プラグインの Discord を開く: {0}</value></data>
+  <data name="Discover" xml:space="preserve"><value>探す</value></data>
+  <data name="Updates" xml:space="preserve"><value>更新</value></data>
+  <data name="Repositories" xml:space="preserve"><value>リポジトリ</value></data>
+  <data name="Pinned sources" xml:space="preserve"><value>固定したソース</value></data>
+  <data name="Compatibility" xml:space="preserve"><value>互換性</value></data>
+  <data name="Working..." xml:space="preserve"><value>処理中...</value></data>
+  <data name="Completed" xml:space="preserve"><value>完了</value></data>
+  <data name="Operation failed" xml:space="preserve"><value>操作に失敗しました</value></data>
+  <data name="Safe mode" xml:space="preserve"><value>セーフモード</value></data>
+  <data name="Collapse pinned sources" xml:space="preserve"><value>固定したソースを折りたたむ</value></data>
+  <data name="Expand pinned sources" xml:space="preserve"><value>固定したソースを展開</value></data>
+  <data name="Authors" xml:space="preserve"><value>作者</value></data>
+  <data name="Manage pins" xml:space="preserve"><value>固定を管理</value></data>
+  <data name="All plugins" xml:space="preserve"><value>すべてのプラグイン</value></data>
+  <data name="Not installed" xml:space="preserve"><value>未インストール</value></data>
+  <data name="Repository not added" xml:space="preserve"><value>リポジトリ未追加</value></data>
+  <data name="Search plugins, authors or repositories" xml:space="preserve"><value>プラグイン、作者、リポジトリを検索</value></data>
+  <data name="Cards" xml:space="preserve"><value>カード</value></data>
+  <data name="Table" xml:space="preserve"><value>テーブル</value></data>
+  <data name="Refresh" xml:space="preserve"><value>再読み込み</value></data>
+  <data name="Clear filter" xml:space="preserve"><value>フィルターを解除</value></data>
+  <data name="{0} plugins" xml:space="preserve"><value>{0} 件のプラグイン</value></data>
+  <data name="Name" xml:space="preserve"><value>名前</value></data>
+  <data name="Manage" xml:space="preserve"><value>管理</value></data>
+  <data name="View details" xml:space="preserve"><value>詳細を見る</value></data>
+  <data name="Plugin" xml:space="preserve"><value>プラグイン</value></data>
+  <data name="Version" xml:space="preserve"><value>バージョン</value></data>
+  <data name="Action" xml:space="preserve"><value>操作</value></data>
+  <data name="Back to results" xml:space="preserve"><value>結果に戻る</value></data>
+  <data name="Unpin repository" xml:space="preserve"><value>リポジトリの固定を解除</value></data>
+  <data name="Pin repository" xml:space="preserve"><value>リポジトリを固定</value></data>
+  <data name="Unpin author" xml:space="preserve"><value>作者の固定を解除</value></data>
+  <data name="Pin author" xml:space="preserve"><value>作者を固定</value></data>
+  <data name="Stop preview" xml:space="preserve"><value>プレビューを停止</value></data>
+  <data name="Play preview" xml:space="preserve"><value>プレビューを再生</value></data>
+  <data name="Overview" xml:space="preserve"><value>概要</value></data>
+  <data name="Release notes" xml:space="preserve"><value>リリースノート</value></data>
+  <data name="No release notes supplied." xml:space="preserve"><value>リリースノートはありません。</value></data>
+  <data name="Plugin status" xml:space="preserve"><value>プラグインの状態</value></data>
+  <data name="Loaded" xml:space="preserve"><value>読み込み済み</value></data>
+  <data name="Repository" xml:space="preserve"><value>リポジトリ</value></data>
+  <data name="Adding a repository does not install its plugins." xml:space="preserve"><value>リポジトリを追加してもプラグインはインストールされません。</value></data>
+  <data name="Project website" xml:space="preserve"><value>プロジェクトのサイト</value></data>
+  <data name="This name is installed from another source." xml:space="preserve"><value>この名前は別のソースからインストール済みです。</value></data>
+  <data name="Unavailable for this API" xml:space="preserve"><value>この API では利用できません</value></data>
+  <data name="Install" xml:space="preserve"><value>インストール</value></data>
+  <data name="Disable" xml:space="preserve"><value>無効化</value></data>
+  <data name="Enable" xml:space="preserve"><value>有効化</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>アンインストール</value></data>
+  <data name="Uninstall this plugin? Its settings are retained." xml:space="preserve"><value>このプラグインを削除しますか？設定は保持されます。</value></data>
+  <data name="Confirm uninstall" xml:space="preserve"><value>アンインストールを確定</value></data>
+  <data name="Discovery failed" xml:space="preserve"><value>検索に失敗しました</value></data>
+  <data name="Add repository" xml:space="preserve"><value>リポジトリを追加</value></data>
+  <data name="Disable repository" xml:space="preserve"><value>リポジトリを無効化</value></data>
+  <data name="Enable repository" xml:space="preserve"><value>リポジトリを有効化</value></data>
+  <data name="Remove repository" xml:space="preserve"><value>リポジトリを削除</value></data>
+  <data name="Removing a repository does not uninstall its plugins." xml:space="preserve"><value>リポジトリを削除してもプラグインは削除されません。</value></data>
+  <data name="Confirm removal" xml:space="preserve"><value>削除を確定</value></data>
+  <data name="Pinning a source does not add its repository." xml:space="preserve"><value>ソースを固定してもリポジトリは追加されません。</value></data>
+  <data name="Preview unavailable" xml:space="preserve"><value>プレビューを利用できません</value></data>
+  <data name="No preview supplied" xml:space="preserve"><value>プレビューはありません</value></data>
+  <data name="Repository disabled" xml:space="preserve"><value>リポジトリ無効</value></data>
+  <data name="Added" xml:space="preserve"><value>追加済み</value></data>
+  <data name="Removal scheduled" xml:space="preserve"><value>削除予定</value></data>
+  <data name="Update available" xml:space="preserve"><value>更新があります</value></data>
+  <data name="Disabled" xml:space="preserve"><value>無効</value></data>
+  <data name="Not assessed" xml:space="preserve"><value>未評価</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>スクリーンショット</value></data>
+  <data name="View plugins" xml:space="preserve"><value>プラグインを表示</value></data>
+  <data name="Yes" xml:space="preserve"><value>はい</value></data>
+  <data name="No" xml:space="preserve"><value>いいえ</value></data>
+  <data name="Cancel" xml:space="preserve"><value>キャンセル</value></data>
 </root>

@@ -261,4 +261,76 @@
   <data name="Discord URL (optional)" xml:space="preserve"><value>URL Discord (необязательно)</value></data>
   <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Введите допустимый HTTPS URL Discord или оставьте поле пустым.</value></data>
   <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Открыть Discord плагина: {0}</value></data>
+  <data name="Discover" xml:space="preserve"><value>Обзор</value></data>
+  <data name="Updates" xml:space="preserve"><value>Обновления</value></data>
+  <data name="Repositories" xml:space="preserve"><value>Репозитории</value></data>
+  <data name="Pinned sources" xml:space="preserve"><value>Закреплённые источники</value></data>
+  <data name="Compatibility" xml:space="preserve"><value>Совместимость</value></data>
+  <data name="Working..." xml:space="preserve"><value>Выполняется...</value></data>
+  <data name="Completed" xml:space="preserve"><value>Завершено</value></data>
+  <data name="Operation failed" xml:space="preserve"><value>Ошибка операции</value></data>
+  <data name="Safe mode" xml:space="preserve"><value>Безопасный режим</value></data>
+  <data name="Collapse pinned sources" xml:space="preserve"><value>Свернуть закреплённые источники</value></data>
+  <data name="Expand pinned sources" xml:space="preserve"><value>Развернуть закреплённые источники</value></data>
+  <data name="Authors" xml:space="preserve"><value>Авторы</value></data>
+  <data name="Manage pins" xml:space="preserve"><value>Управление избранным</value></data>
+  <data name="All plugins" xml:space="preserve"><value>Все плагины</value></data>
+  <data name="Not installed" xml:space="preserve"><value>Не установлен</value></data>
+  <data name="Repository not added" xml:space="preserve"><value>Репозиторий не добавлен</value></data>
+  <data name="Search plugins, authors or repositories" xml:space="preserve"><value>Поиск плагинов, авторов и репозиториев</value></data>
+  <data name="Cards" xml:space="preserve"><value>Карточки</value></data>
+  <data name="Table" xml:space="preserve"><value>Таблица</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Обновить</value></data>
+  <data name="Clear filter" xml:space="preserve"><value>Сбросить фильтр</value></data>
+  <data name="{0} plugins" xml:space="preserve"><value>Плагинов: {0}</value></data>
+  <data name="Name" xml:space="preserve"><value>Название</value></data>
+  <data name="Manage" xml:space="preserve"><value>Управление</value></data>
+  <data name="View details" xml:space="preserve"><value>Подробнее</value></data>
+  <data name="Plugin" xml:space="preserve"><value>Плагин</value></data>
+  <data name="Version" xml:space="preserve"><value>Версия</value></data>
+  <data name="Action" xml:space="preserve"><value>Действие</value></data>
+  <data name="Back to results" xml:space="preserve"><value>К результатам</value></data>
+  <data name="Unpin repository" xml:space="preserve"><value>Открепить репозиторий</value></data>
+  <data name="Pin repository" xml:space="preserve"><value>Закрепить репозиторий</value></data>
+  <data name="Unpin author" xml:space="preserve"><value>Открепить автора</value></data>
+  <data name="Pin author" xml:space="preserve"><value>Закрепить автора</value></data>
+  <data name="Stop preview" xml:space="preserve"><value>Остановить просмотр</value></data>
+  <data name="Play preview" xml:space="preserve"><value>Воспроизвести</value></data>
+  <data name="Overview" xml:space="preserve"><value>Описание</value></data>
+  <data name="Release notes" xml:space="preserve"><value>Изменения версии</value></data>
+  <data name="No release notes supplied." xml:space="preserve"><value>Изменения версии не указаны.</value></data>
+  <data name="Plugin status" xml:space="preserve"><value>Состояние плагина</value></data>
+  <data name="Loaded" xml:space="preserve"><value>Загружен</value></data>
+  <data name="Repository" xml:space="preserve"><value>Репозиторий</value></data>
+  <data name="Adding a repository does not install its plugins." xml:space="preserve"><value>Добавление репозитория не устанавливает его плагины.</value></data>
+  <data name="Project website" xml:space="preserve"><value>Сайт проекта</value></data>
+  <data name="This name is installed from another source." xml:space="preserve"><value>Плагин с этим именем уже установлен из другого источника.</value></data>
+  <data name="Unavailable for this API" xml:space="preserve"><value>Недоступен для этой версии API</value></data>
+  <data name="Install" xml:space="preserve"><value>Установить</value></data>
+  <data name="Disable" xml:space="preserve"><value>Отключить</value></data>
+  <data name="Enable" xml:space="preserve"><value>Включить</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>Удалить</value></data>
+  <data name="Uninstall this plugin? Its settings are retained." xml:space="preserve"><value>Удалить этот плагин? Его настройки сохранятся.</value></data>
+  <data name="Confirm uninstall" xml:space="preserve"><value>Подтвердить удаление плагина</value></data>
+  <data name="Discovery failed" xml:space="preserve"><value>Ошибка поиска</value></data>
+  <data name="Add repository" xml:space="preserve"><value>Добавить репозиторий</value></data>
+  <data name="Disable repository" xml:space="preserve"><value>Отключить репозиторий</value></data>
+  <data name="Enable repository" xml:space="preserve"><value>Включить репозиторий</value></data>
+  <data name="Remove repository" xml:space="preserve"><value>Удалить репозиторий</value></data>
+  <data name="Removing a repository does not uninstall its plugins." xml:space="preserve"><value>Удаление репозитория не удаляет его плагины.</value></data>
+  <data name="Confirm removal" xml:space="preserve"><value>Подтвердить удаление</value></data>
+  <data name="Pinning a source does not add its repository." xml:space="preserve"><value>Закрепление источника не добавляет его репозиторий.</value></data>
+  <data name="Preview unavailable" xml:space="preserve"><value>Просмотр недоступен</value></data>
+  <data name="No preview supplied" xml:space="preserve"><value>Предпросмотр не предоставлен</value></data>
+  <data name="Repository disabled" xml:space="preserve"><value>Репозиторий отключён</value></data>
+  <data name="Added" xml:space="preserve"><value>Добавлен</value></data>
+  <data name="Removal scheduled" xml:space="preserve"><value>Удаление запланировано</value></data>
+  <data name="Update available" xml:space="preserve"><value>Доступно обновление</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Отключён</value></data>
+  <data name="Not assessed" xml:space="preserve"><value>Не оценено</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>Скриншоты</value></data>
+  <data name="View plugins" xml:space="preserve"><value>Показать плагины</value></data>
+  <data name="Yes" xml:space="preserve"><value>Да</value></data>
+  <data name="No" xml:space="preserve"><value>Нет</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Отмена</value></data>
 </root>

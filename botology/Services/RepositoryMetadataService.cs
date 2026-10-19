@@ -30,6 +30,51 @@ public sealed class RepositoryMetadataService : IDisposable
     private readonly HttpClient httpClient;
     private readonly object gate = new();
     private readonly Dictionary<string, CachedMetadataEntry> cache = new(StringComparer.OrdinalIgnoreCase);
+    // Reuse fetched manifests for discovery. These session snapshots are never written as a new cache.
+    private readonly Dictionary<string, IReadOnlyList<InstallerManifest>> discoveryFeeds = new(StringComparer.Ordinal);
+    private readonly HashSet<string> discoveryAttempted = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> discoveryErrors = new(StringComparer.Ordinal);
+    private bool discoveryRunning;
+    public bool DiscoveryRunning { get { lock (gate) return discoveryRunning; } }
+    public IReadOnlyDictionary<string, string> DiscoveryErrors { get { lock (gate) return new Dictionary<string, string>(discoveryErrors); } }
+
+    // Independent of the legacy description cache: complete feeds are needed even when that cache is fresh.
+    public void QueueDiscovery(IEnumerable<string> repositories, bool force = false)
+    {
+        string[] pending;
+        lock (gate)
+        {
+            if (discoveryRunning) return;
+            pending = repositories.Select(InstallerCatalog.NormalizeRepository).OfType<string>().Distinct(StringComparer.Ordinal)
+                .Where(url => force || !discoveryAttempted.Contains(url)).ToArray();
+            if (pending.Length == 0) return;
+            foreach (var url in pending) discoveryAttempted.Add(url);
+            discoveryRunning = true;
+        }
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Parallel.ForEachAsync(pending, new ParallelOptions { MaxDegreeOfParallelism = 4 }, async (url, token) =>
+                {
+                    try
+                    {
+                        using var response = await httpClient.GetAsync(url, token).ConfigureAwait(false);
+                        response.EnsureSuccessStatusCode();
+                        var manifests = InstallerCatalog.ParseFeed(await response.Content.ReadAsStringAsync(token).ConfigureAwait(false), url);
+                        lock (gate) { discoveryFeeds[url] = manifests; discoveryErrors.Remove(url); }
+                    }
+                    catch (Exception ex) { lock (gate) discoveryErrors[url] = ex.GetBaseException().Message; }
+                }).ConfigureAwait(false);
+            }
+            finally { lock (gate) discoveryRunning = false; }
+        });
+    }
+
+    public IReadOnlyList<InstallerManifest> CaptureDiscoveryManifests()
+    {
+        lock (gate) return discoveryFeeds.Values.SelectMany(entries => entries).ToArray();
+    }
 
     private bool cacheLoaded;
     private bool refreshInProgress;
@@ -42,6 +87,9 @@ public sealed class RepositoryMetadataService : IDisposable
         httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("botology", "1.0"));
         EnsureCacheLoaded();
     }
+
+    internal RepositoryMetadataService(IPluginLog log, HttpClient client)
+    { this.log = log; httpClient = client; cacheLoaded = true; }
 
     public void Dispose()
         => httpClient.Dispose();
@@ -203,6 +251,11 @@ public sealed class RepositoryMetadataService : IDisposable
 
         await using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
         using var document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
+        if (InstallerCatalog.NormalizeRepository(repoJsonUrl) is { } source)
+        {
+            var discovered = InstallerCatalog.ParseFeed(document.RootElement.GetRawText(), source);
+            lock (gate) discoveryFeeds[source] = discovered;
+        }
 
         var manifests = EnumerateManifestCandidates(document.RootElement)
             .Select(ParseRemoteManifest)

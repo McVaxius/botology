@@ -19,6 +19,10 @@ Scroll down to "The Dumpster Fire" channel to discuss issues / suggestions for s
 
 ## Current Status
 
+The current source opens a plugin installer with Discover cards, a table view, Installed, Updates and repository management. Known unadded sources remain searchable; review a source and explicitly add it before installing. Repository and author favourites use the existing configuration, with a folding side panel. Invalid favourites stay hidden without deleting saved choices. The Compatibility tab retains the existing grid, DTR and catalog tools.
+
+Plugin profiles load supplied screenshots on demand. GIF previews start with Play, stop when leaving the page, and use Windows' built-in decoder with no bundled codec or helper executable. WebM is deferred. Local checks use fabricated host data; live installation and Wine playback require separate acceptance. The source version remains `2.0.0.12`; this work has not been published.
+
 Catalog entries can include an optional plugin-specific Discord HTTPS URL. Set it in the existing catalog editor; the supplied link appears beside that entry's repository actions. Local overrides preserve the URL across reloads, older entries need no change, and invalid supplied links stay disabled. Botology opens a link only when you click it.
 
 Hindi uses installed shaping fonts. The source now leaves other languages usable when the Hindi menu caption is unavailable, showing a disabled ASCII `Hindi (unavailable)` option. Required text for a selected Hindi UI still requires full validation; on failure, the readable status offers **Use English**, saving English only after an explicit press. Native verification and Linux/Wine acceptance remain pending for this change.

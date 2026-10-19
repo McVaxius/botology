@@ -8,6 +8,18 @@ using botology.Windows;
 
 Console.OutputEncoding = new UTF8Encoding(false);
 
+if (args.FirstOrDefault() == "--installer-media") { InstallerMediaTests.Check(); await InstallerMediaTests.CheckOwnershipAsync(); return 0; }
+if (args.FirstOrDefault() == "--installer-ui") { InstallerUiTests.Check(args.Skip(1).ToArray()); return 0; }
+if (args.FirstOrDefault() == "--installer-discovery") { await InstallerDiscoveryTests.CheckAsync(); return 0; }
+
+if (args.FirstOrDefault() == "--installer-core")
+{
+    var installerFailures = InstallerFeatureTests.Check().Concat(await InstallerActionTests.CheckAsync()).ToArray();
+    foreach (var failure in installerFailures) Console.Error.WriteLine("FAIL: " + failure);
+    if (installerFailures.Length == 0) Console.WriteLine("Botology installer core checks passed: source identity, pins/configuration, host snapshots, repository management and awaited native lifecycle results.");
+    return installerFailures.Length == 0 ? 0 : 1;
+}
+
 if (args.FirstOrDefault() == "--confirmation-popups")
 {
     AethertekUI.Tests.BotologyUiSmoke.CheckConfirmationPopups(args.Skip(1).ToArray());
@@ -243,6 +255,8 @@ finally
     Directory.Delete(tempDirectory, recursive: true);
 }
 
+failures.AddRange(InstallerFeatureTests.Check());
+failures.AddRange(await InstallerActionTests.CheckAsync());
 if (failures.Count > 0)
 {
     foreach (var failure in failures)
@@ -250,6 +264,10 @@ if (failures.Count > 0)
     return 1;
 }
 
+await InstallerDiscoveryTests.CheckAsync();
+InstallerMediaTests.Check();
+await InstallerMediaTests.CheckOwnershipAsync();
+InstallerUiTests.Check();
 AethertekUI.Tests.BotologyUiSmoke.Run();
 Console.WriteLine("Botology feature tests passed: notification matching, duplicate prevention, AI storage, changelog cache fallback, grid sorting, and native main-window rendering.");
 return 0;

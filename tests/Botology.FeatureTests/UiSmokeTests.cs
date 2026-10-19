@@ -193,6 +193,7 @@ internal static class BotologyUiSmoke
                 backend.Configuration.ShowDetailedNotes=scenario.Detailed;
                 backend.BlockingPopup=scenario.Popup=="blocking";
                 var main=new MainWindow(backend);
+                main.DiagnosticCompatibilityOnly=true;
                 var bounds=new Dictionary<string,(Vector2 Min,Vector2 Max)>();
                 main.MeasureBounds=(name,min,max)=>bounds[name]=(min,max);
                 var settings=new ConfigWindow(backend);
@@ -217,10 +218,12 @@ internal static class BotologyUiSmoke
                     bounds.Clear();
                     using var locale=text.Enter();
                     using var material=MaterialTheme.Push(theme,scenario.Scale,MaterialStyleMode.ColorsOnly);
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding,new Vector2(16*scenario.Scale));
+                    using var geometry=BotologyPresentation.PushHostGeometry(scenario.Scale,scenario.Compact);
+                    using var chrome=MaterialWindowChrome.Push();
                     ImGui.SetNextWindowPos(Vector2.Zero); ImGui.SetNextWindowSize(new(scenario.Width,scenario.Height));
                     ImGui.Begin(scenario.Window switch { "settings"=>"Botology Settings##Config","catalog"=>"Botology Catalog Editor##CatalogEditor",
-                        "dtr"=>"Botology DTR Manager##DtrManager",_=>"Botology##Main" },ImGuiWindowFlags.NoSavedSettings);
+                        "dtr"=>"Botology DTR Manager##DtrManager",_=>"Botology##Main" },
+                        (scenario.Window switch { "settings"=>settings.Flags,"catalog"=>catalog.Flags,"dtr"=>dtr.Flags,_=>main.Flags })|ImGuiWindowFlags.NoSavedSettings);
                     try
                     {
                     switch(scenario.Window)
@@ -245,7 +248,7 @@ internal static class BotologyUiSmoke
                     if(scenario.Window=="main" && ImGui.GetCursorPosY()>scenario.Height-8*scenario.Scale)
                         throw new InvalidOperationException("Footer overflow: "+language+"/"+scenario.Name);
                     }
-                    finally { ImGui.End(); ImGui.PopStyleVar(); }
+                    finally { ImGui.End(); }
                 }
                 ImGui.GetIO().AddMousePosEvent(-1000,-1000);
                 // Native child scrollbars can change available width over several frames.
@@ -351,7 +354,7 @@ internal static class BotologyUiSmoke
         Console.WriteLine("Native filtering/clear, stable header sorting, resized widths and optional-column preservation passed.");
     }
 
-    private static void CheckPreferencesAndResources()
+    internal static void CheckPreferencesAndResources()
     {
         var configuration=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>("{\"Version\":1,\"PluginEnabled\":false,\"ShowAuthorColumn\":true,\"IgnoredPluginIds\":[\"fixture\"]}")!;
         if(!configuration.UiShowTitlebarStatus || !configuration.UiDetailedTitlebarStatus || configuration.UiLanguage!="en" || configuration.UiAccentRgb!=0x1CC9E6 || configuration.Version!=1 || configuration.PluginEnabled || !configuration.ShowAuthorColumn || configuration.IgnoredPluginIds.Single()!="fixture")
@@ -374,6 +377,8 @@ internal static class BotologyUiSmoke
         finally { property.SetValue(null,previous); }
         using var english=new UiText("en",_=>throw new InvalidOperationException());
         var keys=english.Resources.Cast<DictionaryEntry>().ToDictionary(e=>(string)e.Key,e=>(string)e.Value!);
+        foreach(var statusKey in new[]{"Yes","No","Cancel"})
+            if(!keys.ContainsKey(statusKey)) throw new InvalidOperationException("Installer status/action resource missing: "+statusKey);
         string Fields(string value)=>string.Join(",",System.Text.RegularExpressions.Regex.Matches(value,@"(?<!\{)\{(\d+)(?:[^{}]*)\}").Select(m=>m.Groups[1].Value).Distinct().Order());
         foreach(var language in UiText.Languages)
         {
@@ -642,6 +647,15 @@ internal sealed class BotologyOriginalIcon : global::Dalamud.Interface.Textures.
 
 internal sealed class SnapshotUi : IBotologyUi
 {
+    public InstallerCatalogSnapshot Installer { get; set; } = InstallerCatalogSnapshot.Empty;
+    public InstallerCatalogSnapshot CaptureInstaller()=>Installer;
+    public bool DiscoveryRunning=>false;
+    public IReadOnlyDictionary<string,string> DiscoveryErrors=>new Dictionary<string,string>();
+    public InstallerOperation? InstallerOperation=>null;
+    public void RefreshInstaller()=>Actions.Add("installer-refresh");
+    public void RunInstallerAction(InstallerAction action,string repository,string internalName="")=>Actions.Add(action+":"+repository+":"+internalName);
+    public void ToggleRepositoryPin(string repository)=>botology.Services.InstallerCatalog.ToggleRepositoryPin(Configuration,repository);
+    public void ToggleAuthorPin(string author)=>botology.Services.InstallerCatalog.ToggleAuthorPin(Configuration,author);
     public AethertekUI.MaterialTitlebarStatus? TitlebarStatus => null;
     public Configuration Configuration { get; } = new() { ShowRepoColumn=false,ShowAiColumn=false,ShowIgnoreColumn=false,
         ShowAuthorColumn=true,ShowDetailedNotes=false,DtrIconEnabled="+",DtrIconDisabled="-" };

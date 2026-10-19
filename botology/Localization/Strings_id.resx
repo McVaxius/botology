@@ -259,5 +259,77 @@
   <data name="Discord URL (optional)" xml:space="preserve"><value>URL Discord (opsional)</value></data>
   <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Masukkan URL HTTPS Discord yang valid atau biarkan kosong.</value></data>
   <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Buka Discord plugin: {0}</value></data>
+  <data name="Discover" xml:space="preserve"><value>Jelajahi</value></data>
+  <data name="Updates" xml:space="preserve"><value>Pembaruan</value></data>
+  <data name="Repositories" xml:space="preserve"><value>Repositori</value></data>
+  <data name="Pinned sources" xml:space="preserve"><value>Sumber disematkan</value></data>
+  <data name="Compatibility" xml:space="preserve"><value>Kompatibilitas</value></data>
+  <data name="Working..." xml:space="preserve"><value>Memproses...</value></data>
+  <data name="Completed" xml:space="preserve"><value>Selesai</value></data>
+  <data name="Operation failed" xml:space="preserve"><value>Operasi gagal</value></data>
+  <data name="Safe mode" xml:space="preserve"><value>Mode aman</value></data>
+  <data name="Collapse pinned sources" xml:space="preserve"><value>Ciutkan sumber disematkan</value></data>
+  <data name="Expand pinned sources" xml:space="preserve"><value>Perluas sumber disematkan</value></data>
+  <data name="Authors" xml:space="preserve"><value>Penulis</value></data>
+  <data name="Manage pins" xml:space="preserve"><value>Kelola sematan</value></data>
+  <data name="All plugins" xml:space="preserve"><value>Semua plugin</value></data>
+  <data name="Not installed" xml:space="preserve"><value>Belum terpasang</value></data>
+  <data name="Repository not added" xml:space="preserve"><value>Repositori belum ditambahkan</value></data>
+  <data name="Search plugins, authors or repositories" xml:space="preserve"><value>Cari plugin, penulis, atau repositori</value></data>
+  <data name="Cards" xml:space="preserve"><value>Kartu</value></data>
+  <data name="Table" xml:space="preserve"><value>Tabel</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Segarkan</value></data>
+  <data name="Clear filter" xml:space="preserve"><value>Hapus filter</value></data>
+  <data name="{0} plugins" xml:space="preserve"><value>{0} plugin</value></data>
+  <data name="Name" xml:space="preserve"><value>Nama</value></data>
+  <data name="Manage" xml:space="preserve"><value>Kelola</value></data>
+  <data name="View details" xml:space="preserve"><value>Lihat detail</value></data>
+  <data name="Plugin" xml:space="preserve"><value>Plugin</value></data>
+  <data name="Version" xml:space="preserve"><value>Versi</value></data>
+  <data name="Action" xml:space="preserve"><value>Tindakan</value></data>
+  <data name="Back to results" xml:space="preserve"><value>Kembali ke hasil</value></data>
+  <data name="Unpin repository" xml:space="preserve"><value>Lepas sematan repositori</value></data>
+  <data name="Pin repository" xml:space="preserve"><value>Sematkan repositori</value></data>
+  <data name="Unpin author" xml:space="preserve"><value>Lepas sematan penulis</value></data>
+  <data name="Pin author" xml:space="preserve"><value>Sematkan penulis</value></data>
+  <data name="Stop preview" xml:space="preserve"><value>Hentikan pratinjau</value></data>
+  <data name="Play preview" xml:space="preserve"><value>Putar pratinjau</value></data>
+  <data name="Overview" xml:space="preserve"><value>Ringkasan</value></data>
+  <data name="Release notes" xml:space="preserve"><value>Catatan rilis</value></data>
+  <data name="No release notes supplied." xml:space="preserve"><value>Tidak ada catatan rilis.</value></data>
+  <data name="Plugin status" xml:space="preserve"><value>Status plugin</value></data>
+  <data name="Loaded" xml:space="preserve"><value>Dimuat</value></data>
+  <data name="Repository" xml:space="preserve"><value>Repositori</value></data>
+  <data name="Adding a repository does not install its plugins." xml:space="preserve"><value>Menambahkan repositori tidak memasang pluginnya.</value></data>
+  <data name="Project website" xml:space="preserve"><value>Situs proyek</value></data>
+  <data name="This name is installed from another source." xml:space="preserve"><value>Nama ini sudah terpasang dari sumber lain.</value></data>
+  <data name="Unavailable for this API" xml:space="preserve"><value>Tidak tersedia untuk API ini</value></data>
+  <data name="Install" xml:space="preserve"><value>Pasang</value></data>
+  <data name="Disable" xml:space="preserve"><value>Nonaktifkan</value></data>
+  <data name="Enable" xml:space="preserve"><value>Aktifkan</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>Copot</value></data>
+  <data name="Uninstall this plugin? Its settings are retained." xml:space="preserve"><value>Copot plugin ini? Pengaturannya tetap disimpan.</value></data>
+  <data name="Confirm uninstall" xml:space="preserve"><value>Konfirmasi pencopotan</value></data>
+  <data name="Discovery failed" xml:space="preserve"><value>Penemuan gagal</value></data>
+  <data name="Add repository" xml:space="preserve"><value>Tambah repositori</value></data>
+  <data name="Disable repository" xml:space="preserve"><value>Nonaktifkan repositori</value></data>
+  <data name="Enable repository" xml:space="preserve"><value>Aktifkan repositori</value></data>
+  <data name="Remove repository" xml:space="preserve"><value>Hapus repositori</value></data>
+  <data name="Removing a repository does not uninstall its plugins." xml:space="preserve"><value>Menghapus repositori tidak mencopot pluginnya.</value></data>
+  <data name="Confirm removal" xml:space="preserve"><value>Konfirmasi penghapusan</value></data>
+  <data name="Pinning a source does not add its repository." xml:space="preserve"><value>Menyematkan sumber tidak menambahkan repositorinya.</value></data>
+  <data name="Preview unavailable" xml:space="preserve"><value>Pratinjau tidak tersedia</value></data>
+  <data name="No preview supplied" xml:space="preserve"><value>Tidak ada pratinjau</value></data>
+  <data name="Repository disabled" xml:space="preserve"><value>Repositori nonaktif</value></data>
+  <data name="Added" xml:space="preserve"><value>Ditambahkan</value></data>
+  <data name="Removal scheduled" xml:space="preserve"><value>Penghapusan dijadwalkan</value></data>
+  <data name="Update available" xml:space="preserve"><value>Pembaruan tersedia</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Nonaktif</value></data>
+  <data name="Not assessed" xml:space="preserve"><value>Belum dinilai</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>Tangkapan layar</value></data>
+  <data name="View plugins" xml:space="preserve"><value>Lihat plugin</value></data>
+  <data name="Yes" xml:space="preserve"><value>Ya</value></data>
+  <data name="No" xml:space="preserve"><value>Tidak</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Batal</value></data>
 </root>
 

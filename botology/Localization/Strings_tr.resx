@@ -259,5 +259,77 @@
   <data name="Discord URL (optional)" xml:space="preserve"><value>Discord URL’si (isteğe bağlı)</value></data>
   <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>Geçerli bir Discord HTTPS URL’si girin veya boş bırakın.</value></data>
   <data name="Open plugin Discord: {0}" xml:space="preserve"><value>Eklentinin Discord’unu aç: {0}</value></data>
+  <data name="Discover" xml:space="preserve"><value>Keşfet</value></data>
+  <data name="Updates" xml:space="preserve"><value>Güncellemeler</value></data>
+  <data name="Repositories" xml:space="preserve"><value>Depolar</value></data>
+  <data name="Pinned sources" xml:space="preserve"><value>Sabitlenen kaynaklar</value></data>
+  <data name="Compatibility" xml:space="preserve"><value>Uyumluluk</value></data>
+  <data name="Working..." xml:space="preserve"><value>İşleniyor...</value></data>
+  <data name="Completed" xml:space="preserve"><value>Tamamlandı</value></data>
+  <data name="Operation failed" xml:space="preserve"><value>İşlem başarısız</value></data>
+  <data name="Safe mode" xml:space="preserve"><value>Güvenli mod</value></data>
+  <data name="Collapse pinned sources" xml:space="preserve"><value>Sabitlenen kaynakları daralt</value></data>
+  <data name="Expand pinned sources" xml:space="preserve"><value>Sabitlenen kaynakları genişlet</value></data>
+  <data name="Authors" xml:space="preserve"><value>Yazarlar</value></data>
+  <data name="Manage pins" xml:space="preserve"><value>Sabitlenenleri yönet</value></data>
+  <data name="All plugins" xml:space="preserve"><value>Tüm eklentiler</value></data>
+  <data name="Not installed" xml:space="preserve"><value>Yüklü değil</value></data>
+  <data name="Repository not added" xml:space="preserve"><value>Depo eklenmedi</value></data>
+  <data name="Search plugins, authors or repositories" xml:space="preserve"><value>Eklenti, yazar veya depo ara</value></data>
+  <data name="Cards" xml:space="preserve"><value>Kartlar</value></data>
+  <data name="Table" xml:space="preserve"><value>Tablo</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Yenile</value></data>
+  <data name="Clear filter" xml:space="preserve"><value>Filtreyi temizle</value></data>
+  <data name="{0} plugins" xml:space="preserve"><value>{0} eklenti</value></data>
+  <data name="Name" xml:space="preserve"><value>Ad</value></data>
+  <data name="Manage" xml:space="preserve"><value>Yönet</value></data>
+  <data name="View details" xml:space="preserve"><value>Ayrıntıları gör</value></data>
+  <data name="Plugin" xml:space="preserve"><value>Eklenti</value></data>
+  <data name="Version" xml:space="preserve"><value>Sürüm</value></data>
+  <data name="Action" xml:space="preserve"><value>İşlem</value></data>
+  <data name="Back to results" xml:space="preserve"><value>Sonuçlara dön</value></data>
+  <data name="Unpin repository" xml:space="preserve"><value>Depoyu sabitlemeden çıkar</value></data>
+  <data name="Pin repository" xml:space="preserve"><value>Depoyu sabitle</value></data>
+  <data name="Unpin author" xml:space="preserve"><value>Yazarı sabitlemeden çıkar</value></data>
+  <data name="Pin author" xml:space="preserve"><value>Yazarı sabitle</value></data>
+  <data name="Stop preview" xml:space="preserve"><value>Önizlemeyi durdur</value></data>
+  <data name="Play preview" xml:space="preserve"><value>Önizlemeyi oynat</value></data>
+  <data name="Overview" xml:space="preserve"><value>Genel bakış</value></data>
+  <data name="Release notes" xml:space="preserve"><value>Sürüm notları</value></data>
+  <data name="No release notes supplied." xml:space="preserve"><value>Sürüm notları sağlanmadı.</value></data>
+  <data name="Plugin status" xml:space="preserve"><value>Eklenti durumu</value></data>
+  <data name="Loaded" xml:space="preserve"><value>Yüklendi</value></data>
+  <data name="Repository" xml:space="preserve"><value>Depo</value></data>
+  <data name="Adding a repository does not install its plugins." xml:space="preserve"><value>Depo eklemek eklentilerini yüklemez.</value></data>
+  <data name="Project website" xml:space="preserve"><value>Proje sitesi</value></data>
+  <data name="This name is installed from another source." xml:space="preserve"><value>Bu ad başka bir kaynaktan zaten yüklenmiş.</value></data>
+  <data name="Unavailable for this API" xml:space="preserve"><value>Bu API için kullanılamıyor</value></data>
+  <data name="Install" xml:space="preserve"><value>Yükle</value></data>
+  <data name="Disable" xml:space="preserve"><value>Devre dışı bırak</value></data>
+  <data name="Enable" xml:space="preserve"><value>Etkinleştir</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="Uninstall this plugin? Its settings are retained." xml:space="preserve"><value>Bu eklenti kaldırılsın mı? Ayarları korunur.</value></data>
+  <data name="Confirm uninstall" xml:space="preserve"><value>Kaldırmayı onayla</value></data>
+  <data name="Discovery failed" xml:space="preserve"><value>Keşif başarısız</value></data>
+  <data name="Add repository" xml:space="preserve"><value>Depo ekle</value></data>
+  <data name="Disable repository" xml:space="preserve"><value>Depoyu devre dışı bırak</value></data>
+  <data name="Enable repository" xml:space="preserve"><value>Depoyu etkinleştir</value></data>
+  <data name="Remove repository" xml:space="preserve"><value>Depoyu kaldır</value></data>
+  <data name="Removing a repository does not uninstall its plugins." xml:space="preserve"><value>Depoyu kaldırmak eklentilerini kaldırmaz.</value></data>
+  <data name="Confirm removal" xml:space="preserve"><value>Depo kaldırmayı onayla</value></data>
+  <data name="Pinning a source does not add its repository." xml:space="preserve"><value>Kaynağı sabitlemek deposunu eklemez.</value></data>
+  <data name="Preview unavailable" xml:space="preserve"><value>Önizleme kullanılamıyor</value></data>
+  <data name="No preview supplied" xml:space="preserve"><value>Önizleme sağlanmadı</value></data>
+  <data name="Repository disabled" xml:space="preserve"><value>Depo devre dışı</value></data>
+  <data name="Added" xml:space="preserve"><value>Eklendi</value></data>
+  <data name="Removal scheduled" xml:space="preserve"><value>Kaldırma planlandı</value></data>
+  <data name="Update available" xml:space="preserve"><value>Güncelleme var</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Devre dışı</value></data>
+  <data name="Not assessed" xml:space="preserve"><value>Değerlendirilmedi</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>Ekran görüntüleri</value></data>
+  <data name="View plugins" xml:space="preserve"><value>Eklentileri görüntüle</value></data>
+  <data name="Yes" xml:space="preserve"><value>Evet</value></data>
+  <data name="No" xml:space="preserve"><value>Hayır</value></data>
+  <data name="Cancel" xml:space="preserve"><value>İptal</value></data>
 </root>
 

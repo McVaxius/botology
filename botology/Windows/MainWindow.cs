@@ -13,7 +13,7 @@ using botology.Services;
 
 namespace botology.Windows;
 
-public sealed class MainWindow : PositionedWindow, IDisposable
+public sealed partial class MainWindow : PositionedWindow, IDisposable
 {
     private const string BlockingPopupId = "BotologyBlockingAlert";
     private const string ColumnSelectionPopupId = "BotologyColumnSelection";
@@ -56,7 +56,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         this.plugin = plugin;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(1240f, 640f),
+            MinimumSize = new Vector2(800f, 640f),
             MaximumSize = new Vector2(1880f, 1400f),
         };
         TitleBarButtons.Add(new()
@@ -75,11 +75,15 @@ public sealed class MainWindow : PositionedWindow, IDisposable
 
     public void Dispose()
     {
+        installerMedia?.Dispose();
     }
+
+    public override void OnClose() => installerMedia?.Clear();
+    internal void ReleaseClosedMedia() { if(!IsOpen) { installerMedia?.Clear(); installerMedia?.BeginFrame(); } }
 
     public override void PreDraw()
     {
-        UiGui.ReserveTitleSpace(this, PluginInfo.DisplayName + " v" + typeof(Plugin).Assembly.GetName().Version, 1240);
+        UiGui.ReserveTitleSpace(this, PluginInfo.DisplayName + " v" + typeof(Plugin).Assembly.GetName().Version, 800);
         base.PreDraw();
     }
 
@@ -94,7 +98,7 @@ public sealed class MainWindow : PositionedWindow, IDisposable
         windowMotion.DrawChrome();
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(34,20));
-        DrawContent(plugin.CaptureRows(), plugin.CaptureDtrEntries(), plugin.GetCatalogRefreshInfo());
+        DrawInstaller();
     }
 
     private void DrawContent(IReadOnlyList<PluginAssessmentRow> rows, IReadOnlyList<DtrEntrySnapshot> dtrEntries, CatalogRefreshInfo refreshInfo)

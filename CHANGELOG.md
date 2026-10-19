@@ -1,3 +1,12 @@
+2026-10-18 - Installer evolution (local implementation)
+
+- Correct the installer presentation against the approved design: icon navigation, emphasized filter chips, an icon-preserving view switch, rounded cards with state badges and a single primary action, grouped favourites and a media/status profile. Render native candidates through the production geometry path. Resolve official artwork through its actual distribution channel and stop using Botology branding for unrelated plugins.
+- Add Discover cards/table, source-aware plugin profiles, Installed, Updates, repository management and a folding favourites rail. Keep searchable unadded sources interactive, separate identical plugin names from different feeds, and retain the compatibility grid, DTR and catalog tools.
+- Add explicit source changes and awaited native install/update/enable/disable/removal results while retaining installed origin, host profiles and plugin settings. Bootstrap full known feeds independently of legacy metadata-cache freshness; retain last-valid discovery data on failure.
+- Save repository/author pins through the existing configuration. Hide invalid pins without deleting saved choices. Keep panel/view state session-only and preserve the logical browsing anchor when the panel folds.
+- Load visible static previews and detail screenshots on demand. Play one native GIF explicitly using OS WIC decoding, frame timing, compositing and bounded media ownership; stop and release on leave/unload. Ship no media codec, helper, package or persistent media cache. WebM remains deferred.
+- Translate installer controls across all 15 existing locales and preserve shared appearance preferences and native titlebar actions. Keep version 2.0.0.12; local verification is separate from live-client and Wine acceptance.
+
 2026-10-16 - Confirmation popups without screen dimming (I576)
 
 - Keep compatibility warnings and patch notes in titled native popups without a full-screen dimmer. Preserve dialog IDs, explicit actions and saved window opacity; outside dismissal never acknowledges a warning.

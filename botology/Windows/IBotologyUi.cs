@@ -6,6 +6,14 @@ namespace botology.Windows;
 internal interface IBotologyUi
 {
     Configuration Configuration { get; }
+    InstallerCatalogSnapshot CaptureInstaller();
+    bool DiscoveryRunning { get; }
+    IReadOnlyDictionary<string, string> DiscoveryErrors { get; }
+    InstallerOperation? InstallerOperation { get; }
+    void RefreshInstaller();
+    void RunInstallerAction(InstallerAction action, string repository, string internalName = "");
+    void ToggleRepositoryPin(string repository);
+    void ToggleAuthorPin(string author);
     AethertekUI.MaterialTitlebarStatus? TitlebarStatus { get; }
     void DrawAppearanceSelector();
     void DrawWindowAppearanceSettings();

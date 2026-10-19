@@ -661,4 +661,76 @@
   <data name="Discord URL (optional)" xml:space="preserve"><value>Discord URL (वैकल्पिक)</value></data>
   <data name="Enter a valid Discord HTTPS URL or leave it empty." xml:space="preserve"><value>मान्य Discord HTTPS URL दर्ज करें या इसे खाली छोड़ दें।</value></data>
   <data name="Open plugin Discord: {0}" xml:space="preserve"><value>प्लगइन का Discord खोलें: {0}</value></data>
+  <data name="Discover" xml:space="preserve"><value>खोजें</value></data>
+  <data name="Updates" xml:space="preserve"><value>अपडेट</value></data>
+  <data name="Repositories" xml:space="preserve"><value>रिपॉज़िटरी</value></data>
+  <data name="Pinned sources" xml:space="preserve"><value>पिन किए गए स्रोत</value></data>
+  <data name="Compatibility" xml:space="preserve"><value>संगतता</value></data>
+  <data name="Working..." xml:space="preserve"><value>कार्य जारी है...</value></data>
+  <data name="Completed" xml:space="preserve"><value>पूरा हुआ</value></data>
+  <data name="Operation failed" xml:space="preserve"><value>कार्रवाई विफल</value></data>
+  <data name="Safe mode" xml:space="preserve"><value>सुरक्षित मोड</value></data>
+  <data name="Collapse pinned sources" xml:space="preserve"><value>पिन किए स्रोत समेटें</value></data>
+  <data name="Expand pinned sources" xml:space="preserve"><value>पिन किए स्रोत फैलाएँ</value></data>
+  <data name="Authors" xml:space="preserve"><value>लेखक</value></data>
+  <data name="Manage pins" xml:space="preserve"><value>पिन प्रबंधित करें</value></data>
+  <data name="All plugins" xml:space="preserve"><value>सभी प्लगइन</value></data>
+  <data name="Not installed" xml:space="preserve"><value>इंस्टॉल नहीं है</value></data>
+  <data name="Repository not added" xml:space="preserve"><value>रिपॉज़िटरी नहीं जोड़ी गई</value></data>
+  <data name="Search plugins, authors or repositories" xml:space="preserve"><value>प्लगइन, लेखक या रिपॉज़िटरी खोजें</value></data>
+  <data name="Cards" xml:space="preserve"><value>कार्ड</value></data>
+  <data name="Table" xml:space="preserve"><value>तालिका</value></data>
+  <data name="Refresh" xml:space="preserve"><value>ताज़ा करें</value></data>
+  <data name="Clear filter" xml:space="preserve"><value>फ़िल्टर हटाएँ</value></data>
+  <data name="{0} plugins" xml:space="preserve"><value>{0} प्लगइन</value></data>
+  <data name="Name" xml:space="preserve"><value>नाम</value></data>
+  <data name="Manage" xml:space="preserve"><value>प्रबंधित करें</value></data>
+  <data name="View details" xml:space="preserve"><value>विवरण देखें</value></data>
+  <data name="Plugin" xml:space="preserve"><value>प्लगइन</value></data>
+  <data name="Version" xml:space="preserve"><value>संस्करण</value></data>
+  <data name="Action" xml:space="preserve"><value>कार्रवाई</value></data>
+  <data name="Back to results" xml:space="preserve"><value>नतीजों पर वापस जाएँ</value></data>
+  <data name="Unpin repository" xml:space="preserve"><value>रिपॉज़िटरी का पिन हटाएँ</value></data>
+  <data name="Pin repository" xml:space="preserve"><value>रिपॉज़िटरी पिन करें</value></data>
+  <data name="Unpin author" xml:space="preserve"><value>लेखक का पिन हटाएँ</value></data>
+  <data name="Pin author" xml:space="preserve"><value>लेखक पिन करें</value></data>
+  <data name="Stop preview" xml:space="preserve"><value>पूर्वावलोकन रोकें</value></data>
+  <data name="Play preview" xml:space="preserve"><value>पूर्वावलोकन चलाएँ</value></data>
+  <data name="Overview" xml:space="preserve"><value>सारांश</value></data>
+  <data name="Release notes" xml:space="preserve"><value>संस्करण नोट्स</value></data>
+  <data name="No release notes supplied." xml:space="preserve"><value>संस्करण नोट्स नहीं दिए गए।</value></data>
+  <data name="Plugin status" xml:space="preserve"><value>प्लगइन की स्थिति</value></data>
+  <data name="Loaded" xml:space="preserve"><value>लोड किया गया</value></data>
+  <data name="Repository" xml:space="preserve"><value>रिपॉज़िटरी</value></data>
+  <data name="Adding a repository does not install its plugins." xml:space="preserve"><value>रिपॉज़िटरी जोड़ने से उसके प्लगइन इंस्टॉल नहीं होते।</value></data>
+  <data name="Project website" xml:space="preserve"><value>परियोजना की वेबसाइट</value></data>
+  <data name="This name is installed from another source." xml:space="preserve"><value>यह नाम दूसरे स्रोत से पहले ही इंस्टॉल है।</value></data>
+  <data name="Unavailable for this API" xml:space="preserve"><value>इस API के लिए उपलब्ध नहीं</value></data>
+  <data name="Install" xml:space="preserve"><value>इंस्टॉल करें</value></data>
+  <data name="Disable" xml:space="preserve"><value>बंद करें</value></data>
+  <data name="Enable" xml:space="preserve"><value>चालू करें</value></data>
+  <data name="Uninstall" xml:space="preserve"><value>अनइंस्टॉल करें</value></data>
+  <data name="Uninstall this plugin? Its settings are retained." xml:space="preserve"><value>यह प्लगइन अनइंस्टॉल करें? इसकी सेटिंग बनी रहेगी।</value></data>
+  <data name="Confirm uninstall" xml:space="preserve"><value>अनइंस्टॉल की पुष्टि करें</value></data>
+  <data name="Discovery failed" xml:space="preserve"><value>खोज विफल</value></data>
+  <data name="Add repository" xml:space="preserve"><value>रिपॉज़िटरी जोड़ें</value></data>
+  <data name="Disable repository" xml:space="preserve"><value>रिपॉज़िटरी बंद करें</value></data>
+  <data name="Enable repository" xml:space="preserve"><value>रिपॉज़िटरी चालू करें</value></data>
+  <data name="Remove repository" xml:space="preserve"><value>रिपॉज़िटरी हटाएँ</value></data>
+  <data name="Removing a repository does not uninstall its plugins." xml:space="preserve"><value>रिपॉज़िटरी हटाने से उसके प्लगइन अनइंस्टॉल नहीं होते।</value></data>
+  <data name="Confirm removal" xml:space="preserve"><value>हटाने की पुष्टि करें</value></data>
+  <data name="Pinning a source does not add its repository." xml:space="preserve"><value>स्रोत पिन करने से उसकी रिपॉज़िटरी नहीं जुड़ती।</value></data>
+  <data name="Preview unavailable" xml:space="preserve"><value>पूर्वावलोकन उपलब्ध नहीं</value></data>
+  <data name="No preview supplied" xml:space="preserve"><value>पूर्वावलोकन नहीं दिया गया</value></data>
+  <data name="Repository disabled" xml:space="preserve"><value>रिपॉज़िटरी बंद है</value></data>
+  <data name="Added" xml:space="preserve"><value>जोड़ी गई</value></data>
+  <data name="Removal scheduled" xml:space="preserve"><value>हटाना तय है</value></data>
+  <data name="Update available" xml:space="preserve"><value>अपडेट उपलब्ध</value></data>
+  <data name="Disabled" xml:space="preserve"><value>बंद है</value></data>
+  <data name="Not assessed" xml:space="preserve"><value>आकलन नहीं हुआ</value></data>
+  <data name="Screenshots" xml:space="preserve"><value>स्क्रीनशॉट</value></data>
+  <data name="View plugins" xml:space="preserve"><value>प्लगइन देखें</value></data>
+  <data name="Yes" xml:space="preserve"><value>हाँ</value></data>
+  <data name="No" xml:space="preserve"><value>नहीं</value></data>
+  <data name="Cancel" xml:space="preserve"><value>रद्द करें</value></data>
 </root>

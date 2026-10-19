@@ -24,7 +24,7 @@ using botology.Windows;
 
 namespace botology;
 
-public sealed class Plugin : IDalamudPlugin, IBotologyUi
+public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
 {
     private const string ReviewScriptResourceName = "botology.review_catalog.py";
 
@@ -155,6 +155,7 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
 
     private void DrawUi()
     {
+        mainWindow.ReleaseClosedMedia();
         ApplyAppearance();
         if(!mainWindow.IsOpen && !configWindow.IsOpen && !dtrManagerWindow.IsOpen && !catalogEditorWindow.IsOpen) return;
         using var text = uiText.Enter();
@@ -186,14 +187,7 @@ public sealed class Plugin : IDalamudPlugin, IBotologyUi
             catch(Exception ex) { if(!fontIssueLogged) { Log.Error(ex,"[botology] Required UI glyph coverage failed.");fontIssueLogged=true; } DrawFontStatus(false);return; }
         }
         using var theme = MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, MaterialStyleMode.ColorsOnly);
-        using var geometry=new MaterialStyleScope();
-        geometry.Style(Dalamud.Bindings.ImGui.ImGuiStyleVar.WindowPadding,new System.Numerics.Vector2((Configuration.UiCompact ? 10 : 16)*ImGuiHelpers.GlobalScale));
-        if (Configuration.UiCompact)
-        {
-            geometry.Style(ImGuiStyleVar.ItemSpacing, new Vector2(8, 4) * ImGuiHelpers.GlobalScale);
-            geometry.Style(ImGuiStyleVar.FramePadding, new Vector2(8, 3) * ImGuiHelpers.GlobalScale);
-            geometry.Style(ImGuiStyleVar.CellPadding, new Vector2(6, 3) * ImGuiHelpers.GlobalScale);
-        }
+        using var geometry=BotologyPresentation.PushHostGeometry(ImGuiHelpers.GlobalScale, Configuration.UiCompact);
         using var chrome = MaterialWindowChrome.Push();
         PrepareAppearanceTitleBars(WindowSystem);
         try

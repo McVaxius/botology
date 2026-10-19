@@ -11,7 +11,7 @@ using botology.Models;
 
 namespace botology.Services;
 
-public sealed class PluginManagerBridge
+public sealed partial class PluginManagerBridge
 {
     private readonly IDalamudPluginInterface pluginInterface;
     private readonly ICommandManager commandManager;
@@ -144,10 +144,13 @@ public sealed class PluginManagerBridge
     }
 
     private object GetPluginManager()
+        => GetHostService("Dalamud.Plugin.Internal.PluginManager");
+
+    private object GetHostService(string typeName)
     {
         return pluginInterface.GetType().Assembly
             .GetType("Dalamud.Service`1", true)!
-            .MakeGenericType(pluginInterface.GetType().Assembly.GetType("Dalamud.Plugin.Internal.PluginManager", true)!)
+            .MakeGenericType(pluginInterface.GetType().Assembly.GetType(typeName, true)!)
             .GetMethod("Get", BindingFlags.Public | BindingFlags.Static)!
             .Invoke(null, Array.Empty<object>())!;
     }
