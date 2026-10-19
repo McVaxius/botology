@@ -13,12 +13,19 @@ public sealed partial class MainWindow
     private InstallerOperation? observedOperation;
     private InstallerMedia? installerMedia;
     private string installerPage = "Discover", installerSearch = "", installerCategory = "", installerAuthor = "";
-    private string installerFilter = "All plugins", repositoryFilter = "", pinnedAuthorFilter = "";
+    private enum InstallerFilterMode { Required, Blocked }
+    private readonly Dictionary<string,InstallerFilterMode> installerFilters = new(StringComparer.Ordinal)
+        { ["Not available on this API"]=InstallerFilterMode.Blocked };
+    private readonly Dictionary<string,InstallerFilterMode> repositoryFilters = new(StringComparer.Ordinal);
+    private readonly Dictionary<string,InstallerFilterMode> pinnedAuthorFilters = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string,InstallerFilterMode> dalamudCategoryFilters = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string,InstallerFilterMode> thirdPartyCategoryFilters = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string,InstallerFilterMode> botologyCategoryFilters = new(StringComparer.OrdinalIgnoreCase);
     private string manualRepository = "", pinSearch = "";
     private string? selectedInstaller, pendingRemoval, browseAnchor, highlightedInstaller;
     private int galleryIndex, previousColumns, installerSort;
     private bool pinsExpanded, tableView, restoreBrowse, installerSortDescending;
-    private bool resetInstallerContentScroll;
+    private bool resetInstallerContentScroll, resetInstallerBrowseScroll;
     private float browseRemainder;
     private float lastBrowseScroll;
     private float profileSourceHeight;
@@ -60,6 +67,39 @@ public sealed partial class MainWindow
             ImGui.SameLine();
     }
 
+    private void ResetInstallerResults()
+    {
+        resetInstallerContentScroll=resetInstallerBrowseScroll=true;
+        browseAnchor=highlightedInstaller=null; browseRemainder=0; restoreBrowse=false; preserveBrowseFrames=0;
+    }
+
+    private void ToggleInstallerFilter(Dictionary<string,InstallerFilterMode> filters,string key,InstallerFilterMode mode)
+    {
+        if(filters.TryGetValue(key,out var current) && current==mode) filters.Remove(key);
+        else filters[key]=mode;
+        ResetInstallerResults();
+    }
+
+    private static Vector4 InstallerFilterColor(InstallerFilterMode mode)
+        =>mode==InstallerFilterMode.Required?BotologyPresentation.GreenCounter:BotologyPresentation.RedCounter;
+
+    private static string InstallerFilterHelp(InstallerFilterMode? mode)
+        =>(mode.HasValue?UiText.T(mode.Value.ToString())+"\n":"")+UiText.T("Left-click: require. Right-click: block. Click again to clear.");
+
+    private bool MatchesInstallerAuthors(string value,bool requireAny)
+    {
+        var matched=false;
+        var lookup=pinnedAuthorFilters.GetAlternateLookup<ReadOnlySpan<char>>();
+        var authors=value.AsSpan();
+        foreach(var range in authors.SplitAny(",;"))
+            if(lookup.TryGetValue(authors[range].Trim(),out var mode))
+            {
+                if(mode==InstallerFilterMode.Blocked) return false;
+                matched=true;
+            }
+        return !requireAny || matched;
+    }
+
     private void DrawInstallerNavigation()
     {
         (string Label,MaterialIcon Icon)[] pages=[("Discover",MaterialIcon.Search),("Installed",MaterialIcon.Backpack),
@@ -71,7 +111,11 @@ public sealed partial class MainWindow
             if(i>0) InstallerNextInline(MaterialText.Measure(UiText.T(page)).X+54*MaterialTheme.Metrics.Scale);
             var selected=installerPage==page || page=="Repositories" && installerPage=="Pinned sources";
             if(InstallerButton(page,"nav-"+page,selected,leading:icon,textOnly:true,linkColour:false))
-            { installerPage=page; selectedInstaller=null; pendingRemoval=null; resetInstallerContentScroll=true; installerMedia?.Clear(); }
+            {
+                installerPage=page; selectedInstaller=null; pendingRemoval=null;
+                if(page!="Discover") { installerFilters.Remove("Installed"); installerFilters.Remove("Not installed"); }
+                ResetInstallerResults(); installerMedia?.Clear();
+            }
             if(selected)
                 ImGui.GetWindowDrawList().AddLine(ImGui.GetItemRectMin()+new Vector2(0,ImGui.GetItemRectSize().Y),ImGui.GetItemRectMax(),
                     MaterialCanvas.Color(MaterialTheme.Current.Colors.Primary),3*MaterialTheme.Metrics.Scale);
@@ -85,6 +129,7 @@ public sealed partial class MainWindow
         if(DateTime.UtcNow>=nextInstallerSnapshot || !ReferenceEquals(observedOperation,plugin.InstallerOperation))
         {
             installerSnapshot=plugin.CaptureInstaller(); nextInstallerSnapshot=DateTime.UtcNow.AddSeconds(1);
+            RefreshCategoryTracks();
             observedOperation=plugin.InstallerOperation;
         }
         installerMedia?.BeginFrame();
@@ -113,6 +158,7 @@ public sealed partial class MainWindow
         DrawPinnedRail();
         ImGui.SameLine();
         ImGui.BeginChild("InstallerContent",new(Math.Max(1,width-rail-ImGui.GetStyle().ItemSpacing.X),-1),false);
+        MeasureBounds?.Invoke("installer-content",ImGui.GetWindowPos(),ImGui.GetWindowPos()+ImGui.GetWindowSize());
         DrawInstallerNavigation();
         if(plugin.InstallerOperation is { } operation)
             MaterialText.TextWrapped(UiText.T(operation.IsRunning ? "Working..." : operation.Succeeded ? "Completed" : "Operation failed")+": "+UiText.T(operation.Message));
@@ -121,7 +167,7 @@ public sealed partial class MainWindow
         if(resetInstallerContentScroll) { ImGui.SetScrollY(0); resetInstallerContentScroll=false; }
         if(selectedInstaller is not null)
         {
-            var entry=installerSnapshot.Entries.FirstOrDefault(e=>e.Identity==selectedInstaller);
+            var entry=installerSnapshot.Entries.FirstOrDefault(e=>MatchesBrowseAnchor(e,selectedInstaller));
             if(entry is not null) DrawInstallerProfile(entry);
             else { selectedInstaller=null; installerMedia?.Clear(); }
         }
@@ -144,7 +190,6 @@ public sealed partial class MainWindow
     private void DrawPinnedRail()
     {
         var s=MaterialTheme.Metrics.Scale;
-        var c=MaterialTheme.Current.Colors;
         if(pinsExpanded)
         {
             using(UiText.Font(UiFontRole.BodyStrong)) MaterialText.Text(UiText.T("Pinned sources"));
@@ -164,19 +209,52 @@ public sealed partial class MainWindow
         ImGui.Dummy(new(0,10*s));
         MaterialStatus.SectionHeader(UiText.T("Repositories"));
         foreach(var repo in InstallerCatalog.VisiblePinnedRepositories(plugin.Configuration,installerSnapshot))
-        {
-            if(MaterialNavigation.ListItem("repo-pin-"+repo.Url,repo.Name,repositoryFilter==repo.Url,MaterialIcon.Database))
-            { repositoryFilter=repositoryFilter==repo.Url?"":repo.Url; pinnedAuthorFilter=""; selectedInstaller=null; installerPage="Discover"; }
-            MaterialText.TextColored(c.OnSurfaceVariant,RepositoryState(repo));
-            if(ImGui.IsItemHovered()) MaterialText.SetTooltip(repo.Url+"\n"+RepositoryState(repo));
-        }
+            DrawPinnedFilter("repo-pin-"+repo.Url,repo.Url,repo.Name,RepositoryState(repo),MaterialIcon.Database,repositoryFilters,repo.Url);
         ImGui.Separator(); MaterialStatus.SectionHeader(UiText.T("Authors"));
         foreach(var author in InstallerCatalog.VisiblePinnedAuthors(plugin.Configuration,installerSnapshot))
-            if(MaterialNavigation.ListItem("author-pin-"+author,author,pinnedAuthorFilter==author,MaterialIcon.Person))
-            { pinnedAuthorFilter=pinnedAuthorFilter==author?"":author; repositoryFilter=""; selectedInstaller=null; installerPage="Discover"; }
+            DrawPinnedFilter("author-pin-"+author,author,author,"",MaterialIcon.Person,pinnedAuthorFilters);
         ImGui.Separator();
         if(InstallerButton("Manage pins","manage-pins",leading:MaterialIcon.Settings,textOnly:true)) { installerPage="Pinned sources"; selectedInstaller=null; installerMedia?.Clear(); }
         MeasureBounds?.Invoke("nav-Pinned sources",ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
+    }
+
+    private void DrawPinnedFilter(string id,string key,string label,string detail,MaterialIcon icon,
+        Dictionary<string,InstallerFilterMode> filters,string? url=null)
+    {
+        var s=MaterialTheme.Metrics.Scale;
+        var active=filters.TryGetValue(key,out var mode);
+        var ink=active?InstallerFilterColor(mode):MaterialTheme.Current.Colors.OnSurfaceVariant;
+        var textHeight=MaterialText.Measure(label).Y+(detail.Length>0?MaterialText.Measure(detail).Y:0);
+        using var controls=MaterialControls.Push(BotologyPresentation.Controls(textHeight/s+12,18,preserveHeight:true));
+        var left=MaterialNavigation.ListItem(id,"",false);
+        var right=ImGui.IsItemClicked(ImGuiMouseButton.Right);
+        var min=ImGui.GetItemRectMin(); var max=ImGui.GetItemRectMax(); var metrics=MaterialControls.Metrics;
+        MeasureBounds?.Invoke(id,min,max);
+        if(ImGui.IsItemVisible())
+        {
+            var draw=ImGui.GetWindowDrawList(); draw.PushClipRect(min,max,true);
+            var position=min+new Vector2(metrics.Padding.X+metrics.IconSize+metrics.Gap,(max.Y-min.Y-textHeight)*.5f);
+            if(active)
+            {
+                draw.AddRectFilled(min+new Vector2(s),max-new Vector2(s),MaterialCanvas.Color(MaterialColor.Alpha(ink,.16f)),8*s);
+                draw.AddRect(min+new Vector2(s),max-new Vector2(s),MaterialCanvas.Color(ink),8*s);
+                MaterialIcons.Draw(mode==InstallerFilterMode.Required?MaterialIcon.Check:MaterialIcon.Close,
+                    new(max.X-metrics.Padding.X-16*s,position.Y+(MaterialText.Measure(label).Y-16*s)*.5f),16*s,ink);
+            }
+            MaterialIcons.Draw(icon,new(min.X+metrics.Padding.X,(min.Y+max.Y-metrics.IconSize)*.5f),metrics.IconSize,ink);
+            var name=FitSourceLabel(label,Math.Max(1,max.X-position.X-metrics.Padding.X-(active?22*s:0)));
+            // Keep Latin source names independent of a shaped translated status.
+            MaterialText.AddText(draw,position,MaterialCanvas.Color(ink),name);
+            if(url is not null) MeasureBounds?.Invoke("repo-pin-name-"+url,position,position+MaterialText.Measure(name));
+            if(detail.Length>0) MaterialText.AddText(draw,position+new Vector2(0,MaterialText.Measure(name).Y),MaterialCanvas.Color(ink),detail);
+            draw.PopClipRect();
+        }
+        if(ImGui.IsItemHovered()) MaterialText.SetTooltip(label+(url is not null?"\n"+url:"")+(detail.Length>0?"\n"+detail:"")+"\n"+InstallerFilterHelp(active?mode:null));
+        if(left || right)
+        {
+            ToggleInstallerFilter(filters,key,right?InstallerFilterMode.Blocked:InstallerFilterMode.Required);
+            selectedInstaller=null; installerPage="Discover"; installerMedia?.Clear();
+        }
     }
 
     private IReadOnlyList<InstallerEntry> FilterInstallerEntries()
@@ -184,21 +262,77 @@ public sealed partial class MainWindow
         IEnumerable<InstallerEntry> entries=installerSnapshot.Entries.Where(e=>!e.Manifest.IsHidden || e.IsInstalled);
         if(installerPage=="Installed") entries=entries.Where(e=>e.IsInstalled);
         if(installerPage=="Updates") entries=entries.Where(e=>e.HasUpdate);
-        if(installerFilter=="Installed") entries=entries.Where(e=>e.IsInstalled);
-        if(installerFilter=="Not installed") entries=entries.Where(e=>!e.IsInstalled);
-        if(installerFilter=="Repository not added") entries=entries.Where(e=>!e.Repository.IsAdded);
-        if(repositoryFilter.Length>0) entries=entries.Where(e=>e.Repository.Url==repositoryFilter);
-        if(pinnedAuthorFilter.Length>0) entries=entries.Where(e=>e.Manifest.Authors.Contains(pinnedAuthorFilter,StringComparer.OrdinalIgnoreCase));
-        entries=entries.Where(e=>(installerSearch.Length==0 || string.Join(' ',e.Manifest.Name,e.Manifest.InternalName,e.Manifest.Author,e.Manifest.Description,e.Repository.Name,e.Repository.Url,string.Join(' ',e.Manifest.Tags??[])).Contains(installerSearch,StringComparison.OrdinalIgnoreCase))
-            && (installerAuthor.Length==0 || e.Manifest.Author.Contains(installerAuthor,StringComparison.OrdinalIgnoreCase))
-            && (installerCategory.Length==0 || (e.Compatibility?.Entry.Category??string.Join(' ',e.Manifest.Tags??[])).Contains(installerCategory,StringComparison.OrdinalIgnoreCase)));
-        string Key(InstallerEntry e)=>installerSort switch { 1=>e.Repository.Name, 2=>EntryState(e), 6=>e.Manifest.Author, _=>e.Manifest.Name };
-        if(installerSort==3)
+        foreach(var (filter,mode) in installerFilters)
+            entries=entries.Where(e=>(filter switch {
+                "Installed"=>e.IsInstalled,"Not installed"=>!e.IsInstalled,"Repository not added"=>!e.Repository.IsAdded,
+                "Not available on this API"=>!e.IsApiCompatible || e.Installed?.IsOutdated==true,_=>false })==(mode==InstallerFilterMode.Required));
+        if(repositoryFilters.Count>0)
         {
-            Version? VersionKey(InstallerEntry entry)=>entry.Installed?.Runtime.Version??(Version.TryParse(entry.Manifest.Version,out var version)?version:null);
-            return (installerSortDescending?entries.OrderByDescending(VersionKey):entries.OrderBy(VersionKey)).ThenBy(e=>e.Identity,StringComparer.Ordinal).ToArray();
+            var required=repositoryFilters.Values.Contains(InstallerFilterMode.Required);
+            entries=entries.Where(e=>(!required
+                || repositoryFilters.TryGetValue(e.Repository.Url,out var include) && include==InstallerFilterMode.Required)
+                && (!repositoryFilters.TryGetValue(e.Repository.Url,out var exclude) || exclude!=InstallerFilterMode.Blocked));
         }
-        return (installerSortDescending?entries.OrderByDescending(Key,StringComparer.OrdinalIgnoreCase):entries.OrderBy(Key,StringComparer.OrdinalIgnoreCase)).ThenBy(e=>e.Identity,StringComparer.Ordinal).ToArray();
+        if(pinnedAuthorFilters.Count>0)
+        {
+            var required=pinnedAuthorFilters.Values.Contains(InstallerFilterMode.Required);
+            entries=entries.Where(e=>MatchesInstallerAuthors(e.Manifest.Author,required));
+        }
+        if(dalamudCategoryFilters.Count+thirdPartyCategoryFilters.Count>0)
+        {
+            var required=dalamudCategoryFilters.Values.Contains(InstallerFilterMode.Required) || thirdPartyCategoryFilters.Values.Contains(InstallerFilterMode.Required);
+            entries=entries.Where(entry=>MatchesCategoryTags(entry.ManifestTags??[],
+                entry.Repository.Url==InstallerCatalog.OfficialRepository?dalamudCategoryFilters:thirdPartyCategoryFilters,required));
+        }
+        if(botologyCategoryFilters.Count>0)
+        {
+            var required=botologyCategoryFilters.Values.Contains(InstallerFilterMode.Required);
+            entries=entries.Where(entry=>entry.BotologyCategory is { } category
+                ?(!required || botologyCategoryFilters.TryGetValue(category,out var include) && include==InstallerFilterMode.Required)
+                    && (!botologyCategoryFilters.TryGetValue(category,out var exclude) || exclude!=InstallerFilterMode.Blocked)
+                :!required);
+        }
+        entries=entries.Where(e=>(installerSearch.Length==0 || string.Join(' ',e.Manifest.Name,e.Manifest.InternalName,e.Manifest.Author,e.Manifest.Description,e.Repository.Name,e.Repository.Url,string.Join(' ',e.ManifestTags??[])).Contains(installerSearch,StringComparison.OrdinalIgnoreCase))
+            && (installerAuthor.Length==0 || e.Manifest.Author.Contains(installerAuthor,StringComparison.OrdinalIgnoreCase))
+            && (installerCategory.Length==0 || (e.BotologyCategory??string.Join(' ',e.ManifestTags??[])).Contains(installerCategory,StringComparison.OrdinalIgnoreCase)));
+        // Merge supplies name/identity order; filtering retains it without preparing unused secondary sort keys.
+        if(installerSort==0 && !installerSortDescending) return entries.ToArray();
+        var sort=installerSort;var descending=installerSortDescending;
+        string Key(InstallerEntry e)=>sort switch { 1=>e.Repository.Name, 2=>EntryState(e), 6=>e.Manifest.Author, _=>e.Manifest.Name };
+        Version? VersionKey(InstallerEntry entry)=>entry.Installed?.Runtime.Version??(Version.TryParse(entry.Manifest.Version,out var version)?version:null);
+        var result=entries.ToArray();
+        var keys=result.Select(entry=>(Key:Key(entry),Version:sort==3?VersionKey(entry):null,
+            Source:entry.Manifest.RepositoryUrl,Name:entry.Manifest.InternalName.Trim(),Ascii:System.Text.Ascii.IsValid(entry.Manifest.InternalName))).ToArray();
+        int Compare(int leftIndex,int rightIndex)
+        {
+            ref readonly var left=ref keys[leftIndex];ref readonly var right=ref keys[rightIndex];
+            var comparison=sort==3?Comparer<Version?>.Default.Compare(left.Version,right.Version):StringComparer.OrdinalIgnoreCase.Compare(left.Key,right.Key);
+            if(comparison!=0) return descending?-comparison:comparison;
+            var source=StringComparer.Ordinal.Compare(left.Source,right.Source);
+            if(source!=0) return source;
+            return left.Ascii && right.Ascii?StringComparer.OrdinalIgnoreCase.Compare(left.Name,right.Name)
+                :StringComparer.Ordinal.Compare(left.Name.ToUpperInvariant(),right.Name.ToUpperInvariant());
+        }
+        // Filtering preserves the merged catalog order. Sort only when its current order differs.
+        for(var index=1;index<result.Length;index++)
+            if(Compare(index-1,index)>0)
+            {
+                // Move small indices, retaining the prepared keys in place during comparisons and swaps.
+                var order=Enumerable.Range(0,result.Length).ToArray();Array.Sort(order,Compare);
+                return Array.ConvertAll(order,item=>result[item]);
+            }
+        return result;
+    }
+
+    private static int CompareInstallerIdentity(InstallerEntry left,InstallerEntry right)
+    {
+        // Merge already canonicalizes these URLs. Compare the identity parts without reparsing/allocating the full key.
+        var source=StringComparer.Ordinal.Compare(left.Manifest.RepositoryUrl,right.Manifest.RepositoryUrl);
+        if(source!=0) return source;
+        var leftName=left.Manifest.InternalName;var rightName=right.Manifest.InternalName;
+        return System.Text.Ascii.IsValid(leftName) && System.Text.Ascii.IsValid(rightName)
+            ?leftName.AsSpan().Trim().CompareTo(rightName.AsSpan().Trim(),StringComparison.OrdinalIgnoreCase)
+            :StringComparer.Ordinal.Compare(leftName.Trim().ToUpperInvariant(),rightName.Trim().ToUpperInvariant());
     }
 
     private void DrawInstallerResults()
@@ -207,8 +341,8 @@ public sealed partial class MainWindow
         var width=ImGui.GetContentRegionAvail().X;
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(BotologyPresentation.Compact?36:42,20,preserveHeight:true));
         var switchWidth=112*s;
-        MaterialTextField.SearchField("##InstallerSearch",ref installerSearch,
-            BotologyPresentation.Field with { CornerRadius=10 },UiText.T("Search plugins, authors or repositories"),(width-switchWidth-12*s)/s,maxLength:512);
+        if(MaterialTextField.SearchField("##InstallerSearch",ref installerSearch,
+            BotologyPresentation.Field with { CornerRadius=10 },UiText.T("Search plugins, authors or repositories"),(width-switchWidth-12*s)/s,maxLength:512)) ResetInstallerResults();
         MeasureBounds?.Invoke("installer-search",ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
         ImGui.SameLine();
         ReadOnlySpan<MaterialSegment<bool>> views=[new(false,"",MaterialIcon.Grid,Key:"cards"),new(true,"",MaterialIcon.List,Key:"table")];
@@ -217,32 +351,52 @@ public sealed partial class MainWindow
         MeasureBounds?.Invoke("view-cards",min,new(middle,max.Y));
         MeasureBounds?.Invoke("view-table",new(middle,min.Y),max);
         if(ImGui.IsItemHovered()) MaterialText.SetTooltip(UiText.T(tableView?"Table":"Cards"));
-        foreach(var filter in new[]{"All plugins","Installed","Not installed","Repository not added"})
+        foreach(var filter in new[]{"All plugins","Installed","Not installed","Repository not added","Not available on this API"})
         {
+            if(installerPage!="Discover" && filter is "Installed" or "Not installed") continue;
             var label=UiText.T(filter);
             if(filter!="All plugins") InstallerNextInline(MaterialText.Measure(label).X+52*s);
-            var selected=installerFilter==filter;
+            var active=installerFilters.TryGetValue(filter,out var mode);
+            var selected=filter=="All plugins"?installerFilters.Count==0:active;
             var c=MaterialTheme.Current.Colors;
-            var appearance=new MaterialControlAppearance(selected?c.Primary:Vector4.Zero,
-                selected?(MaterialColor.Contrast(c.Primary,c.Background)>MaterialColor.Contrast(c.Primary,c.OnSurface)?c.Background:c.OnSurface):c.OnSurface,
-                selected?c.Primary:c.Outline,24);
-            if(MaterialChip.FilterChip("filter-"+filter,label,ref selected,appearance,showSelectionCheck:false)) installerFilter=filter;
+            var color=active?InstallerFilterColor(mode):c.Primary;
+            var appearance=new MaterialControlAppearance(selected?MaterialColor.Alpha(color,.18f):Vector4.Zero,
+                selected?color:c.OnSurface,selected?color:c.Outline,24);
+            var left=MaterialChip.FilterChip("filter-"+filter,label,ref selected,appearance,showSelectionCheck:false);
+            var right=ImGui.IsItemClicked(ImGuiMouseButton.Right);
+            if(left || right)
+            {
+                if(filter=="All plugins") { installerFilters.Clear(); ResetInstallerResults(); }
+                else ToggleInstallerFilter(installerFilters,filter,right?InstallerFilterMode.Blocked:InstallerFilterMode.Required);
+            }
             MeasureBounds?.Invoke("filter-"+filter,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
+            if(filter!="All plugins" && ImGui.IsItemHovered()) MaterialText.SetTooltip(InstallerFilterHelp(active?mode:null));
         }
         var filterWidth=Math.Min(220*s,(width-100*s)*.36f);
         InstallerNextInline(filterWidth);
-        MaterialTextField.SearchField("##InstallerCategory",ref installerCategory,BotologyPresentation.Field,UiText.T("Category"),filterWidth/s,maxLength:128);
+        if(MaterialTextField.SearchField("##InstallerCategory",ref installerCategory,BotologyPresentation.Field,UiText.T("Category"),filterWidth/s,maxLength:128)) ResetInstallerResults();
         InstallerNextInline(filterWidth);
-        MaterialTextField.SearchField("##InstallerAuthor",ref installerAuthor,BotologyPresentation.Field,UiText.T("Author"),filterWidth/s,maxLength:128);
+        if(MaterialTextField.SearchField("##InstallerAuthor",ref installerAuthor,BotologyPresentation.Field,UiText.T("Author"),filterWidth/s,maxLength:128)) ResetInstallerResults();
         InstallerNextInline(42*s);
         ImGui.BeginDisabled(plugin.DiscoveryRunning || plugin.InstallerOperation?.IsRunning==true);
         if(MaterialButton.IconButton("installer-refresh",MaterialIcon.Refresh,size:36)) { plugin.RefreshInstaller(); nextInstallerSnapshot=DateTime.MinValue; }
         if(ImGui.IsItemHovered()) MaterialText.SetTooltip(UiText.T(plugin.DiscoveryRunning?"Refreshing...":"Refresh"));
         ImGui.EndDisabled();
-        if(repositoryFilter.Length>0 || pinnedAuthorFilter.Length>0)
+        DrawInstallerCategories();
+        var pinFilters=repositoryFilters.Count>0 || pinnedAuthorFilters.Count>0;
+        if(pinFilters || installerFilters.Count>0 || dalamudCategoryFilters.Count>0 || thirdPartyCategoryFilters.Count>0 || botologyCategoryFilters.Count>0 || installerSearch.Length>0 || installerCategory.Length>0 || installerAuthor.Length>0)
         {
-            MaterialText.TextWrapped(repositoryFilter.Length>0?repositoryFilter:pinnedAuthorFilter);
-            ImGui.SameLine(); if(InstallerButton("Clear filter","clear-pin-filter")) { repositoryFilter=pinnedAuthorFilter=""; }
+            foreach(var group in repositoryFilters.Concat(pinnedAuthorFilters).GroupBy(pair=>pair.Value))
+            {
+                var names=group.Select(pair=>repositoryFilters.ContainsKey(pair.Key)?installerSnapshot.Repositories.FirstOrDefault(r=>r.Url==pair.Key)?.Name??pair.Key:pair.Key);
+                ImGui.PushTextWrapPos(0);
+                MaterialText.TextColored(InstallerFilterColor(group.Key),UiText.T(group.Key.ToString())+": "+string.Join(", ",names));
+                ImGui.PopTextWrapPos();
+                if(ImGui.IsItemHovered()) MaterialText.SetTooltip(string.Join("\n",group.Select(pair=>pair.Key)));
+                MeasureBounds?.Invoke("active-pin-filter",ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
+            }
+            if(InstallerButton("Clear filter",pinFilters?"clear-pin-filter":"clear-installer-filters"))
+            { repositoryFilters.Clear(); pinnedAuthorFilters.Clear(); installerFilters.Clear(); ClearCategoryFilters(); installerSearch=installerCategory=installerAuthor=""; ResetInstallerResults(); }
         }
         var entries=FilterInstallerEntries();
         MaterialText.TextColored(MaterialTheme.Current.Colors.OnSurfaceVariant,UiText.F("{0} plugins",entries.Count));
@@ -257,20 +411,27 @@ public sealed partial class MainWindow
         var s=MaterialTheme.Metrics.Scale;
         var gap=16*s;
         var width=ImGui.GetContentRegionAvail().X-ImGui.GetStyle().ScrollbarSize;
-        var minimum=Math.Max(220*s,entries.Count==0?0:entries.Max(e=>MaterialText.Measure(EntryBadgeLabel(e)).X)+40*s);
+        var minimum=Math.Max(220*s,entries.Count==0?0:entries.Select(EntryBadgeLabel).Distinct(StringComparer.Ordinal).Max(label=>MaterialText.Measure("    "+label).X)+42*s);
         var columns=Math.Max(1,(int)((width+gap)/(minimum+gap)));
         var cardWidth=(width-gap*(columns-1))/columns;
         var lineHeight=Math.Max(ImGui.GetTextLineHeight(),MaterialText.Measure(UiText.T("Repository not added")).Y);
         var actionHeight=Math.Max((BotologyPresentation.Compact?34:40)*s,new[]{"Manage","View details","Install"}.Max(label=>MaterialText.Measure(UiText.T(label)).Y)+8*s);
         var previewHeight=cardWidth*(BotologyPresentation.Compact?.36f:.47f);
         var badgeHeight=Math.Max(28*s,lineHeight+8*s);
-        var titleHeight=Math.Max(ImGui.GetTextLineHeight(),entries.Count==0?0:entries.Max(e=>MaterialText.Measure(e.Manifest.Name).Y));
-        var height=previewHeight+titleHeight+lineHeight+badgeHeight+actionHeight+(BotologyPresentation.Compact?38:44)*s;
+        var titleHeight=ImGui.GetTextLineHeight();
+        foreach(var entry in entries)
+            if(entry.Manifest.Name.Contains('\n') || !System.Text.Ascii.IsValid(entry.Manifest.Name) && MaterialText.RequiresShaping(entry.Manifest.Name))
+                titleHeight=Math.Max(titleHeight,MaterialText.Measure(entry.Manifest.Name).Y);
+        var compatibilityHeight=entries.Count==0?lineHeight:entries.Select(CardCompatibilityKey).Distinct(StringComparer.Ordinal)
+            .Max(key=>MaterialText.Measure(UiText.T("Compatibility")+": "+UiText.T(key),false,cardWidth-24*s).Y);
+        var height=previewHeight+titleHeight+lineHeight+badgeHeight+compatibilityHeight+actionHeight+(BotologyPresentation.Compact?46:54)*s;
         ImGui.BeginChild("InstallerBrowse",new(-1,Math.Max(80*s,ImGui.GetContentRegionAvail().Y-40*s)),false);
         MeasureBounds?.Invoke("installer-browse",ImGui.GetWindowPos(),ImGui.GetWindowSize());
-        if(restoreBrowse || columns!=previousColumns)
+        if(resetInstallerBrowseScroll)
+        { ImGui.SetScrollY(0); resetInstallerBrowseScroll=false; restoreBrowse=false; }
+        else if(restoreBrowse || columns!=previousColumns)
         {
-            var anchor=Enumerable.Range(0,entries.Count).FirstOrDefault(i=>entries[i].Identity==browseAnchor);
+            var anchor=Enumerable.Range(0,entries.Count).FirstOrDefault(i=>MatchesBrowseAnchor(entries[i],browseAnchor));
             ImGui.SetScrollY((anchor/columns+browseRemainder)*(height+gap)); restoreBrowse=false;
             preserveBrowseFrames=3;
         }
@@ -278,11 +439,14 @@ public sealed partial class MainWindow
         var scroll=ImGui.GetScrollY();
         var top=Math.Clamp((int)(scroll/(height+gap))*columns,0,Math.Max(0,entries.Count-1));
         if(preserveBrowseFrames>0) preserveBrowseFrames--;
-        else if(browseAnchor is null || Math.Abs(scroll-lastBrowseScroll)>.1f || !entries.Any(e=>e.Identity==browseAnchor))
+        else if(browseAnchor is null || Math.Abs(scroll-lastBrowseScroll)>.1f || !entries.Any(e=>MatchesBrowseAnchor(e,browseAnchor)))
         { browseAnchor=entries.Count>0?entries[top].Identity:null; browseRemainder=scroll%(height+gap)/(height+gap); }
         lastBrowseScroll=scroll;
         var origin=ImGui.GetCursorPos();
-        for(var i=0;i<entries.Count;i++)
+        var first=Math.Max(0,(int)(scroll/(height+gap))-1)*columns;
+        var last=Math.Min(entries.Count,((int)Math.Ceiling((scroll+ImGui.GetWindowHeight())/(height+gap))+1)*columns);
+        var pinnedSources=InstallerCatalog.VisiblePinnedRepositories(plugin.Configuration,installerSnapshot).Select(repo=>repo.Url).ToHashSet(StringComparer.Ordinal);
+        for(var i=first;i<last;i++)
         {
             ImGui.SetCursorPos(origin+new Vector2(i%columns*(cardWidth+gap),i/columns*(height+gap)));
             if(!ImGui.IsRectVisible(new(cardWidth,height))) continue;
@@ -304,22 +468,38 @@ public sealed partial class MainWindow
             var sourceWidth=Math.Max(1,cardWidth-68*s);
             var sourcePos=ImGui.GetCursorScreenPos();
             var draw=ImGui.GetWindowDrawList(); draw.PushClipRect(sourcePos,sourcePos+new Vector2(sourceWidth,lineHeight),true);
-            MaterialText.AddText(draw,sourcePos,MaterialCanvas.Color(MaterialTheme.Current.Colors.OnSurfaceVariant),entry.Repository.Name); draw.PopClipRect();
+            MaterialText.AddText(draw,sourcePos,MaterialCanvas.Color(MaterialTheme.Current.Colors.OnSurfaceVariant),FitSourceLabel(entry.Repository.Name,sourceWidth)); draw.PopClipRect();
             ImGui.Dummy(new(sourceWidth,lineHeight));
+            if(ImGui.IsItemHovered()) MaterialText.SetTooltip(entry.Repository.Name+"\n"+entry.Repository.Url);
             ImGui.SameLine(0,0);
-            var pinned=InstallerCatalog.VisiblePinnedRepositories(plugin.Configuration,installerSnapshot).Any(r=>r.Url==entry.Repository.Url);
+            var pinned=pinnedSources.Contains(entry.Repository.Url);
             using(var pinControls=MaterialControls.Push(BotologyPresentation.Controls(lineHeight/s,16,preserveHeight:true)))
-                if(MaterialButton.IconButton("card-pin",pinned?MaterialIcon.Star:MaterialIcon.Plus,size:lineHeight/s)) plugin.ToggleRepositoryPin(entry.Repository.Url);
-            if(ImGui.IsItemHovered()) MaterialText.SetTooltip(entry.Repository.Name+"\n"+UiText.T(pinned?"Unpin repository":"Pin repository"));
+                if(MaterialButton.IconButton("card-pin",MaterialIcon.Star,tonal:pinned,size:lineHeight/s)) plugin.ToggleRepositoryPin(entry.Repository.Url);
+            MeasureBounds?.Invoke("card-pin-"+entry.Identity,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
+            if(ImGui.IsItemHovered()) MaterialText.SetTooltip(entry.Repository.Name+"\n"+entry.Repository.Url+"\n"+UiText.T(pinned?"Unpin repository":"Pin repository"));
             ImGui.SetCursorPosX(bodyX);
             DrawEntryBadge(entry,cardWidth-24*s,badgeHeight);
+            MeasureBounds?.Invoke("card-state-"+entry.Identity,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
+            ImGui.SetCursorPosX(bodyX);
+            using(var compatibilityStyle=new MaterialStyleScope())
+            {
+                var color=entry.Compatibility is { IsAssessable:true,Ignored:false } assessment && assessment.Assessment.Severity!=AssessmentSeverity.Green
+                    ?assessment.Assessment.Severity==AssessmentSeverity.Red?BotologyPresentation.RedCounter:BotologyPresentation.YellowCounter
+                    :MaterialTheme.Current.Colors.OnSurfaceVariant;
+                compatibilityStyle.Color(ImGuiCol.Text,color);
+                ImGui.PushTextWrapPos(cardWidth-bodyX);
+                MaterialText.TextWrapped(CardCompatibilityLabel(entry));
+                ImGui.PopTextWrapPos();
+            }
+            if(ImGui.IsItemHovered()) MaterialText.SetTooltip(CompatibilityState(entry));
+            MeasureBounds?.Invoke("card-compatibility-"+entry.Identity,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
             MeasureBounds?.Invoke("card-text-end-"+entry.Identity,ImGui.GetCursorScreenPos(),ImGui.GetCursorScreenPos());
             ImGui.SetCursorPos(new(bodyX,height-actionHeight-12*s));
             using(var actions=MaterialControls.Push(BotologyPresentation.Controls(actionHeight/s,18,preserveHeight:true)))
             {
                 ImGui.BeginDisabled(entry.CanInstall && plugin.InstallerOperation?.IsRunning==true);
                 if(InstallerButton(entry.CanInstall?"Install":entry.IsInstalled?"Manage":"View details","details-"+i,
-                    size:new((cardWidth-24*s)/s,actionHeight/s),trailing:MaterialIcon.ArrowRight,primary:entry.CanInstall))
+                    size:new((cardWidth-24*s)/s,actionHeight/s),trailing:MaterialIcon.ArrowRight))
                 { if(entry.CanInstall) plugin.RunInstallerAction(InstallerAction.Install,entry.Repository.Url,entry.Manifest.InternalName); else OpenInstallerProfile(entry); }
                 ImGui.EndDisabled();
             }
@@ -331,6 +511,37 @@ public sealed partial class MainWindow
         ImGui.Dummy(new(1,1)); ImGui.EndChild();
     }
 
+    private static string CardCompatibilityKey(InstallerEntry entry)=>
+        entry.Compatibility is { IsAssessable:true } row?row.Ignored?"Ignored":row.Assessment.Severity.ToString():"Not assessed";
+    private static string CardCompatibilityLabel(InstallerEntry entry)=>UiText.T("Compatibility")+": "+UiText.T(CardCompatibilityKey(entry));
+
+    private static bool MatchesBrowseAnchor(InstallerEntry entry,string? anchor)=>anchor is not null
+        && anchor.AsSpan(anchor.LastIndexOf('\n')+1).Equals(entry.Manifest.InternalName.AsSpan().Trim(),StringComparison.OrdinalIgnoreCase)
+        && entry.Identity==anchor;
+
+    private static string FitSourceLabel(string value,float width)
+    {
+        string Fit(string text,float available)
+        {
+            if(MaterialText.Measure(text).X<=available) return text;
+            var boundaries=System.Globalization.StringInfo.ParseCombiningCharacters(text);
+            for(var count=boundaries.Length-1;count>=0;count--)
+            {
+                var left=(count+1)/2;var right=count/2;
+                var candidate=text[..(left==0?0:boundaries[left])]+"..."+(right==0?"":text[boundaries[boundaries.Length-right]..]);
+                if(MaterialText.Measure(candidate).X<=available) return candidate;
+            }
+            return "";
+        }
+        var separator=value.IndexOf(" · ",StringComparison.Ordinal);
+        if(separator>=0 && MaterialText.Measure(value).X>width)
+        {
+            var detail=" · "+value[(separator+3)..];
+            if(MaterialText.Measure(detail).X<width*.7f) return Fit(value[..separator],width-MaterialText.Measure(detail).X)+detail;
+        }
+        return Fit(value,width);
+    }
+
     private static string EntryBadgeLabel(InstallerEntry entry)=>entry.Installed?.State is "LoadError" or "UnloadError" or "DependencyResolutionFailed"
         ?UiText.T("Operation failed"):EntryState(entry);
 
@@ -340,7 +551,7 @@ public sealed partial class MainWindow
         var c=MaterialTheme.Current.Colors;
         var color=entry.Installed?.State is "LoadError" or "UnloadError" or "DependencyResolutionFailed"?BotologyPresentation.RedCounter
             :entry.HasUpdate?BotologyPresentation.YellowCounter:entry.IsLoaded?BotologyPresentation.Rgb(0xB6A5FF)
-            :entry.IsInstalled?c.OnSurfaceVariant:!entry.Repository.IsAdded || !entry.Repository.IsEnabled || !entry.IsApiCompatible?BotologyPresentation.YellowCounter:c.Primary;
+            :entry.IsInstalled?c.OnSurfaceVariant:!entry.CanInstall?BotologyPresentation.YellowCounter:c.Primary;
         var label="    "+EntryBadgeLabel(entry);
         var size=new Vector2(Math.Min(width>0?width:float.MaxValue,MaterialText.Measure(label).X+18*s),height>0?height:Math.Max(28*s,MaterialText.Measure(label).Y+8*s));
         var p=ImGui.GetCursorScreenPos();
@@ -364,9 +575,12 @@ public sealed partial class MainWindow
         tableColors.Color(ImGuiCol.TableRowBgAlt,InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLow,.8f));
         uint[] ids=[1,2,7,3,4,5,6];
         for(var i=0;i<labels.Length;i++) widths[i]=Math.Max(widths[i]*s,MaterialText.Measure(UiText.T(labels[i])).X+32*s);
+        var badgeSizes=entries.Select(EntryBadgeLabel).Distinct(StringComparer.Ordinal).ToDictionary(label=>label,label=>MaterialText.Measure("    "+label),StringComparer.Ordinal);
+        if(badgeSizes.Count>0) widths[3]=Math.Max(widths[3],badgeSizes.Values.Max(size=>size.X)+18*s);
         var tableHeight=Math.Max(80*s,ImGui.GetContentRegionAvail().Y-140*s);
         if(ImGui.BeginTable("InstallerTable",7,flags,new(-1,tableHeight),Math.Max(ImGui.GetContentRegionAvail().X,widths.Sum()+14*ImGui.GetStyle().CellPadding.X)))
         {
+            if(resetInstallerBrowseScroll) { ImGui.SetScrollY(0); resetInstallerBrowseScroll=false; }
             for(var i=0;i<labels.Length;i++) ImGui.TableSetupColumn(labels[i],(i<3?ImGuiTableColumnFlags.WidthStretch:ImGuiTableColumnFlags.WidthFixed)|(i>=5?ImGuiTableColumnFlags.NoSort:ImGuiTableColumnFlags.None),widths[i],ids[i]);
             ImGui.TableSetupScrollFreeze(0,1);
             UiGui.TableHeadersRow(BotologyPresentation.TableHeaderHeight*s);
@@ -378,31 +592,102 @@ public sealed partial class MainWindow
             }
             var specs=ImGui.TableGetSortSpecs();
             if(specs.SpecsCount>0 && specs.SpecsDirty) { installerSort=(int)specs.Specs.ColumnUserID-1; installerSortDescending=specs.Specs.SortDirection==ImGuiSortDirection.Descending; specs.SpecsDirty=false; }
-            foreach(var entry in entries)
+            // Reserve every row's real wrapped height, but only submit controls in the viewport.
+            // Measurements are deduplicated within this frame, so resizing or changing fonts takes effect immediately.
+            var textHeights=new Dictionary<(string Text,int Column),float>();
+            var columnWidths=new float[7];
+            unsafe
             {
+                var table=ImGuiP.GetCurrentTable();
+                for(var column=0;column<columnWidths.Length;column++)
+                    columnWidths[column]=Math.Max(1,table.Columns.Data[column].WorkMaxX-table.Columns.Data[column].WorkMinX);
+            }
+            float TextHeight(string value,int column)
+            {
+                if(!textHeights.TryGetValue((value,column),out var height))
+                    textHeights[(value,column)]=height=MaterialText.Measure(value,false,columnWidths[column]).Y;
+                return height;
+            }
+            var metrics=MaterialControls.Metrics;
+            var actionHeights=new[]{"Install","Manage","View details"}.ToDictionary(label=>label,label=>
+                MaterialText.RequiresShaping(UiText.T(label))?Math.Max(metrics.Height,MaterialText.Measure(UiText.T(label)).Y+2*metrics.Padding.Y):metrics.Height);
+            var cellPadding=ImGui.GetStyle().CellPadding.Y;
+            var rowHeights=new float[entries.Count];
+            for(var index=0;index<entries.Count;index++)
+            {
+                var entry=entries[index];
+                var version=entry.IsInstalled?entry.Installed!.Runtime.Version+(entry.HasUpdate?" -> "+entry.Manifest.Version:""):entry.Manifest.Version;
+                var compatibility=CompatibilityState(entry);
+                var contentHeight=Math.Max(28*s,actionHeights[entry.CanInstall?"Install":entry.IsInstalled?"Manage":"View details"]);
+                contentHeight=Math.Max(contentHeight,TextHeight(entry.Repository.Name,1));
+                contentHeight=Math.Max(contentHeight,TextHeight(entry.Manifest.Author,2));
+                contentHeight=Math.Max(contentHeight,TextHeight(version,4));
+                contentHeight=Math.Max(contentHeight,TextHeight(compatibility,5));
+                // Badge text is a single line; the plugin name sits beside its icon.
+                contentHeight=Math.Max(contentHeight,badgeSizes[EntryBadgeLabel(entry)].Y+8*s);
+                if(!System.Text.Ascii.IsValid(entry.Manifest.Name) && MaterialText.RequiresShaping(entry.Manifest.Name))
+                    contentHeight=Math.Max(contentHeight,MaterialText.Measure(entry.Manifest.Name).Y);
+                rowHeights[index]=Math.Max((BotologyPresentation.Compact?42:56)*s,contentHeight+2*cellPadding);
+            }
+            var uniform=entries.Count>0 && rowHeights.All(height=>height==rowHeights[0]);
+            if(uniform)
+            {
+                using var clipper=new MaterialClipper(entries.Count,rowHeights[0]);
+                while(clipper.Step()) DrawRange(clipper.Start,clipper.End);
+            }
+            else DrawRange(0,entries.Count);
+            void DrawRange(int start,int end)
+            {
+                for(var index=start;index<end;index++)
+                {
+                var entry=entries[index];
+                var version=entry.IsInstalled?entry.Installed!.Runtime.Version+(entry.HasUpdate?" -> "+entry.Manifest.Version:""):entry.Manifest.Version;
+                var compatibility=CompatibilityState(entry);
+                ImGui.TableNextRow(ImGuiTableRowFlags.None,rowHeights[index]);
+                unsafe
+                {
+                    var table=ImGuiP.GetCurrentTable();
+                    // Variable rows keep native row advancement and adjacent navigation targets.
+                    var clip=ImGuiP.GetCurrentWindow().InnerClipRect;
+                    if(!uniform && (table.RowPosY2<clip.Min.Y-rowHeights[index] || table.RowPosY1>clip.Max.Y+rowHeights[index])) continue;
+                    MeasureBounds?.Invoke("installer-table-reserved-"+entry.Identity,new(table.OuterRect.Min.X,table.RowPosY1),new(table.OuterRect.Max.X,table.RowPosY2));
+                }
                 ImGui.PushID(entry.Identity);
-                ImGui.TableNextRow(ImGuiTableRowFlags.None,(BotologyPresentation.Compact?42:56)*s);
-                ImGui.TableSetColumnIndex(0);
+                if(ImGui.TableSetColumnIndex(0))
+                {
                 var iconSize=new Vector2(28*s);
                 if(ImGui.IsRectVisible(iconSize)) DrawInstallerIcon(entry,ImGui.GetCursorScreenPos(),iconSize.X);
                 ImGui.Dummy(iconSize); ImGui.SameLine();
                 if(UiGui.Selectable("details",highlightedInstaller==entry.Identity,entry.Manifest.Name)) highlightedInstaller=entry.Identity;
                 if(ImGui.IsItemHovered()) MaterialText.SetTooltip(entry.Manifest.Description);
-                ImGui.TableSetColumnIndex(1); MaterialText.TextWrapped(entry.Repository.Name);
-                ImGui.TableSetColumnIndex(2); MaterialText.TextWrapped(entry.Manifest.Author);
-                ImGui.TableSetColumnIndex(3); DrawEntryBadge(entry);
-                ImGui.TableSetColumnIndex(4); MaterialText.TextWrapped(entry.IsInstalled?entry.Installed!.Runtime.Version+(entry.HasUpdate?" -> "+entry.Manifest.Version:""):entry.Manifest.Version);
-                ImGui.TableSetColumnIndex(5); MaterialText.TextWrapped(CompatibilityState(entry));
-                ImGui.TableSetColumnIndex(6);
+                }
+                if(ImGui.TableSetColumnIndex(1)) MaterialText.TextWrapped(entry.Repository.Name);
+                if(ImGui.TableSetColumnIndex(2)) MaterialText.TextWrapped(entry.Manifest.Author);
+                if(ImGui.TableSetColumnIndex(3)) DrawEntryBadge(entry);
+                if(ImGui.TableSetColumnIndex(4)) MaterialText.TextWrapped(version);
+                if(ImGui.TableSetColumnIndex(5)) MaterialText.TextWrapped(compatibility);
+                if(ImGui.TableSetColumnIndex(6))
+                {
                 ImGui.BeginDisabled(entry.CanInstall && plugin.InstallerOperation?.IsRunning==true);
-                if(InstallerButton(entry.CanInstall?"Install":entry.IsInstalled?"Manage":"View details","table-details",primary:entry.CanInstall||!entry.Repository.IsAdded))
+                if(InstallerButton(entry.CanInstall?"Install":entry.IsInstalled?"Manage":"View details","table-details"))
                 { if(entry.CanInstall) plugin.RunInstallerAction(InstallerAction.Install,entry.Repository.Url,entry.Manifest.InternalName); else OpenInstallerProfile(entry); }
                 ImGui.EndDisabled();
+                }
+                if(MeasureBounds is not null)
+                {
+                    ImGui.TableSetColumnIndex(0); // Finish the last cell before observing the actual row extent.
+                    unsafe
+                    {
+                        var table=ImGuiP.GetCurrentTable();
+                        MeasureBounds("installer-table-row-"+entry.Identity,new(table.OuterRect.Min.X,table.RowPosY1),new(table.OuterRect.Max.X,table.RowPosY2));
+                    }
+                }
                 ImGui.PopID();
+                }
             }
             ImGui.EndTable();
         }
-        var selected=entries.FirstOrDefault(e=>e.Identity==highlightedInstaller)??entries.FirstOrDefault();
+        var selected=(highlightedInstaller is null?null:entries.FirstOrDefault(e=>MatchesBrowseAnchor(e,highlightedInstaller)))??entries.FirstOrDefault();
         if(selected is not null)
         {
             using var summary=InstallerSurface("InstallerSelection",new(-1,86),MaterialElevation.Low,outline:true,padding:10,radius:8);
@@ -438,7 +723,7 @@ public sealed partial class MainWindow
         ImGui.EndGroup();
         MaterialText.TextWrapped(entry.Manifest.Description);
         var repoPinned=InstallerCatalog.VisiblePinnedRepositories(plugin.Configuration,installerSnapshot).Any(r=>r.Url==entry.Repository.Url);
-        MaterialText.TextColored(c.OnSurfaceVariant,UiText.T("Repository")+": "+entry.Repository.Name);
+        ImGui.PushTextWrapPos(0); MaterialText.TextColored(c.OnSurfaceVariant,UiText.T("Repository")+": "+entry.Repository.Name); ImGui.PopTextWrapPos();
         InstallerNextInline(MaterialText.Measure(UiText.T(repoPinned?"Unpin repository":"Pin repository")).X+52*s);
         if(InstallerButton(repoPinned?"Unpin repository":"Pin repository","profile-pin-repo",repoPinned,leading:MaterialIcon.Star,textOnly:true)) plugin.ToggleRepositoryPin(entry.Repository.Url);
         foreach(var author in entry.Manifest.Authors)
@@ -524,7 +809,7 @@ public sealed partial class MainWindow
                 if(entry.Compatibility?.Entry.DiscordUrl is { } discord && RepositoryLinkResolver.NormalizeDiscordUrl(discord) is { } safe && InstallerButton("Discord","profile-discord",leading:MaterialIcon.Discord,textOnly:true)) plugin.OpenUrl(safe);
                 ImGui.Separator();
                 using(UiText.Font(UiFontRole.BodyStrong)) MaterialText.Text(UiText.T("Repository"));
-                MaterialText.TextColored(c.Primary,entry.Repository.Name);
+                ImGui.PushTextWrapPos(0); MaterialText.TextColored(c.Primary,entry.Repository.Name); ImGui.PopTextWrapPos();
                 var feed=entry.Repository.Url;
                 var copySide=MaterialControls.Metrics.Height;
                 MaterialTextField.TextField("ProfileFeed",ref feed,width:Math.Max(1,ImGui.GetContentRegionAvail().X-copySide-8*s)/s,
@@ -609,10 +894,12 @@ public sealed partial class MainWindow
         {
             ImGui.PushID(repo.Url);
             var urlHeight=MaterialText.Measure(repo.Url,false,Math.Max(1,ImGui.GetContentRegionAvail().X-32*s)).Y;
-            var height=Math.Max(150*s,urlHeight+3*ImGui.GetTextLineHeight()+(repo.IsOfficial?1:repo.IsAdded?3:2)*(MaterialControls.Metrics.Height+10*s)+44*s+(pendingRemoval==repo.Url?180*s:0));
+            float nameHeight;
+            using(UiText.Font(UiFontRole.BodyStrong)) nameHeight=MaterialText.Measure(repo.Name,false,Math.Max(1,ImGui.GetContentRegionAvail().X-32*s)).Y;
+            var height=Math.Max(150*s,urlHeight+nameHeight+2*ImGui.GetTextLineHeight()+(repo.IsOfficial?1:repo.IsAdded?3:2)*(MaterialControls.Metrics.Height+10*s)+44*s+(pendingRemoval==repo.Url?180*s:0));
             using(var card=InstallerSurface("RepositoryCard",new(-1,height/s),outline:true,padding:16,radius:8))
             {
-            using(UiText.Font(UiFontRole.BodyStrong)) MaterialText.Text(repo.Name);
+            using(UiText.Font(UiFontRole.BodyStrong)) MaterialText.TextWrapped(repo.Name);
             MaterialText.TextWrapped(repo.Url); MaterialText.TextWrapped(RepositoryState(repo));
             if(plugin.DiscoveryErrors.TryGetValue(repo.Url,out var error)) MaterialText.TextWrapped(UiText.T("Discovery failed")+": "+error);
             DrawRepositoryActions(repo);
@@ -705,10 +992,12 @@ public sealed partial class MainWindow
             using(UiText.Font(UiFontRole.BodyStrong)) MaterialText.TextWrapped(row.Name);
             MaterialText.TextWrapped(row.Detail);
             if(!stacked) ImGui.TableSetColumnIndex(1);
-            if(InstallerButton("View plugins",(repository?"pin-repo-view-":"pin-author-view-")+row.Key,leading:repository?MaterialIcon.Database:MaterialIcon.Person))
+            var view=InstallerButton("View plugins",(repository?"pin-repo-view-":"pin-author-view-")+row.Key,leading:repository?MaterialIcon.Database:MaterialIcon.Person);
+            var block=ImGui.IsItemClicked(ImGuiMouseButton.Right);
+            if(view || block)
             {
-                repositoryFilter=repository?row.Key:""; pinnedAuthorFilter=repository?"":row.Key;
-                installerPage="Discover"; selectedInstaller=null; resetInstallerContentScroll=true;
+                (repository?repositoryFilters:pinnedAuthorFilters)[row.Key]=block?InstallerFilterMode.Blocked:InstallerFilterMode.Required;
+                installerPage="Discover"; selectedInstaller=null; ResetInstallerResults(); installerMedia?.Clear();
             }
             if(stacked) InstallerNextInline(removeWidth); else ImGui.TableSetColumnIndex(2);
             if(InstallerButton(removeLabel,(repository?"pin-repo-remove-":"pin-author-remove-")+row.Key,leading:MaterialIcon.Star))
@@ -741,7 +1030,6 @@ public sealed partial class MainWindow
         var origin=ImGui.GetCursorScreenPos(); var size=new Vector2(Math.Max(1,ImGui.GetContentRegionAvail().X),height);
         var s=MaterialTheme.Metrics.Scale;
         var draw=ImGui.GetWindowDrawList();
-        MaterialCanvas.Surface(origin,origin+size,MaterialTheme.Current.Colors.SurfaceContainerHigh,MaterialTheme.Current.Colors.SurfaceContainerLowest,8*s);
         var failed=false;
         Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap? texture=null;
         if(InstallerCatalog.NormalizeRepository(url) is not null)
@@ -754,9 +1042,11 @@ public sealed partial class MainWindow
             texture=(installerMedia??=new(Plugin.TextureProvider)).Get(entry.Manifest.PublisherIconUrl,false,out _);
         if(texture is null && images.Length==0) texture=InstallerIcon(entry);
         var label=images.Length==0 || failed && installerMedia?.IsMissing(url,full)==true ? UiText.T("No preview supplied")
-            :failed?UiText.T("Preview unavailable"):null;
+            :failed?UiText.T("Preview unavailable"):images.Length>0&&!hasPreview?UiText.T("Working..."):null;
+        var surface=hasPreview?MaterialTheme.Current.Colors.SurfaceContainerHigh:InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLow,.75f);
+        MaterialCanvas.Surface(origin,origin+size,surface,MaterialTheme.Current.Colors.SurfaceContainerLowest,8*s);
         var labelHeight=label is null?0:MaterialText.Measure(label,false,Math.Max(1,size.X-16*s)).Y;
-        var placeholderSide=Math.Min(48*s,Math.Max(1,height-labelHeight-12*s));
+        var placeholderSide=Math.Min((full?48:32)*s,Math.Max(1,height-labelHeight-12*s));
         var placeholderTop=Math.Max(0,(height-placeholderSide-labelHeight-8*s)*.5f);
         var tint=full||entry.Repository.IsAdded?Vector4.One:new Vector4(.48f,.48f,.48f,1);
         if(texture is not null)
@@ -766,11 +1056,7 @@ public sealed partial class MainWindow
             var max=media?origin+size:min+new Vector2(placeholderSide);
             if(media && !full)
             {
-                var imageAspect=(float)texture.Width/texture.Height;
-                var boxAspect=size.X/size.Y;
-                var span=imageAspect>boxAspect?new Vector2(boxAspect/imageAspect,1):new Vector2(1,imageAspect/boxAspect);
-                draw.AddImageRounded(texture.Handle,min,max,(Vector2.One-span)*.5f,(Vector2.One+span)*.5f,
-                    MaterialCanvas.Color(tint),8*s,ImDrawFlags.RoundCornersTop);
+                MaterialCanvas.DrawImage(draw,texture.Handle,new(texture.Width,texture.Height),min+new Vector2(8*s),max-new Vector2(8*s),tint:tint);
             }
             else MaterialCanvas.DrawImage(draw,texture.Handle,new(texture.Width,texture.Height),min,max,tint:tint);
             if(!media) MeasureBounds?.Invoke("preview-icon-"+entry.Identity,min,max);
@@ -778,7 +1064,7 @@ public sealed partial class MainWindow
         else
         {
             var iconMin=origin+new Vector2((size.X-placeholderSide)*.5f,placeholderTop);
-            MaterialIcons.Draw(MaterialIcon.Cube,iconMin,placeholderSide,MaterialTheme.Current.Colors.OnSurfaceVariant);
+            MaterialIcons.Draw(MaterialIcon.Cube,iconMin,placeholderSide,MaterialColor.Alpha(MaterialTheme.Current.Colors.OnSurfaceVariant,full?1:.55f));
             MeasureBounds?.Invoke("preview-icon-"+entry.Identity,iconMin,iconMin+new Vector2(placeholderSide));
         }
         if(label is not null)
@@ -786,7 +1072,12 @@ public sealed partial class MainWindow
             var labelWidth=Math.Min(size.X-16*s,MaterialText.Measure(label).X);
             ImGui.SetCursorScreenPos(origin+new Vector2(Math.Max(8*s,(size.X-labelWidth)*.5f),placeholderTop+placeholderSide+8*s));
             ImGui.PushTextWrapPos(ImGui.GetCursorPosX()+size.X-16*s);
-            MaterialText.TextWrapped(label); ImGui.PopTextWrapPos();
+            using(var labelStyle=new MaterialStyleScope())
+            {
+                labelStyle.Color(ImGuiCol.Text,MaterialColor.Alpha(MaterialTheme.Current.Colors.OnSurfaceVariant,full?1:.8f));
+                MaterialText.TextWrapped(label);
+            }
+            ImGui.PopTextWrapPos();
             MeasureBounds?.Invoke("preview-label-"+entry.Identity,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
         }
         ImGui.SetCursorScreenPos(origin); ImGui.Dummy(size);
@@ -797,7 +1088,8 @@ public sealed partial class MainWindow
     {
         if(entry.Installed?.ScheduledForDeletion==true) return UiText.T("Removal scheduled");
         if(entry.Installed?.State is "LoadError" or "UnloadError" or "DependencyResolutionFailed") return UiText.T("Operation failed")+" ("+entry.Installed.State+")";
-        return UiText.T(entry.HasUpdate?"Update available":entry.IsLoaded?"Loaded":entry.Installed?.IsOutdated==true?"Unavailable for this API":entry.IsInstalled?"Disabled":!entry.Repository.IsAdded?"Repository not added":!entry.Repository.IsEnabled?"Repository disabled":!entry.IsApiCompatible?"Unavailable for this API":"Available");
+        return UiText.T(entry.HasUpdate?"Update available":entry.IsLoaded?"Loaded":entry.Installed?.IsOutdated==true?"Unavailable for this API":entry.IsInstalled?"Disabled":entry.InstallBlockReason??"Available");
     }
-    private static string CompatibilityState(InstallerEntry entry)=>entry.Compatibility is { IsAssessable:true } row?UiText.Assessment(row.Assessment):UiText.T("Not assessed");
+    private static string CompatibilityState(InstallerEntry entry)=>entry.Compatibility is { IsAssessable:true } row
+        ?(row.Ignored?UiText.T("Ignored")+" — ":"")+UiText.Assessment(row.Assessment):UiText.T("Not assessed");
 }

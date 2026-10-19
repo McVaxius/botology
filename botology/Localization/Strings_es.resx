@@ -333,4 +333,20 @@
   <data name="Yes" xml:space="preserve"><value>Sí</value></data>
   <data name="No" xml:space="preserve"><value>No</value></data>
   <data name="Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Other source installed" xml:space="preserve"><value>Instalado de otra fuente</value></data>
+  <data name="Testing only" xml:space="preserve"><value>Solo versión de prueba</value></data>
+  <data name="Hidden plugin" xml:space="preserve"><value>Plugin oculto</value></data>
+  <data name="Host not ready" xml:space="preserve"><value>Host no preparado</value></data>
+  <data name="Source unavailable" xml:space="preserve"><value>Fuente no disponible</value></data>
+  <data name="Source refresh required" xml:space="preserve"><value>Actualizar la fuente</value></data>
+  <data name="Not available on this API" xml:space="preserve"><value>No disponible para esta API</value></data>
+  <data name="Required" xml:space="preserve"><value>Obligatorio</value></data>
+  <data name="Blocked" xml:space="preserve"><value>Bloqueado</value></data>
+  <data name="Left-click: require. Right-click: block. Click again to clear." xml:space="preserve"><value>Clic izquierdo: exigir. Clic derecho: bloquear. Haz clic de nuevo para quitarlo.</value></data>
+  <data name="Categories &amp; tags" xml:space="preserve"><value>Categorías y etiquetas</value></data>
+  <data name="Clear categories" xml:space="preserve"><value>Borrar categorías</value></data>
+  <data name="Find a tag..." xml:space="preserve"><value>Buscar una etiqueta...</value></data>
+  <data name="Scroll categories left" xml:space="preserve"><value>Desplazar categorías a la izquierda</value></data>
+  <data name="Scroll categories right" xml:space="preserve"><value>Desplazar categorías a la derecha</value></data>
+  <data name="Third-party" xml:space="preserve"><value>De terceros</value></data>
 </root>

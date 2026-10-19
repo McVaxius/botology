@@ -23,10 +23,17 @@ public sealed partial class PluginManagerBridge
 
     internal static InstallerHostSnapshot CaptureInstallerHost(object manager, object configuration, PluginSnapshot installed)
     {
+        var sourceUrls=new Dictionary<object,string?>(ReferenceEqualityComparer.Instance);
+        string? Source(object? repo)
+        {
+            if(repo is null) return null;
+            if(!sourceUrls.TryGetValue(repo,out var url)) sourceUrls[repo]=url=InstallerCatalog.NormalizeRepository(ReadString(repo,"PluginMasterUrl"));
+            return url;
+        }
         var repos = new Dictionary<string, InstallerRepository>(StringComparer.Ordinal);
         foreach (var repo in GetEnumerableProperty(manager, "Repos"))
         {
-            if (InstallerCatalog.NormalizeRepository(ReadString(repo, "PluginMasterUrl")) is not { } url) continue;
+            if (Source(repo) is not { } url) continue;
             repos[url] = new(url, InstallerCatalog.RepositoryName(url), true, ReadBool(repo, "IsEnabled"),
                 !ReadBool(repo, "IsThirdParty"), ReadString(repo, "State"));
         }
@@ -39,15 +46,14 @@ public sealed partial class PluginManagerBridge
         var manifests = new List<InstallerManifest>();
         foreach (var manifest in GetEnumerableProperty(manager, "AvailablePlugins"))
         {
-            var repo = Read(manifest, "SourceRepo");
-            if (InstallerCatalog.NormalizeRepository(repo is null ? null : ReadString(repo, "PluginMasterUrl")) is not { } source) continue;
+            if (Source(Read(manifest, "SourceRepo")) is not { } source) continue;
             var name = ReadString(manifest, "InternalName");
             if (name.Length == 0) continue;
             manifests.Add(new(name, ReadString(manifest, "Name"), source,
                 ReadString(manifest, "Author"), ReadString(manifest, "Description"), ReadString(manifest, "AssemblyVersion"),
                 Read(manifest, "DalamudApiLevel") is int api ? api : 0, ReadString(manifest, "RepoUrl"),
                 ReadString(manifest, "IconUrl"), ReadStrings(manifest, "ImageUrls"), ReadStrings(manifest, "Tags"),
-                ReadBool(manifest, "IsTestingExclusive"), ReadBool(manifest, "IsHide"), ReadString(manifest, "Changelog"), ReadString(manifest, "Dip17Channel")));
+                ReadBool(manifest, "IsTestingExclusive"), ReadBool(manifest, "IsHide"), ReadString(manifest, "Changelog"), ReadString(manifest, "Dip17Channel"),ReadStrings(manifest,"CategoryTags")));
         }
         var locals = installed.Plugins.Select(runtime =>
         {

@@ -95,8 +95,9 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     public Plugin()
     {
         uiTextHost = new(TextureProvider);
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-        if (Configuration.ApplyCompactDefaults()) Configuration.Save();
+        var savedConfiguration=PluginInterface.GetPluginConfig() as Configuration;
+        Configuration = Configuration.FromSaved(savedConfiguration);
+        if (Configuration.ApplyCompactDefaults() || savedConfiguration is null) Configuration.Save();
         ApplyAppearance();
         PluginManagerBridge = new PluginManagerBridge(PluginInterface, CommandManager, Log);
         DtrVisibilityBridge = new DtrVisibilityBridge(PluginInterface, DtrBar, Log);

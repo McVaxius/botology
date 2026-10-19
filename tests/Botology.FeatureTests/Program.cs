@@ -10,6 +10,8 @@ Console.OutputEncoding = new UTF8Encoding(false);
 
 if (args.FirstOrDefault() == "--installer-media") { InstallerMediaTests.Check(); await InstallerMediaTests.CheckOwnershipAsync(); return 0; }
 if (args.FirstOrDefault() == "--installer-ui") { InstallerUiTests.Check(args.Skip(1).ToArray()); return 0; }
+if (args.FirstOrDefault() == "--installer-performance") { InstallerUiTests.CheckPerformance(); return 0; }
+if (args.FirstOrDefault() == "--installer-title") { InstallerUiTests.CheckTitle(); return 0; }
 if (args.FirstOrDefault() == "--installer-discovery") { await InstallerDiscoveryTests.CheckAsync(); return 0; }
 
 if (args.FirstOrDefault() == "--installer-core")
@@ -267,6 +269,7 @@ if (failures.Count > 0)
 await InstallerDiscoveryTests.CheckAsync();
 InstallerMediaTests.Check();
 await InstallerMediaTests.CheckOwnershipAsync();
+InstallerUiTests.CheckTitle();
 InstallerUiTests.Check();
 AethertekUI.Tests.BotologyUiSmoke.Run();
 Console.WriteLine("Botology feature tests passed: notification matching, duplicate prevention, AI storage, changelog cache fallback, grid sorting, and native main-window rendering.");

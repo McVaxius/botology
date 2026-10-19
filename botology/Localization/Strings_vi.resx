@@ -331,5 +331,21 @@
   <data name="Yes" xml:space="preserve"><value>Có</value></data>
   <data name="No" xml:space="preserve"><value>Không</value></data>
   <data name="Cancel" xml:space="preserve"><value>Hủy</value></data>
+  <data name="Other source installed" xml:space="preserve"><value>Đã cài từ nguồn khác</value></data>
+  <data name="Testing only" xml:space="preserve"><value>Chỉ bản thử nghiệm</value></data>
+  <data name="Hidden plugin" xml:space="preserve"><value>Plugin bị ẩn</value></data>
+  <data name="Host not ready" xml:space="preserve"><value>Hệ chủ chưa sẵn sàng</value></data>
+  <data name="Source unavailable" xml:space="preserve"><value>Nguồn không khả dụng</value></data>
+  <data name="Source refresh required" xml:space="preserve"><value>Cần làm mới nguồn</value></data>
+  <data name="Not available on this API" xml:space="preserve"><value>Không khả dụng trên API này</value></data>
+  <data name="Required" xml:space="preserve"><value>Bắt buộc</value></data>
+  <data name="Blocked" xml:space="preserve"><value>Đã chặn</value></data>
+  <data name="Left-click: require. Right-click: block. Click again to clear." xml:space="preserve"><value>Nhấp trái: bắt buộc. Nhấp phải: chặn. Nhấp lại để xóa.</value></data>
+  <data name="Categories &amp; tags" xml:space="preserve"><value>Danh mục và thẻ</value></data>
+  <data name="Clear categories" xml:space="preserve"><value>Xóa bộ lọc danh mục</value></data>
+  <data name="Find a tag..." xml:space="preserve"><value>Tìm thẻ...</value></data>
+  <data name="Scroll categories left" xml:space="preserve"><value>Cuộn danh mục sang trái</value></data>
+  <data name="Scroll categories right" xml:space="preserve"><value>Cuộn danh mục sang phải</value></data>
+  <data name="Third-party" xml:space="preserve"><value>Bên thứ ba</value></data>
 </root>
 

@@ -21,7 +21,8 @@ public sealed record InstallerManifest(
     bool IsTestingExclusive = false,
     bool IsHidden = false,
     string? Changelog = null,
-    string? Dip17Channel = null)
+    string? Dip17Channel = null,
+    string[]? CategoryTags = null)
 {
     public string Identity => Services.InstallerCatalog.PluginIdentity(RepositoryUrl, InternalName);
     public IReadOnlyList<string> Authors => Services.InstallerCatalog.ParseAuthors(Author);
@@ -61,15 +62,21 @@ public sealed record InstallerEntry(
     bool NameCollision,
     bool AvailableFromHost,
     bool HostReady = true,
-    bool HostSafeMode = false)
+    bool HostSafeMode = false,
+    IReadOnlyList<string>? ManifestTags = null,
+    string? BotologyCategory = null)
 {
     public string Identity => Manifest.Identity;
     public bool IsInstalled => Installed is not null;
     public bool IsLoaded => Installed?.Runtime.IsLoaded == true;
     public bool HasUpdate => Installed?.Runtime.HasUpdate == true;
     public bool IsApiCompatible => Manifest.ApiLevel == PluginAssessmentRow.CurrentDalamudApiLevel;
-    public bool CanInstall => HostReady && !HostSafeMode && !IsInstalled && !NameCollision && Repository.IsAdded && Repository.IsEnabled && Repository.Status == "Success"
-        && AvailableFromHost && IsApiCompatible && !Manifest.IsTestingExclusive && !Manifest.IsHidden;
+    public string? InstallBlockReason => IsInstalled ? "Installed" : NameCollision ? "Other source installed"
+        : !Repository.IsAdded ? "Repository not added" : !Repository.IsEnabled ? "Repository disabled"
+        : !IsApiCompatible ? "Unavailable for this API" : Manifest.IsTestingExclusive ? "Testing only"
+        : Manifest.IsHidden ? "Hidden plugin" : HostSafeMode ? "Safe mode" : !HostReady ? "Host not ready"
+        : Repository.Status != "Success" ? "Source unavailable" : !AvailableFromHost ? "Source refresh required" : null;
+    public bool CanInstall => InstallBlockReason is null;
     public bool CanUpdate => HostReady && !HostSafeMode && HasUpdate && Installed is { IsDevelopment: false, IsBanned: false }
         && Repository.IsAdded && Repository.IsEnabled && Repository.Status == "Success" && AvailableFromHost && IsApiCompatible;
     public bool CanUninstall => HostReady && Installed is { IsDevelopment: false } && !IsLoaded
@@ -82,7 +89,10 @@ public sealed record InstallerCatalogSnapshot(
     bool Ready,
     bool SafeMode,
     string? Error = null,
-    IReadOnlyList<string>? KnownAuthors = null)
+    IReadOnlyList<string>? KnownAuthors = null,
+    IReadOnlyList<string>? DalamudTags = null,
+    IReadOnlyList<string>? BotologyCategories = null,
+    IReadOnlyList<string>? ThirdPartyTags = null)
 {
     public static InstallerCatalogSnapshot Empty { get; } = new([], [], false, false);
 }

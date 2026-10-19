@@ -1,6 +1,7 @@
 using botology;
 using botology.Models;
 using botology.Services;
+using botology.Windows;
 using Newtonsoft.Json;
 
 internal static class InstallerFeatureTests
@@ -12,6 +13,39 @@ internal static class InstallerFeatureTests
         const string official = InstallerCatalog.OfficialRepository;
         const string third = "https://example.invalid/Plugins/feed.json?channel=Stable";
         const string other = "https://example.invalid/plugins/feed.json?channel=Stable";
+        var fresh=Configuration.FromSaved(null);
+        Require(fresh.PinnedRepositories.SequenceEqual([InstallerCatalog.DefaultPinnedRepository]) && new Configuration().PinnedRepositories.Count==0,
+            "Only fresh installation initialization seeds the default; ordinary deserialization defaults stay empty.");
+        var freshSnapshot=InstallerCatalog.Merge(InstallerHostSnapshot.Empty,[],[],[]);
+        Require(InstallerCatalog.VisiblePinnedRepositories(fresh,freshSnapshot).Single().Url==InstallerCatalog.DefaultPinnedRepository
+            && freshSnapshot.Repositories.Single().IsAdded==false && freshSnapshot.Entries.Count==0,
+            "The initial favorite must resolve as a known unadded source without subscribing/installing.");
+        fresh.PinnedRepositories.Add(third);
+        InstallerCatalog.ToggleRepositoryPin(fresh,InstallerCatalog.DefaultPinnedRepository);
+        var unpinned=Configuration.FromSaved(JsonConvert.DeserializeObject<Configuration>(JsonConvert.SerializeObject(fresh)));
+        Require(unpinned.PinnedRepositories.SequenceEqual([third]) && ReferenceEquals(Configuration.FromSaved(unpinned),unpinned),
+            "Save/load/reload must retain removal and unrelated favorites.");
+        var emptyPins=JsonConvert.DeserializeObject<Configuration>("{\"PinnedRepositories\":[],\"privateFutureField\":7}")!;
+        Require(ReferenceEquals(Configuration.FromSaved(emptyPins),emptyPins) && emptyPins.PinnedRepositories.Count==0
+            && emptyPins.AdditionalSettings!.ContainsKey("privateFutureField")
+            && Configuration.FromSaved(JsonConvert.DeserializeObject<Configuration>("{}")!).PinnedRepositories.Count==0,
+            "Existing empty and legacy saved configurations are authoritative, including unknown fields.");
+        for(var refresh=0;refresh<3;refresh++)
+            Require(InstallerCatalog.VisiblePinnedRepositories(Configuration.FromSaved(emptyPins),InstallerCatalog.Merge(InstallerHostSnapshot.Empty,[],[],[])).Count==0,
+                "Catalog refresh/reload must not recreate a removed default favorite.");
+        var categoryFeed=InstallerCatalog.ParseFeed("""
+            [{"InternalName":"TagsA","Tags":["Utility"," chat ","",null,1],"CategoryTags":[" utility ","UI","Housing"]},
+             {"InternalName":"TagsB","Tags":["Housing"],"CategoryTags":null}]
+            """,third);
+        var categories=InstallerCatalog.Merge(InstallerHostSnapshot.Empty,categoryFeed.Append(new("OfficialTags","Official tags",official,Tags:["Official only","UI"])),
+            [new("tags-a"," Housing ","Tag A",["T-a-g-s-A"],""),new("not-discovered","New category","Absent",["Absent"],"")],[]);
+        Require(categoryFeed[0].CategoryTags!.SequenceEqual([" utility ","UI","Housing"])
+            && categories.DalamudTags!.SequenceEqual(["Official only","UI"]) && categories.ThirdPartyTags!.Count==4 && categories.ThirdPartyTags.Contains("chat")
+            && !categories.DalamudTags!.Contains("chat") && !categories.ThirdPartyTags!.Contains("Official only") && categories.ThirdPartyTags.Contains("UI")
+            && categories.Entries.Single(entry=>entry.Manifest.InternalName=="TagsA").ManifestTags!.Count==4
+            && categories.Entries.Single(entry=>entry.Manifest.InternalName=="TagsA") is { BotologyCategory:"Housing",Compatibility:null }
+            && categories.BotologyCategories!.SequenceEqual(["Housing","New category"]),
+            "Category metadata must keep official/third-party vocabularies separate by feed (including unadded feeds and shared labels), normalize both manifest fields, and match effective catalog categories without fabricating assessments.");
         var officialArt=new InstallerManifest("Fixture","Fixture",official,Dip17Channel:"stable");
         Require(officialArt.PublisherIconUrl=="https://raw.githubusercontent.com/goatcorp/PluginDistD17/main/stable/Fixture/images/icon.png"
             && officialArt.PublisherImageUrls.Length==5 && officialArt.PublisherImageUrls[0].EndsWith("/image1.png",StringComparison.Ordinal),
@@ -25,6 +59,25 @@ internal static class InstallerFeatureTests
         Require(InstallerCatalog.NormalizeRepository(" HTTPS://EXAMPLE.INVALID/Plugins/feed.json?channel=Stable ") == third,
             "Feed identity must normalize host/scheme without changing path/query case.");
         Require(InstallerCatalog.NormalizeRepository(other) != third, "Case-sensitive feed paths must remain distinct.");
+        var feeds=new[]{"https://raw.githubusercontent.com/sample-owner/tools/main/plugins.json",
+            "https://raw.githubusercontent.com/sample-owner/tools/testing/plugins.json",
+            "https://raw.githubusercontent.com/sample-owner/tools/main/plugins.json?track=Preview",
+            "https://raw.githubusercontent.com/sample-owner/tools/main/plugins.json?track=preview",
+            "https://raw.githubusercontent.com/other-owner/tools/main/plugins.json",
+            "https://raw.githubusercontent.com/sample-owner/tools/main/alternate.json",
+            "https://raw.githubusercontent.com/sample-owner/tools/main/plugins.json?track=A%2FB",
+            "https://raw.githubusercontent.com/sample-owner/tools/main/plugins.json?track=A/B"};
+        var namedSources=InstallerCatalog.Merge(new([],[],[],true,false),feeds.Select(url=>new InstallerManifest("Same","Same",url)),[],[]);
+        var feedSources=namedSources.Repositories.Where(repo=>feeds.Contains(repo.Url)).ToArray();
+        Require(feedSources.Select(r=>r.Name).Distinct(StringComparer.Ordinal).Count()==feeds.Length
+            && feedSources.All(r=>r.Name.Contains("/tools",StringComparison.Ordinal) && !r.Name.Contains("raw.githubusercontent",StringComparison.Ordinal)),
+            "GitHub feed labels must expose owner/repository and distinguish branches, feed paths and case-sensitive query values.");
+        Require(InstallerCatalog.RepositoryName(official)=="Dalamud" && InstallerCatalog.RepositoryName("https://source.invalid/feed.json")=="source.invalid"
+            && InstallerCatalog.RepositoryName("https://github.com/sample-owner/tools/raw/main/plugins.json")=="sample-owner/tools",
+            "Official, dedicated-host and GitHub URL labels must retain their actual source provenance.");
+        Require(namedSources.Entries.Select(e=>e.Identity).Distinct(StringComparer.Ordinal).Count()==feeds.Length
+            && InstallerCatalog.VisiblePinnedRepositories(new Configuration { PinnedRepositories=[feeds[0]] },namedSources).Single().Url==feeds[0],
+            "Readable source labels must not merge entries, rewrite URLs or invalidate existing pins.");
         Require(InstallerCatalog.NormalizeRepository("file:///repo.json") is null
             && InstallerCatalog.NormalizeRepository("https://user:secret@example.invalid/feed") is null,
             "Non-HTTP and credential-bearing values are not repository pins.");
@@ -103,6 +156,20 @@ internal static class InstallerFeatureTests
         var eligible = InstallerCatalog.Merge(addedHost, [], [], []);
         Require(eligible.Entries.Single(e => e.Manifest.InternalName == "Media").CanInstall,
             "An actual available, compatible host manifest from an enabled added source is installable.");
+        var installable=eligible.Entries.Single(e=>e.Manifest.InternalName=="Media");
+        var blocked=new[]{installable with { NameCollision=true },installable with { HostReady=false },installable with { HostSafeMode=true },
+            installable with { AvailableFromHost=false },installable with { Repository=installable.Repository with { IsAdded=false } },
+            installable with { Repository=installable.Repository with { IsEnabled=false } },installable with { Repository=installable.Repository with { Status="Fail" } },
+            installable with { Manifest=installable.Manifest with { ApiLevel=14 } },installable with { Manifest=installable.Manifest with { IsTestingExclusive=true } },
+            installable with { Manifest=installable.Manifest with { IsHidden=true } },installable with { Installed=native }};
+        using(var text=new UiText("en",_=>throw new InvalidOperationException()))
+        using(var locale=text.Enter())
+        {
+            var state=typeof(MainWindow).GetMethod("EntryState",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic)!;
+            Require(blocked.All(e=>!e.CanInstall && !string.IsNullOrWhiteSpace(e.InstallBlockReason) && (string)state.Invoke(null,[e])! != "Available")
+                && installable.InstallBlockReason is null && (string)state.Invoke(null,[installable])! == "Available",
+                "Every install blocker must have an honest displayed reason; Available must agree with the offered eligible action.");
+        }
         Require(eligible.Entries.Where(e => e.Manifest.InternalName != "Media").All(e => !e.CanInstall),
             "Testing-only, hidden and unknown-API records must not offer stable installation.");
         Require(InstallerCatalog.Merge(addedHost with { SafeMode = true }, [], [], []).Entries.All(e => !e.CanInstall)
@@ -114,7 +181,7 @@ internal static class InstallerFeatureTests
         {
             Repos = new[] { repoHandle },
             AvailablePlugins = new[] { new { InternalName = "Same", Name = "Native", Author = "Sam", SourceRepo = repoHandle,
-                AssemblyVersion = new Version(1, 2), DalamudApiLevel = 15, Dip17Channel="stable", ImageUrls = new[] { "https://example.invalid/image.png" } } },
+                AssemblyVersion = new Version(1, 2), DalamudApiLevel = 15, Dip17Channel="stable", ImageUrls = new[] { "https://example.invalid/image.png" },Tags=new[]{"chat"},CategoryTags=new[]{"UI"} } },
             PluginsReady = true, ReposReady = true, SafeMode = false,
         };
         var captured = PluginManagerBridge.CaptureInstallerHost(manager,
@@ -122,6 +189,7 @@ internal static class InstallerFeatureTests
         Require(captured.Ready && captured.Installed.Single().RepositoryUrl == official
             && captured.Repositories.Single(r => r.Url == third) is { IsAdded: true, IsEnabled: false }
             && captured.Manifests.Single().ImageUrls!.Length == 1 && captured.Manifests.Single().Dip17Channel=="stable"
+            && captured.Manifests.Single().CategoryTags!.SequenceEqual(["UI"]) && captured.Manifests.Single().Tags!.SequenceEqual(["chat"])
             && captured.Manifests.Single().PublisherIconUrl!.EndsWith("/stable/Same/images/icon.png",StringComparison.Ordinal),
             "Host capture must retain official origin, disabled-added repos and publisher media without touching the host.");
         return failures;

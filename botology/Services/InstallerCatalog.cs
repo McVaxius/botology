@@ -7,6 +7,7 @@ namespace botology.Services;
 public static class InstallerCatalog
 {
     public const string OfficialRepository = "https://kamori.goats.dev/Plugin/PluginMaster";
+    public const string DefaultPinnedRepository = "https://aethertek.io/x.json";
 
     public static string? NormalizeRepository(string? value)
     {
@@ -20,7 +21,13 @@ public static class InstallerCatalog
         => (NormalizeRepository(repository) ?? repository) + "\n" + internalName.Trim().ToUpperInvariant();
 
     public static string RepositoryName(string url)
-        => url == OfficialRepository ? "Dalamud" : Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Host.Length > 0 ? uri.Host : "Unknown source";
+    {
+        if(url==OfficialRepository) return "Dalamud";
+        if(!Uri.TryCreate(url,UriKind.Absolute,out var uri) || uri.Host.Length==0) return "Unknown source";
+        var parts=uri.AbsolutePath.Split('/',StringSplitOptions.RemoveEmptyEntries);
+        return (uri.Host is "raw.githubusercontent.com" or "github.com" or "www.github.com") && parts.Length>=2
+            ? Uri.UnescapeDataString(parts[0]+"/"+parts[1]) : uri.Host;
+    }
 
     public static IReadOnlyList<string> ParseAuthors(string? value)
         => (value ?? "").Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -32,48 +39,119 @@ public static class InstallerCatalog
         IEnumerable<PluginCatalogEntry> catalog,
         IReadOnlyList<PluginAssessmentRow> assessments)
     {
+        var catalogEntries=catalog.ToArray();
+        // A feed URL repeats for every manifest. Resolve it once in this merge, not once per plugin.
+        var sourceUrls = new Dictionary<string,string?>(StringComparer.Ordinal);
+        string? Source(string? value)
+        {
+            if(value is null) return null;
+            if(!sourceUrls.TryGetValue(value,out var url)) sourceUrls[value]=url=NormalizeRepository(value);
+            return url;
+        }
+        static string Key(string source,string name)=>source+"\n"+name.Trim().ToUpperInvariant();
         var repositories = new Dictionary<string, InstallerRepository>(StringComparer.Ordinal);
+        void AddSource(string url)
+        {
+            if(!repositories.ContainsKey(url))
+                repositories.Add(url,new(url,RepositoryName(url),false,false,url==OfficialRepository));
+        }
         foreach (var repo in host.Repositories)
-            if (NormalizeRepository(repo.Url) is { } url) repositories[url] = repo with { Url = url };
-        foreach (var entry in catalog)
+            if (Source(repo.Url) is { } url) repositories[url] = repo with { Url = url, Name=repo.IsOfficial?"Dalamud":repo.Name };
+        AddSource(DefaultPinnedRepository);
+        foreach (var entry in catalogEntries)
             foreach (var candidate in (entry.RepoJsonUrls ?? []).Append(entry.RepoJsonUrl ?? ""))
-                if (NormalizeRepository(candidate) is { } url)
-                    repositories.TryAdd(url, new(url, RepositoryName(url), false, false, url == OfficialRepository));
+                if (Source(candidate) is { } url) AddSource(url);
 
         var manifests = new Dictionary<string, InstallerManifest>(StringComparer.Ordinal);
-        foreach (var manifest in discovered.Concat(host.Manifests))
+        var hostIds = new HashSet<string>(StringComparer.Ordinal);
+        void AddManifest(InstallerManifest manifest,bool fromHost)
         {
-            if (string.IsNullOrWhiteSpace(manifest.InternalName) || NormalizeRepository(manifest.RepositoryUrl) is not { } url)
-                continue;
-            var normalized = manifest with { RepositoryUrl = url };
-            repositories.TryAdd(url, new(url, RepositoryName(url), false, false, url == OfficialRepository));
-            manifests[normalized.Identity] = normalized; // Current host data supersedes discovery metadata.
+            if (string.IsNullOrWhiteSpace(manifest.InternalName) || Source(manifest.RepositoryUrl) is not { } url) return;
+            var key=Key(url,manifest.InternalName);
+            AddSource(url);
+            manifests[key] = url==manifest.RepositoryUrl?manifest:manifest with { RepositoryUrl = url };
+            if(fromHost) hostIds.Add(key);
         }
-        var installedByIdentity = host.Installed.GroupBy(p => PluginIdentity(p.RepositoryUrl, p.Runtime.InternalName), StringComparer.Ordinal)
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.Runtime.IsLoaded).First(), StringComparer.Ordinal);
+        foreach(var manifest in discovered) AddManifest(manifest,false);
+        foreach(var manifest in host.Manifests) AddManifest(manifest,true); // Current host data supersedes discovery metadata.
+        var installedByIdentity = new Dictionary<string,InstallerInstalledPlugin>(StringComparer.Ordinal);
         foreach (var installed in host.Installed)
         {
-            var source = NormalizeRepository(installed.RepositoryUrl) ?? installed.RepositoryUrl;
-            var key = PluginIdentity(source, installed.Runtime.InternalName);
-            repositories.TryAdd(source, new(source, installed.IsDevelopment ? "Development" : RepositoryName(source), false, false, false));
+            var source = Source(installed.RepositoryUrl) ?? installed.RepositoryUrl;
+            var key = Key(source, installed.Runtime.InternalName);
+            if(!installedByIdentity.TryGetValue(key,out var prior) || installed.Runtime.IsLoaded && !prior.Runtime.IsLoaded)
+                installedByIdentity[key]=installed;
+            if(!repositories.ContainsKey(source)) repositories.Add(source,new(source,installed.IsDevelopment?"Development":RepositoryName(source),false,false,false));
             manifests.TryAdd(key, new(installed.Runtime.InternalName, installed.Runtime.DisplayName, source,
                 Version: installed.Runtime.Version.ToString(), ProjectUrl: installed.Runtime.RepoUrl));
         }
-        var hostIds = host.Manifests.Select(m => m.Identity).ToHashSet(StringComparer.Ordinal);
-        var installedNames = host.Installed.Select(p => p.Runtime.InternalName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var rows = manifests.Values.Select(manifest =>
+        foreach(var group in repositories.Values.GroupBy(r=>r.Name,StringComparer.OrdinalIgnoreCase).Where(g=>g.Count()>1).ToArray())
         {
-            installedByIdentity.TryGetValue(manifest.Identity, out var installed);
+            var variants=group.Where(r=>NormalizeRepository(r.Url) is not null).Select(r=>
+            {
+                var uri=new Uri(r.Url);
+                var parts=uri.AbsolutePath.Split('/',StringSplitOptions.RemoveEmptyEntries);
+                var github=uri.Host is "raw.githubusercontent.com" or "github.com" or "www.github.com";
+                if(github) parts=parts.Skip(2).ToArray();
+                var reference=parts.AsEnumerable();
+                if(parts.Length>2 && parts[0]=="refs" && parts[1] is "heads" or "tags") reference=reference.Skip(2);
+                else if(parts.Length>1 && parts[0] is "raw" or "blob") reference=reference.Skip(1);
+                var hint=github?(reference.FirstOrDefault()??"")+uri.Query:string.Join('/',parts)+uri.Query;
+                return (Repo:r,Parts:(string.Join('/',parts)+uri.Query).Split('/'),Hint:hint);
+            }).ToArray();
+            if(variants.Length<2) continue;
+            var first=0;
+            while(variants.All(v=>v.Parts.Length>first+1) && variants.Select(v=>v.Parts[first]).Distinct(StringComparer.Ordinal).Count()==1) first++;
+            var tail=0;
+            while(variants.All(v=>v.Parts.Length-first-tail>1) && variants.Select(v=>v.Parts[^(tail+1)]).Distinct(StringComparer.Ordinal).Count()==1) tail++;
+            foreach(var variant in variants)
+            {
+                var detail=variants.Count(v=>v.Hint==variant.Hint)==1?variant.Hint:
+                    string.Join('/',variant.Parts.Skip(first).Take(variant.Parts.Length-first-tail));
+                repositories[variant.Repo.Url]=variant.Repo with { Name=variant.Repo.Name+" · "+detail };
+            }
+        }
+        var installedNames = host.Installed.Select(p => p.Runtime.InternalName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var assessmentsByName = new Dictionary<string,PluginAssessmentRow>(StringComparer.Ordinal);
+        foreach(var assessment in assessments)
+            foreach(var token in assessment.Entry.MatchTokens)
+                assessmentsByName.TryAdd(PluginSnapshot.Normalize(token),assessment);
+        var catalogByName=new Dictionary<string,PluginCatalogEntry>(StringComparer.Ordinal);
+        foreach(var entry in catalogEntries)
+            foreach(var token in entry.MatchTokens) catalogByName.TryAdd(PluginSnapshot.Normalize(token),entry);
+        var tagSet=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        string[] ManifestTags(InstallerManifest manifest)
+        {
+            tagSet.Clear();
+            foreach(var tag in manifest.CategoryTags??[])
+                if(!string.IsNullOrWhiteSpace(tag)) tagSet.Add(tag.Trim());
+            foreach(var tag in manifest.Tags??[])
+                if(!string.IsNullOrWhiteSpace(tag)) tagSet.Add(tag.Trim());
+            return tagSet.ToArray();
+        }
+        var rows = manifests.Select(pair =>
+        {
+            var manifest=pair.Value;
+            installedByIdentity.TryGetValue(pair.Key, out var installed);
             var normalizedName = PluginSnapshot.Normalize(manifest.InternalName);
-            var assessment = assessments.FirstOrDefault(row => row.Entry.MatchTokens.Any(t => PluginSnapshot.Normalize(t) == normalizedName));
+            assessmentsByName.TryGetValue(normalizedName,out var assessment);
+            catalogByName.TryGetValue(normalizedName,out var categoryEntry);
+            var tags=ManifestTags(manifest);
+            var category=(assessment?.Entry.Category??categoryEntry?.Category)?.Trim();
             // An assessment can carry live installed state. Never attach another source's runtime to this entry.
-            if (assessment is not null && installed is null) assessment = assessment with { RuntimeState = null };
-            return new InstallerEntry(manifest, repositories[NormalizeRepository(manifest.RepositoryUrl) ?? manifest.RepositoryUrl],
-                installed, assessment, installed is null && installedNames.Contains(manifest.InternalName), hostIds.Contains(manifest.Identity), host.Ready, host.SafeMode);
-        }).OrderBy(e => e.Manifest.Name, StringComparer.OrdinalIgnoreCase).ThenBy(e => e.Identity, StringComparer.Ordinal).ToArray();
+            if (assessment?.RuntimeState is not null && installed is null) assessment = assessment with { RuntimeState = null };
+            return (pair.Key,Entry:new InstallerEntry(manifest, repositories[manifest.RepositoryUrl],
+                installed, assessment, installed is null && installedNames.Contains(manifest.InternalName), hostIds.Contains(pair.Key), host.Ready, host.SafeMode,tags,category));
+        }).OrderBy(e => e.Entry.Manifest.Name, StringComparer.OrdinalIgnoreCase).ThenBy(e => e.Key, StringComparer.Ordinal).Select(e=>e.Entry).ToArray();
         return new(repositories.Values.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase).ThenBy(r => r.Url, StringComparer.Ordinal).ToArray(),
-            rows, host.Ready, host.SafeMode, host.Error, assessments.SelectMany(row=>ParseAuthors(row.Metadata?.Author)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
+            rows, host.Ready, host.SafeMode, host.Error, assessments.SelectMany(row=>ParseAuthors(row.Metadata?.Author)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+            NormalizeLabels(rows.Where(row=>row.Repository.Url==OfficialRepository).SelectMany(row=>row.ManifestTags??[])),
+            NormalizeLabels(catalogEntries.Select(entry=>entry.Category).Concat(assessments.Select(row=>row.Entry.Category))),
+            NormalizeLabels(rows.Where(row=>row.Repository.Url!=OfficialRepository).SelectMany(row=>row.ManifestTags??[])));
     }
+
+    private static string[] NormalizeLabels(IEnumerable<string> values)=>values.Where(value=>!string.IsNullOrWhiteSpace(value))
+        .Select(value=>value.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(value=>value,StringComparer.OrdinalIgnoreCase).ToArray();
 
     public static IReadOnlyList<InstallerRepository> VisiblePinnedRepositories(Configuration configuration, InstallerCatalogSnapshot snapshot)
     {
@@ -84,9 +162,18 @@ public static class InstallerCatalog
 
     public static IReadOnlyList<string> VisiblePinnedAuthors(Configuration configuration, InstallerCatalogSnapshot snapshot)
     {
-        var available = snapshot.Entries.SelectMany(e => e.Manifest.Authors).Concat(snapshot.KnownAuthors??[]).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        return (configuration.PinnedAuthors ?? []).Where(p => !string.IsNullOrWhiteSpace(p) && available.Contains(p.Trim()))
-            .Select(p => p.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var pins=(configuration.PinnedAuthors??[]).Where(p=>!string.IsNullOrWhiteSpace(p)).Select(p=>p.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        if(pins.Length==0) return pins;
+        var missing=new HashSet<string>(pins,StringComparer.OrdinalIgnoreCase);
+        foreach(var author in snapshot.KnownAuthors??[]) missing.Remove(author);
+        var lookup=missing.GetAlternateLookup<ReadOnlySpan<char>>();
+        foreach(var entry in snapshot.Entries)
+        {
+            if(missing.Count==0) break;
+            var authors=entry.Manifest.Author.AsSpan();
+            foreach(var range in authors.SplitAny(",;")) lookup.Remove(authors[range].Trim());
+        }
+        return pins.Where(pin=>!missing.Contains(pin)).ToArray();
     }
 
     public static bool ToggleRepositoryPin(Configuration configuration, string repository)
@@ -130,7 +217,7 @@ public static class InstallerCatalog
             Text(e, "Description", Text(e, "Punchline")), Text(e, "AssemblyVersion"),
             TryProperty(e, "DalamudApiLevel", out var api) && api.ValueKind == JsonValueKind.Number && api.TryGetInt32(out var level) ? level : 0,
             Text(e, "RepoUrl"), Text(e, "IconUrl"), Strings(e, "ImageUrls"), Strings(e, "Tags"),
-            Flag(e, "IsTestingExclusive"), Flag(e, "IsHide"), Text(e, "Changelog"), Text(e, "Dip17Channel", Text(e, "_Dip17Channel")));
+            Flag(e, "IsTestingExclusive"), Flag(e, "IsHide"), Text(e, "Changelog"), Text(e, "Dip17Channel", Text(e, "_Dip17Channel")),Strings(e,"CategoryTags"));
     }
 
     private static bool TryProperty(JsonElement element, string name, out JsonElement value)

@@ -90,6 +90,13 @@ public sealed class PluginRuntimeState
         return false;
     }
 
+    internal bool MatchesNormalized(string[] candidates)
+    {
+        foreach(var candidate in candidates)
+            if(normalizedKeys.Contains(candidate)) return true;
+        return false;
+    }
+
     private void AddKey(string value)
     {
         var normalized = PluginSnapshot.Normalize(value);

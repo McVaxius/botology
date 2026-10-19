@@ -211,6 +211,7 @@ internal static class BotologyUiSmoke
                 var dtr=new DtrManagerWindow(backend);
                 var text=new UiText(language,host.PushFont);
                 var theme=BotologyPresentation.Theme(scenario.Accent);
+                PositionedWindow positionedOwner=scenario.Window switch { "settings"=>settings,"catalog"=>catalog,"dtr"=>dtr,_=>main };
                 theme.Density=scenario.Compact?MaterialDensity.Compact:MaterialDensity.Standard;
                 theme.Motion.Enabled=false;
                 void Draw()
@@ -220,10 +221,10 @@ internal static class BotologyUiSmoke
                     using var material=MaterialTheme.Push(theme,scenario.Scale,MaterialStyleMode.ColorsOnly);
                     using var geometry=BotologyPresentation.PushHostGeometry(scenario.Scale,scenario.Compact);
                     using var chrome=MaterialWindowChrome.Push();
+                    positionedOwner.PreDraw();
                     ImGui.SetNextWindowPos(Vector2.Zero); ImGui.SetNextWindowSize(new(scenario.Width,scenario.Height));
-                    ImGui.Begin(scenario.Window switch { "settings"=>"Botology Settings##Config","catalog"=>"Botology Catalog Editor##CatalogEditor",
-                        "dtr"=>"Botology DTR Manager##DtrManager",_=>"Botology##Main" },
-                        (scenario.Window switch { "settings"=>settings.Flags,"catalog"=>catalog.Flags,"dtr"=>dtr.Flags,_=>main.Flags })|ImGuiWindowFlags.NoSavedSettings);
+                    var open=true;
+                    ImGui.Begin(positionedOwner.WindowName,ref open,positionedOwner.Flags|ImGuiWindowFlags.NoSavedSettings);
                     try
                     {
                     switch(scenario.Window)
@@ -248,7 +249,7 @@ internal static class BotologyUiSmoke
                     if(scenario.Window=="main" && ImGui.GetCursorPosY()>scenario.Height-8*scenario.Scale)
                         throw new InvalidOperationException("Footer overflow: "+language+"/"+scenario.Name);
                     }
-                    finally { ImGui.End(); }
+                    finally { ImGui.End(); positionedOwner.PostDraw(); }
                 }
                 ImGui.GetIO().AddMousePosEvent(-1000,-1000);
                 // Native child scrollbars can change available width over several frames.
@@ -365,19 +366,28 @@ internal static class BotologyUiSmoke
         try
         {
             property.SetValue(null,save);
+            var fresh=Configuration.FromSaved(null);
+            fresh.Save();
+            if(!Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(((ConfigurationSaveProxy)save).Json!)!.PinnedRepositories.SequenceEqual([botology.Services.InstallerCatalog.DefaultPinnedRepository]))
+                throw new InvalidOperationException("Fresh default pin did not use the existing save path.");
+            botology.Services.InstallerCatalog.ToggleRepositoryPin(fresh,botology.Services.InstallerCatalog.DefaultPinnedRepository);fresh.Save();
+            var removed=Configuration.FromSaved(Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(((ConfigurationSaveProxy)save).Json!));
+            if(removed.PinnedRepositories.Count!=0) throw new InvalidOperationException("Saved default unpin was restored during load.");
             foreach(var language in UiText.Languages)
             {
                 configuration.UiLanguage=language.Code;configuration.UiAccentRgb=0xC98542;
-                configuration.UiShowTitlebarStatus=false;configuration.UiDetailedTitlebarStatus=false;configuration.Save();
+                configuration.UiShowTitlebarStatus=false;configuration.UiDetailedTitlebarStatus=false;
+                configuration.UiLanguageVisibleOnMainWindow=false;configuration.UiCompactVisibleOnMainWindow=true;configuration.UiTransparencyVisibleOnMainWindow=false;
+                configuration.Save();
                 var saved=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(((ConfigurationSaveProxy)save).Json!)!;
-                if(saved.UiShowTitlebarStatus || saved.UiDetailedTitlebarStatus || saved.UiLanguage!=language.Code || saved.UiAccentRgb!=0xC98542 || saved.Version!=1 || saved.PluginEnabled || !saved.ShowAuthorColumn || saved.IgnoredPluginIds.Single()!="fixture")
+                if(saved.UiShowTitlebarStatus || saved.UiDetailedTitlebarStatus || saved.UiLanguageVisibleOnMainWindow || !saved.UiCompactVisibleOnMainWindow || saved.UiTransparencyVisibleOnMainWindow || saved.UiLanguage!=language.Code || saved.UiAccentRgb!=0xC98542 || saved.Version!=1 || saved.PluginEnabled || !saved.ShowAuthorColumn || saved.IgnoredPluginIds.Single()!="fixture")
                     throw new InvalidOperationException("UI preferences did not use the existing save path: "+language.Code);
             }
         }
         finally { property.SetValue(null,previous); }
         using var english=new UiText("en",_=>throw new InvalidOperationException());
         var keys=english.Resources.Cast<DictionaryEntry>().ToDictionary(e=>(string)e.Key,e=>(string)e.Value!);
-        foreach(var statusKey in new[]{"Yes","No","Cancel"})
+        foreach(var statusKey in new[]{"Yes","No","Cancel","Other source installed","Testing only","Hidden plugin","Host not ready","Source unavailable","Source refresh required","Not available on this API","Required","Blocked","Left-click: require. Right-click: block. Click again to clear."})
             if(!keys.ContainsKey(statusKey)) throw new InvalidOperationException("Installer status/action resource missing: "+statusKey);
         string Fields(string value)=>string.Join(",",System.Text.RegularExpressions.Regex.Matches(value,@"(?<!\{)\{(\d+)(?:[^{}]*)\}").Select(m=>m.Groups[1].Value).Distinct().Order());
         foreach(var language in UiText.Languages)
@@ -656,7 +666,7 @@ internal sealed class SnapshotUi : IBotologyUi
     public void RunInstallerAction(InstallerAction action,string repository,string internalName="")=>Actions.Add(action+":"+repository+":"+internalName);
     public void ToggleRepositoryPin(string repository)=>botology.Services.InstallerCatalog.ToggleRepositoryPin(Configuration,repository);
     public void ToggleAuthorPin(string author)=>botology.Services.InstallerCatalog.ToggleAuthorPin(Configuration,author);
-    public AethertekUI.MaterialTitlebarStatus? TitlebarStatus => null;
+    public AethertekUI.MaterialTitlebarStatus? TitlebarStatus { get; set; }
     public Configuration Configuration { get; } = new() { ShowRepoColumn=false,ShowAiColumn=false,ShowIgnoreColumn=false,
         ShowAuthorColumn=true,ShowDetailedNotes=false,DtrIconEnabled="+",DtrIconDisabled="-" };
     public PluginAssessmentRow[] Rows { get; }
@@ -741,10 +751,13 @@ internal sealed unsafe class NativeTestContext : IDisposable
     private readonly MaterialTextRenderer shapedText;
     private readonly Dictionary<ulong,RegisteredTextTexture> textTextures=[];
     private nint nextTextTextureId=0x100000;
+    private ImFontAtlasPtr nativeAtlas;
+    private ImFontPtr nativeFont;
+    private SoftwarePreview.Texture nativeTexture;
     public byte* Pixels { get; private set; }
     public int AtlasWidth { get; private set; }
     public int AtlasHeight { get; private set; }
-    public NativeTestContext(int width,int height,float scale,string language)
+    public NativeTestContext(int width,int height,float scale,string language,bool separateNativeAtlas=false)
     {
         context=ImGui.CreateContext();
         shapedText=new MaterialTextRenderer(RegisterBitmap);
@@ -773,6 +786,15 @@ internal sealed unsafe class NativeTestContext : IDisposable
             }
         }
         RefreshAtlas();io.Fonts.SetTexID(0,new ImTextureID((nint)1));
+        if(separateNativeAtlas)
+        {
+            nativeAtlas=ImGui.ImFontAtlas();
+            nativeFont=nativeAtlas.AddFontFromFileTTF(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts),"seguisb.ttf"),22);
+            byte* nativePixels=null;int nativeWidth=0,nativeHeight=0;
+            nativeAtlas.GetTexDataAsRGBA32(0,&nativePixels,&nativeWidth,&nativeHeight);
+            nativeAtlas.SetTexID(0,new ImTextureID((nint)0x200000));
+            nativeTexture=new((nint)nativePixels,nativeWidth,nativeHeight);
+        }
         foreach(var font in fonts)
             foreach(var value in UiText.Values(text.Resources).Concat(UiText.Languages.Select(l=>l.Name)).Select(MaterialText.NativeGlyphText))
                 foreach(var character in value.Where(c=>!char.IsControl(c)))
@@ -781,6 +803,7 @@ internal sealed unsafe class NativeTestContext : IDisposable
             shapedText.CheckGlyphs(text.RequiredText,BotologyPresentation.AtlasHeight(role)*scale);
     }
     internal IDisposable PushFont(UiFontRole role) { ImGui.PushFont(fonts[(int)role]);return new FontScope(); }
+    internal IDisposable PushNativeFont() { ImGui.PushFont(nativeAtlas.IsNull?fonts[(int)UiFontRole.BodyStrong]:nativeFont);return new FontScope(); }
     private sealed class FontScope : IDisposable { public void Dispose()=>ImGui.PopFont(); }
     public void RefreshAtlas()
     {
@@ -797,7 +820,7 @@ internal sealed unsafe class NativeTestContext : IDisposable
         }
     }
     public SoftwarePreview.Texture Texture(ImTextureID id)
-        => id.Handle>=1 && id.Handle<=(ulong)textures.Length ? textures[(int)id.Handle-1]
+        => id.Handle==0x200000 && !nativeAtlas.IsNull ? nativeTexture : id.Handle>=1 && id.Handle<=(ulong)textures.Length ? textures[(int)id.Handle-1]
             : textTextures.TryGetValue(id.Handle,out var text) ? text.Texture : throw new InvalidOperationException("Unknown diagnostic texture.");
     public MaterialTextTexture RegisterBitmap(MaterialTextBitmap bitmap)
     {
@@ -825,11 +848,11 @@ internal sealed unsafe class NativeTestContext : IDisposable
         }
     }
     public void Frame(Action draw) { ImGui.NewFrame();try { using(shapedText.Push()) draw(); } finally { ImGui.Render(); } }
-    public void Click(Vector2 position,Action draw)
+    public void Click(Vector2 position,Action draw,ImGuiMouseButton button=ImGuiMouseButton.Left)
     {
         ImGui.GetIO().AddMousePosEvent(position.X,position.Y);Frame(draw);
-        ImGui.GetIO().AddMouseButtonEvent(0,true);Frame(draw);
-        ImGui.GetIO().AddMouseButtonEvent(0,false);Frame(draw);
+        ImGui.GetIO().AddMouseButtonEvent((int)button,true);Frame(draw);
+        ImGui.GetIO().AddMouseButtonEvent((int)button,false);Frame(draw);
     }
-    public void Dispose() { shapedText.Dispose();ImGui.DestroyContext(context);glyphPin.Free(); }
+    public void Dispose() { shapedText.Dispose();ImGui.DestroyContext(context);if(!nativeAtlas.IsNull) ImGui.Destroy(nativeAtlas);glyphPin.Free(); }
 }

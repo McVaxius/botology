@@ -331,5 +331,21 @@
   <data name="Yes" xml:space="preserve"><value>Ya</value></data>
   <data name="No" xml:space="preserve"><value>Tidak</value></data>
   <data name="Cancel" xml:space="preserve"><value>Batal</value></data>
+  <data name="Other source installed" xml:space="preserve"><value>Terpasang dari sumber lain</value></data>
+  <data name="Testing only" xml:space="preserve"><value>Hanya versi uji</value></data>
+  <data name="Hidden plugin" xml:space="preserve"><value>Plugin tersembunyi</value></data>
+  <data name="Host not ready" xml:space="preserve"><value>Host belum siap</value></data>
+  <data name="Source unavailable" xml:space="preserve"><value>Sumber tidak tersedia</value></data>
+  <data name="Source refresh required" xml:space="preserve"><value>Perlu menyegarkan sumber</value></data>
+  <data name="Not available on this API" xml:space="preserve"><value>Tidak tersedia untuk API ini</value></data>
+  <data name="Required" xml:space="preserve"><value>Wajib</value></data>
+  <data name="Blocked" xml:space="preserve"><value>Diblokir</value></data>
+  <data name="Left-click: require. Right-click: block. Click again to clear." xml:space="preserve"><value>Klik kiri: wajibkan. Klik kanan: blokir. Klik lagi untuk menghapus.</value></data>
+  <data name="Categories &amp; tags" xml:space="preserve"><value>Kategori &amp; tag</value></data>
+  <data name="Clear categories" xml:space="preserve"><value>Hapus filter kategori</value></data>
+  <data name="Find a tag..." xml:space="preserve"><value>Cari tag...</value></data>
+  <data name="Scroll categories left" xml:space="preserve"><value>Gulir kategori ke kiri</value></data>
+  <data name="Scroll categories right" xml:space="preserve"><value>Gulir kategori ke kanan</value></data>
+  <data name="Third-party" xml:space="preserve"><value>Pihak ketiga</value></data>
 </root>
 

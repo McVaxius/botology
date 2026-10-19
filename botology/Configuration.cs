@@ -71,5 +71,8 @@ public sealed class Configuration : IPluginConfiguration
     public List<string> PinnedRepositories { get; set; } = new();
     public List<string> PinnedAuthors { get; set; } = new();
 
+    internal static Configuration FromSaved(Configuration? saved)=>saved??new Configuration
+        { PinnedRepositories=[Services.InstallerCatalog.DefaultPinnedRepository] };
+
     public void Save() => Plugin.PluginInterface.SavePluginConfig(this);
 }

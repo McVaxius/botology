@@ -177,13 +177,14 @@ internal static class UiGui
         if (window.IsNull) return;
         var extraRightWidth = AdditionalTitleButtonWidth(owner, ImGuiP.CalcFontSize(window));
         var texture = BotologyPresentation.OriginalIcon;
+        var nativeCaptionFont = ImGui.GetFont();
         using var font = UiText.Font(UiFontRole.Body);
         if (status is { } summary)
             MaterialWindowHeader.PaintTitleWithStatus(window, display, texture?.Handle ?? default,
-            texture is null ? Vector2.Zero : new Vector2(texture.Width, texture.Height), summary, extraRightWidth, owner.ShowCloseButton);
+            texture is null ? Vector2.Zero : new Vector2(texture.Width, texture.Height), summary, nativeCaptionFont, extraRightWidth, owner.ShowCloseButton);
         else
             MaterialWindowHeader.PaintTitle(window, display, texture?.Handle ?? default,
-            texture is null ? Vector2.Zero : new Vector2(texture.Width, texture.Height), extraRightWidth, owner.ShowCloseButton);
+            texture is null ? Vector2.Zero : new Vector2(texture.Width, texture.Height), nativeCaptionFont, extraRightWidth, owner.ShowCloseButton);
     }
 
     internal static void ReserveTitleSpace(Window owner, string visible, float minimumWidth)

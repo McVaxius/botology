@@ -25,12 +25,46 @@ public sealed class PluginSnapshot
             .Where(candidate => !string.IsNullOrEmpty(candidate))
             .ToArray();
 
-        return Plugins
-            .Where(plugin => plugin.MatchesAny(normalized))
-            .OrderByDescending(plugin => plugin.IsLoaded)
-            .ThenBy(plugin => plugin.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
+        if(normalized.Length==0) return null;
+        PluginRuntimeState? best=null;
+        for(var index=0;index<Plugins.Count;index++)
+        {
+            var plugin=Plugins[index];
+            if(!plugin.MatchesNormalized(normalized)) continue;
+            if(best is null || CompareMatches(plugin,best)<0)
+                best=plugin;
+        }
+        return best;
     }
+
+    internal PluginRuntimeState?[] FindBestMatches(IEnumerable<string[]> candidateGroups)
+    {
+        // All assessment rows share this capture. Build one local index instead of rescanning every plugin per row.
+        var matches=new Dictionary<string,(PluginRuntimeState Plugin,int Order)>(StringComparer.Ordinal);
+        void Add(string value,PluginRuntimeState plugin,int order)
+        {
+            var key=Normalize(value);
+            if(key.Length>0 && (!matches.TryGetValue(key,out var previous) || CompareMatches(plugin,previous.Plugin)<0)) matches[key]=(plugin,order);
+        }
+        for(var index=0;index<Plugins.Count;index++)
+        {
+            var plugin=Plugins[index];Add(plugin.InternalName,plugin,index);Add(plugin.Name,plugin,index);
+        }
+        return candidateGroups.Select(candidates=>
+        {
+            PluginRuntimeState? best=null;var bestOrder=int.MaxValue;
+            foreach(var candidate in candidates)
+                if(matches.TryGetValue(Normalize(candidate),out var match))
+                {
+                    var comparison=best is null?-1:CompareMatches(match.Plugin,best);
+                    if(comparison<0 || comparison==0 && match.Order<bestOrder) { best=match.Plugin;bestOrder=match.Order; }
+                }
+            return best;
+        }).ToArray();
+    }
+
+    private static int CompareMatches(PluginRuntimeState left,PluginRuntimeState right)=>left.IsLoaded==right.IsLoaded
+        ?StringComparer.OrdinalIgnoreCase.Compare(left.DisplayName,right.DisplayName):left.IsLoaded?-1:1;
 
     public bool IsInstalled(params string[] candidates)
         => FindBestMatch(candidates) != null;

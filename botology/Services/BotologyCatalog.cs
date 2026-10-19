@@ -77,9 +77,10 @@ public static class BotologyCatalog
         var effectiveEntries = Entries;
         var effectiveEntryMap = effectiveEntries.ToDictionary(entry => entry.Id, StringComparer.OrdinalIgnoreCase);
         var rows = new List<PluginAssessmentRow>(effectiveEntries.Count);
+        var runtimeMatches=snapshot.FindBestMatches(effectiveEntries.Select(entry=>entry.MatchTokens));
         foreach (var entry in effectiveEntries)
         {
-            var runtimeState = snapshot.FindBestMatch(entry.MatchTokens);
+            var runtimeState = runtimeMatches[rows.Count];
             var assessment = Evaluate(entry, runtimeState, snapshot, effectiveEntryMap);
             rows.Add(new PluginAssessmentRow(entry, runtimeState, assessment, ignoredIds.Contains(entry.Id)));
         }

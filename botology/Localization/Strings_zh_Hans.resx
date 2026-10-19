@@ -333,4 +333,20 @@
   <data name="Yes" xml:space="preserve"><value>是</value></data>
   <data name="No" xml:space="preserve"><value>否</value></data>
   <data name="Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Other source installed" xml:space="preserve"><value>已从其他来源安装</value></data>
+  <data name="Testing only" xml:space="preserve"><value>仅测试版</value></data>
+  <data name="Hidden plugin" xml:space="preserve"><value>隐藏的插件</value></data>
+  <data name="Host not ready" xml:space="preserve"><value>宿主尚未就绪</value></data>
+  <data name="Source unavailable" xml:space="preserve"><value>来源不可用</value></data>
+  <data name="Source refresh required" xml:space="preserve"><value>需要刷新来源</value></data>
+  <data name="Not available on this API" xml:space="preserve"><value>当前 API 不可用</value></data>
+  <data name="Required" xml:space="preserve"><value>必需</value></data>
+  <data name="Blocked" xml:space="preserve"><value>已屏蔽</value></data>
+  <data name="Left-click: require. Right-click: block. Click again to clear." xml:space="preserve"><value>左键：必需。右键：屏蔽。再次用同一按键单击可清除。</value></data>
+  <data name="Categories &amp; tags" xml:space="preserve"><value>分类与标签</value></data>
+  <data name="Clear categories" xml:space="preserve"><value>清除分类筛选</value></data>
+  <data name="Find a tag..." xml:space="preserve"><value>查找标签...</value></data>
+  <data name="Scroll categories left" xml:space="preserve"><value>向左滚动分类</value></data>
+  <data name="Scroll categories right" xml:space="preserve"><value>向右滚动分类</value></data>
+  <data name="Third-party" xml:space="preserve"><value>第三方</value></data>
 </root>
