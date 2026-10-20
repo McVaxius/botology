@@ -1,3 +1,21 @@
+2026-10-20 - Uniform Discover cards (local implementation)
+
+- Use one shared card size and aligned media, title, metadata and action areas across the grid. Long titles and preview loading/failure no longer resize individual cards.
+- Display the real plugin icon prominently in the same media area when a screenshot is absent, enlarging small icons proportionally while retaining complete artwork. Keep every title below its media and move subordinate missing-preview feedback to the existing tooltip.
+- Preserve media geometry and typography between Regular and Compact; Compact tightens surrounding spacing and control padding. Retain responsive columns, visible compatibility, source favorites, actions and browsing anchors.
+- Local verification passed 39 native installer cases across 15 locales and eight title-hook contexts. Core/discovery/media checks passed; the unchanged performance budgets passed on rerun after an initial timing failure. Game appearance and timing remain user-operated checks.
+
+2026-10-19 - Installer card and media proportions (local implementation)
+
+- Derive Discover spacing and controls from current text and container proportions. Keep the media canvas and screenshot/icon sizing stable when switching Regular and Compact; Compact tightens surrounding padding and gaps without changing grid breakpoints, artwork size or typography. Fit complete publisher screenshots without the extra inset.
+- Combine the real icon, title and subordinate media feedback in missing-preview identity headers. Keep Clear filter beside result tools when space permits and make the collapsed category strip slimmer while retaining all three expandable tag tracks.
+- Size pinned-source rows and eligibility badge icons from current text/control metrics so they follow the same relative layout and density rules; reserve matching badge geometry in the table.
+- Measure card content against the native rounded allocation, keeping full-width badges and actions inside the card's inset at fractional layout widths.
+- Clear filter uses the new result set immediately so browsing returns to its beginning instead of retaining a filtered result's old anchor.
+- Measure card bodies and row heights locally so long titles and compatibility text do not inflate unrelated rows. Use shaped text metrics for bounded multiline titles, tighten internal vertical spacing, retain visible-card clipping and preserve browsing anchors through layout and media-state changes.
+- Reuse measured geometry and known preview states across unchanged host captures so periodic refreshes do not expand failed-preview cards or remeasure unchanged titles.
+- Local verification passed: 39 native installer cases across 15 locales, 540 readability checks, retained-window interactions/renders and the unchanged 250/5,000-entry performance budgets. Game visual acceptance remains user-operated.
+
 2026-10-19 - Installer categories and initial favorite (local implementation)
 
 - Add a folding horizontal category chooser with separate official Dalamud tags, Botology compatibility categories and third-party repository tags. Separate the two manifest-tag vocabularies by their actual feed URL, with searchable tracks and multiple required/blocked selections; matching captions in different rows remain independent. Retain selected filters when folded and keep the full vocabulary reachable without per-frame whole-list layout work.

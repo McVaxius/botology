@@ -20,7 +20,7 @@ internal static class InstallerUiTests
         foreach(var count in new[]{250,5000})
         {
             const string source="https://benchmark.invalid/plugins.json";
-            var manifests=Enumerable.Range(0,count).Select(i=>new InstallerManifest("Bench"+i,"Plugin "+i.ToString("00000"),
+            var manifests=Enumerable.Range(0,count).Select(i=>new InstallerManifest("Bench"+i,"Plugin "+i.ToString("00000")+(i==count/2?"\nA local multiline title outlier":""),
                 i%2==0?InstallerCatalog.OfficialRepository:source,"SampleAuthor","Publisher description.","1.0",15,Tags:["Utility","Tag "+i.ToString("00000"),"Unicode हिन्दी caption that stays readable"],CategoryTags:["UI"," utility "])).ToArray();
             var assessments=Enumerable.Range(0,1000).Select(i=>new PluginAssessmentRow(new("bench-"+i,"Category "+(i%400).ToString("00000"),"Plugin "+i,
                 i==1?["Bench1","LegacyAlias1","B-E-N-C-H-0"]:["Bench"+i,"LegacyAlias"+i],"Fixture notes."),null,new(AssessmentSeverity.Green,"Not installed.",""),false)).ToArray();
@@ -107,8 +107,10 @@ internal static class InstallerUiTests
             var tableScroll=0f;var tableScrollMax=0f;
             var categoryScroll=0f;var categoryScrollMax=0f;var visibleCategories=0;
             var scrollCategories=false;var focusCategories=false;string? focusedCategory=null;
+            var windowWidth=1440f;var renderedCards=0;
             main.MeasureBounds=(name,min,max)=>
             {
+                if(name.StartsWith("preview-slot-",StringComparison.Ordinal)) renderedCards++;
                 if(name is "installer-browse" or "installer-column-Plugin")
                 {
                     layoutMilliseconds=clock.Elapsed.TotalMilliseconds;
@@ -134,10 +136,10 @@ internal static class InstallerUiTests
             };
             void Draw()
             {
-                reservedRows.Clear();renderedRows=0;visibleCategories=0;
+                reservedRows.Clear();renderedRows=0;visibleCategories=0;renderedCards=0;
                 using var locale=text.Enter(); using var material=MaterialTheme.Push(theme,1,MaterialStyleMode.ColorsOnly);
                 using var geometry=BotologyPresentation.PushHostGeometry(1,false);using var chrome=MaterialWindowChrome.Push();
-                main.PreDraw(); ImGui.SetNextWindowPos(Vector2.Zero); ImGui.SetNextWindowSize(new(1440,960));
+                main.PreDraw(); ImGui.SetNextWindowPos(Vector2.Zero); ImGui.SetNextWindowSize(new(windowWidth,960));
                 var open=true;ImGui.Begin(main.WindowName,ref open,main.Flags|ImGuiWindowFlags.NoSavedSettings);
                 main.Draw();ImGui.End();main.PostDraw();
             }
@@ -147,8 +149,14 @@ internal static class InstallerUiTests
             var botologyFilters=(System.Collections.IDictionary)typeof(MainWindow).GetField("botologyCategoryFilters",categoryFlags)!.GetValue(main)!;
             var requiredMode=Enum.Parse(dalamudFilters.GetType().GenericTypeArguments[1],"Required");
             var blockedMode=Enum.Parse(dalamudFilters.GetType().GenericTypeArguments[1],"Blocked");
-            foreach(var scenario in new[]{"cards","scrolled","authors","source-sort","state-sort","author-sort","version-sort","categories","category-scrolled","category-selections","table","table-scrolled"})
+            foreach(var scenario in new[]{"cards","snapshot-refresh","scrolled","card-reflow","authors","source-sort","state-sort","author-sort","version-sort","categories","category-scrolled","category-selections","table","table-scrolled"})
             {
+            windowWidth=scenario=="card-reflow"?1200:1440;
+            if(scenario=="snapshot-refresh")
+            {
+                backend.Installer=catalog with { Entries=catalog.Entries.Select(entry=>entry with { Manifest=entry.Manifest with { } }).ToArray() };
+                typeof(MainWindow).GetField("nextInstallerSnapshot",categoryFlags)!.SetValue(main,DateTime.MinValue);
+            }
             if(scenario=="categories")
             {
                 typeof(MainWindow).GetField("installerSort",categoryFlags)!.SetValue(main,0);
@@ -184,6 +192,8 @@ internal static class InstallerUiTests
                 typeof(MainWindow).GetField("pinsExpanded",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(main,false);
                 typeof(MainWindow).GetField("tableView",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(main,true);
             }
+            var firstAllocated=GC.GetAllocatedBytesForCurrentThread();clock.Restart();host.Frame(Draw);
+            Console.WriteLine($"Installer first layout/reflow {scenario}: {count} entries; {clock.Elapsed.TotalMilliseconds:F2} ms/{GC.GetAllocatedBytesForCurrentThread()-firstAllocated:N0} bytes.");
             for(var warm=0;warm<3;warm++) host.Frame(Draw);
             var frames=new List<double>();var layouts=new List<double>();var allocations=new List<long>();
             for(var frame=0;frame<12;frame++)
@@ -195,6 +205,8 @@ internal static class InstallerUiTests
             frames.Sort();layouts.Sort();allocations.Sort();
             Console.WriteLine($"Installer performance {scenario}: {count} manifests/1000 assessments; merge {mergeMilliseconds:F2} ms/{mergeBytes:N0} bytes; native frame median {frames[frames.Count/2]:F2} ms, max {frames[^1]:F2} ms; layout median {layouts[layouts.Count/2]:F2} ms; median {allocations[allocations.Count/2]:N0} bytes/frame.");
             if(allocations[allocations.Count/2]>(scenario=="version-sort"?768_000:512_000) || frames[frames.Count/2]>50) throw new Exception("Installer steady frames exceeded their CPU/allocation budget.");
+            if(scenario is "cards" or "snapshot-refresh" or "scrolled" or "card-reflow" or "authors" && renderedCards is <1 or >64)
+                throw new Exception("Card controls were not restricted to visible rows.");
             if(scenario.StartsWith("table",StringComparison.Ordinal) && renderedRows is <1 or >64) throw new Exception("Table controls were not restricted to visible rows.");
             if(scenario.StartsWith("categor",StringComparison.Ordinal) && visibleCategories is <1 or >48) throw new Exception("Category strip submitted the complete offscreen vocabulary.");
             if(scenario=="category-scrolled" && (categoryScroll<=0 || Math.Abs(categoryScroll-categoryScrollMax)>1)) throw new Exception("Horizontal category overflow did not reach all labels.");
@@ -355,10 +367,13 @@ internal static class InstallerUiTests
     {
         BotologyUiSmoke.CheckPreferencesAndResources();
         var selectedLanguages=(languages is { Length:>0 }?languages:UiText.Languages.Select(l=>l.Code)).ToArray();
+        var densityEvidence=new Dictionary<string,(float Media,float Body,float Font)>();
         var cases=selectedLanguages.SelectMany(language=>new[]{false,true}.Select(compact=>(language,compact,width:1440,height:960,scale:1f,accent:0x1CC9E6u,suffix:""))).ToList();
         if(selectedLanguages.Contains("en"))
         {
             foreach(var compact in new[]{false,true}) cases.Add(("en",compact,800,816,1,0x1CC9E6,"reference"));
+            cases.Insert(0,("en",false,2048,1187,1,0x1CC9E6,"wide"));
+            cases.Insert(1,("en",true,2048,1187,1,0x1CC9E6,"wide"));
             cases.Add(("en",false,1200,1224,1.5f,0x1CC9E6,"scaled"));
             cases.Add(("en",true,1240,1000,1,0x808080,"grey"));
             cases.Add(("en",false,1240,1000,1,0x000000,"black"));
@@ -375,12 +390,23 @@ internal static class InstallerUiTests
             const string source="https://raw.githubusercontent.com/fixture-owner/fixture-tools/main/plugins.json";
             var manifests=Enumerable.Range(0,48).Select(i=>new InstallerManifest("Fixture"+i,"Plugin "+i.ToString("00"),i%4==2?InstallerCatalog.OfficialRepository:source,i<24?"SampleAuthor":"OtherAuthor",
                 "Publisher description.",i==2?"2.0":i==6?"10.0":"1.0",15,Tags:i%3==0?["Crafting","Housing"]:["Utility"],CategoryTags:["UI"])).ToArray();
-            var withMedia=suffix is "reference" or "scaled" or "translated-scaled-custom";
+            var withMedia=suffix is "reference" or "wide" or "scaled" or "translated-scaled-custom" || language=="hi";
             const string still="https://fixture.invalid/layout.bmp",gif="https://fixture.invalid/preview.gif";
             if(withMedia)
             {
+                manifests=manifests.Select(manifest=>manifest with { IconUrl="https://fixture.invalid/icon.bmp" }).ToArray();
                 manifests[0]=manifests[0] with { ImageUrls=[still,gif,"https://fixture.invalid/missing.bmp"] };
+                if(language=="hi") manifests[0]=manifests[0] with { Name="Plugin 00\nहिन्दी शीर्षक" };
                 manifests[1]=manifests[1] with { ImageUrls=[gif] };
+                manifests[2]=manifests[2] with { IconUrl="https://fixture.invalid/icon.bmp" };
+                manifests[3]=manifests[3] with { ImageUrls=["https://fixture.invalid/portrait.bmp"] };
+                manifests[4]=manifests[4] with { ImageUrls=["https://fixture.invalid/square.bmp"] };
+                manifests[5]=manifests[5] with { ImageUrls=["https://fixture.invalid/missing.bmp"] };
+                manifests[6]=manifests[6] with { ImageUrls=["https://fixture.invalid/failed.bmp"] };
+                manifests[8]=manifests[8] with { ImageUrls=["https://fixture.invalid/loading.bmp"] };
+                manifests[7]=manifests[7] with { IconUrl="https://fixture.invalid/portrait.bmp" };
+                manifests[9]=manifests[9] with { IconUrl=null };
+                manifests[40]=manifests[40] with { Name="Plugin 40 with a long title that wraps locally\n"+(language=="hi"?"हिन्दी शीर्षक":"Second title line") };
             }
             manifests=manifests.Concat(new[]{"testing/plugins.json","main/plugins.json?track=preview"}.Select(path=>
                 new InstallerManifest("Fixture8","Plugin 08","https://raw.githubusercontent.com/fixture-owner/fixture-tools/"+path,"OtherAuthor","Alternate source fixture.","1.0",15))).ToArray();
@@ -407,18 +433,28 @@ internal static class InstallerUiTests
             backend.Configuration.PinnedRepositories=[source,"invalid"];
             backend.Configuration.PinnedAuthors=["SampleAuthor","Invalid Author"];
             using var main=new MainWindow(backend);
-            using var fixtureMedia=withMedia?new InstallerMedia(frame=>new PreviewTexture(host,frame),new HttpClient(new PreviewImages(
-                compact?180:suffix=="scaled"?240:320,compact?320:suffix=="scaled"?240:180))):null;
+            // The supplied diagnostic exceeds the normal 1880px maximum at this fixture's 100% host scale.
+            // Permit that physical diagnostic size here while retaining the production Draw/PreDraw paths and packing policy.
+            if(suffix=="wide" && main.SizeConstraints is { } limits)
+                main.SizeConstraints=new Dalamud.Interface.Windowing.WindowSizeConstraints {
+                    MinimumSize=limits.MinimumSize,MaximumSize=Vector2.Max(limits.MaximumSize,new(width,height)) };
+            using var fixtureImages=withMedia?new PreviewImages(320,180):null;
+            using var fixtureMedia=fixtureImages is not null?new InstallerMedia(frame=>new PreviewTexture(host,frame),new HttpClient(fixtureImages)):null;
             if(fixtureMedia is not null) typeof(MainWindow).GetField("installerMedia",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(main,fixtureMedia);
             var bounds=new Dictionary<string,(Vector2 Min,Vector2 Max)>();
             var scrollRequest=false;
             var requestedScroll=680f;
             var browseScroll=0f;
+            var browseScrollMax=0f;
+            var bodyFontSize=0f;var bodyLineHeight=0f;
             var browseClip=(Min:Vector2.Zero,Max:Vector2.Zero);
             var contentScrollRequest=false;
             var requestedContentScroll=0f;
             var contentScroll=0f;
             var contentClip=(Min:Vector2.Zero,Max:Vector2.Zero);
+            var galleryClip=(Min:Vector2.Zero,Max:Vector2.Zero);
+            var shapedTitleId="card-title-"+InstallerCatalog.PluginIdentity(source,"Fixture0");
+            var shapedTitleRequired=0f;
             uint expectedGrid=0,actualGrid=0;
             string? clippedPin=null;
             main.MeasureBounds=(name,min,max)=>
@@ -428,6 +464,12 @@ internal static class InstallerUiTests
                     && max.Y-min.Y>bounds["installer-table-reserved-"+name[20..]].Max.Y-bounds["installer-table-reserved-"+name[20..]].Min.Y+.5f)
                     throw new Exception("Translated table row outgrew its reserved wrapped height: "+language);
                 if(name=="table-header") actualGrid=ImGuiP.GetCurrentTable().ID;
+                if(name=="media-play") { var clip=ImGuiP.GetCurrentWindow().InnerClipRect;galleryClip=(clip.Min,clip.Max); }
+                if(language=="hi" && name==shapedTitleId)
+                {
+                    using var font=UiText.Font(UiFontRole.BodyStrong);
+                    shapedTitleRequired=MaterialText.Measure(manifests[0].Name,false,Math.Max(1,ImGui.GetWindowWidth()-24*scale)).Y;
+                }
                 if(name=="installer-content")
                 {
                     var clip=ImGuiP.GetCurrentWindow().InnerClipRect;contentClip=(clip.Min,clip.Max);
@@ -437,30 +479,40 @@ internal static class InstallerUiTests
                 if(name.StartsWith("pin-",StringComparison.Ordinal) && max.X>ImGui.GetWindowPos().X+ImGui.GetWindowContentRegionMax().X+.5f) clippedPin=name;
                 if(name=="installer-browse")
                 {
+                    bodyFontSize=ImGui.GetFontSize();bodyLineHeight=ImGui.GetTextLineHeight();
                     var clip=ImGuiP.GetCurrentWindow().InnerClipRect;browseClip=(clip.Min,clip.Max);
                     if(scrollRequest) { ImGui.SetScrollY(requestedScroll);scrollRequest=false; }
                     browseScroll=ImGui.GetScrollY();
+                    browseScrollMax=ImGui.GetScrollMaxY();
                 }
             };
             var theme=BotologyPresentation.Theme(accent); theme.Density=compact?MaterialDensity.Compact:MaterialDensity.Standard; theme.Motion.Enabled=false;
             void Draw()
             {
-                bounds.Clear(); clippedPin=null; using var locale=text.Enter(); using var material=MaterialTheme.Push(theme,scale,MaterialStyleMode.ColorsOnly);
-                using var geometry=BotologyPresentation.PushHostGeometry(scale,compact);
+                bounds.Clear(); clippedPin=null;shapedTitleRequired=0;using var locale=text.Enter(); using var material=MaterialTheme.Push(theme,scale,MaterialStyleMode.ColorsOnly);
+                using var geometry=BotologyPresentation.PushHostGeometry(scale,theme.Density==MaterialDensity.Compact);
                 using var chrome=MaterialWindowChrome.Push();
                 using var nativeFont=host.PushNativeFont();
                 main.PreDraw();
                 ImGui.SetNextWindowPos(Vector2.Zero);ImGui.SetNextWindowSize(new(width,height));
                 var open=true;
                 ImGui.Begin("Botology##Main",ref open,main.Flags|ImGuiWindowFlags.NoSavedSettings);
+                if(suffix=="wide" && Vector2.Distance(ImGui.GetWindowSize(),new(width,height))>.5f)
+                    throw new Exception("Wide fixture did not render the actual supplied window dimensions.");
                 expectedGrid=ImGui.GetID("BotologyGrid");
                 main.Draw(); ImGui.End(); main.PostDraw();
             }
             void Settle() { for(var i=0;i<4;i++) host.Frame(Draw); }
             void Click(string id,ImGuiMouseButton button=ImGuiMouseButton.Left)
             {
-                if(!bounds.TryGetValue(id,out var rect)) throw new Exception("Missing installer action: "+id+" in "+language+"/"+compact+"/"+suffix);
-                if((id.StartsWith("repo-add-",StringComparison.Ordinal) || id.StartsWith("nav-",StringComparison.Ordinal)) && (rect.Min.Y<contentClip.Min.Y || rect.Max.Y>contentClip.Max.Y))
+                if(!bounds.TryGetValue(id,out var rect))
+                {
+                    SoftwarePreview.Save(Path.Combine(AppContext.BaseDirectory,"artifacts","installer",suffix,language+(compact?"-compact":"-regular")+"-interaction-failed.png"),host);
+                    throw new Exception("Missing installer action: "+id+" in "+language+"/"+compact+"/"+suffix);
+                }
+                if((id.StartsWith("repo-add-",StringComparison.Ordinal) || id.StartsWith("nav-",StringComparison.Ordinal)
+                    || id.StartsWith("profile-",StringComparison.Ordinal) || id.StartsWith("media-",StringComparison.Ordinal))
+                    && (rect.Min.Y<contentClip.Min.Y || rect.Max.Y>contentClip.Max.Y))
                 {
                     requestedContentScroll=Math.Max(0,contentScroll+(rect.Max.Y>contentClip.Max.Y?rect.Max.Y-contentClip.Max.Y+8*scale:rect.Min.Y-contentClip.Min.Y-8*scale));
                     contentScrollRequest=true;Settle();
@@ -487,10 +539,79 @@ internal static class InstallerUiTests
                 }
                 host.Frame(Draw);
             }
+            void CheckCardBounds()
+            {
+                var cards=bounds.Where(pair=>pair.Key.StartsWith("card-",StringComparison.Ordinal)
+                    && backend.Installer.Entries.Any(entry=>pair.Key=="card-"+entry.Identity)).ToArray();
+                var template=cards.Length>0?cards[0]:default;
+                foreach(var (name,card) in cards)
+                {
+                    var identity=name[5..];
+                    if(Vector2.Distance(card.Max-card.Min,template.Value.Max-template.Value.Min)>.5f)
+                        throw new Exception("Media state or text changed an individual card's dimensions: "+language+"/"+compact+"/"+suffix);
+                    foreach(var prefix in new[]{"preview-slot-","card-title-","card-state-","card-compatibility-","card-pin-"})
+                        if(bounds.TryGetValue(prefix+identity,out var region) && bounds.TryGetValue(prefix+template.Key[5..],out var shared)
+                            && Math.Abs((region.Min.Y-card.Min.Y)-(shared.Min.Y-template.Value.Min.Y))>.5f)
+                            throw new Exception("Card regions do not align within the shared template: "+prefix+language+"/"+suffix);
+                    if(bounds["card-title-"+identity].Min.Y<bounds["preview-slot-"+identity].Max.Y)
+                        throw new Exception("A plugin title moved into the media band.");
+                    var entry=backend.Installer.Entries.First(entry=>entry.Identity==identity);
+                    if(fixtureMedia is not null && entry.Manifest.IconUrl is { } iconUrl
+                        && bounds.TryGetValue("preview-icon-"+identity,out var iconInk)
+                        && fixtureMedia.Get(iconUrl,false,out _) is { } iconTexture)
+                    {
+                        var slot=bounds["preview-slot-"+identity];var extent=slot.Max-slot.Min;
+                        var fit=Math.Min(extent.X/iconTexture.Width,extent.Y/iconTexture.Height);
+                        if(Vector2.Distance(iconInk.Max-iconInk.Min,new Vector2(iconTexture.Width,iconTexture.Height)*fit)>.5f
+                            || Vector2.Distance((iconInk.Min+iconInk.Max)*.5f,(slot.Min+slot.Max)*.5f)>.5f)
+                            throw new Exception("Plugin icon lost full aspect-fit or media prominence: "+identity);
+                    }
+                    foreach(var prefix in new[]{"card-title-","card-state-","card-compatibility-","preview-slot-","preview-image-","preview-icon-","preview-label-"})
+                        if(bounds.TryGetValue(prefix+identity,out var ink) && (ink.Min.X<card.Min.X-.5f || ink.Max.X>card.Max.X+.5f || ink.Min.Y<card.Min.Y-.5f || ink.Max.Y>card.Max.Y+.5f))
+                            throw new Exception("Card content exceeds its measured bounds: "+prefix+language+"/"+compact+"/"+suffix);
+                    if(bounds.TryGetValue("preview-label-"+identity,out var label) && bounds.TryGetValue("preview-icon-"+identity,out var picture)
+                        && picture.Min.X<label.Max.X && picture.Max.X>label.Min.X && picture.Min.Y<label.Max.Y && picture.Max.Y>label.Min.Y)
+                        throw new Exception("Missing-media caption overlaps its icon: "+language);
+                }
+                if(cards.Length>0)
+                {
+                    var first=cards.OrderBy(pair=>pair.Value.Min.Y).ThenBy(pair=>pair.Value.Min.X).First().Value;
+                    var firstRow=cards.Where(pair=>Math.Abs(pair.Value.Min.Y-first.Min.Y)<1).ToArray();
+                    var available=browseClip.Max.X-browseClip.Min.X;
+                    if(firstRow.Length>1 && firstRow.Max(pair=>pair.Value.Max.X)-firstRow.Min(pair=>pair.Value.Min.X)>available+2*scale)
+                        throw new Exception("Responsive card packing exceeded the browse viewport.");
+                }
+            }
             Settle();
+            if(language=="en" && withMedia)
+            {
+                WaitForPreview(still,false);Settle();
+                var identity=InstallerCatalog.PluginIdentity(source,"Fixture0");
+                var card=bounds["card-"+identity];var slot=bounds["preview-slot-"+identity];var picture=bounds["preview-image-"+identity];
+                var priorFont=bodyFontSize;
+                var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+                var columns=(int)typeof(MainWindow).GetField("previousColumns",flags)!.GetValue(main)!;
+                var priorDensity=theme.Density;
+                theme.Density=priorDensity==MaterialDensity.Compact?MaterialDensity.Standard:MaterialDensity.Compact;
+                Settle();CheckCardBounds();
+                var toggledCard=bounds["card-"+identity];var toggledSlot=bounds["preview-slot-"+identity];var toggledImage=bounds["preview-image-"+identity];
+                if((int)typeof(MainWindow).GetField("previousColumns",flags)!.GetValue(main)! != columns
+                    || Math.Abs((card.Max.X-card.Min.X)-(toggledCard.Max.X-toggledCard.Min.X))>.5f
+                    || Vector2.Distance(slot.Max-slot.Min,toggledSlot.Max-toggledSlot.Min)>.5f
+                    || Vector2.Distance(picture.Max-picture.Min,toggledImage.Max-toggledImage.Min)>.5f
+                    || Math.Abs(bodyFontSize-priorFont)>.01f)
+                    throw new Exception("Density changed the default grid breakpoint, actual media geometry or body font at the same window size.");
+                theme.Density=priorDensity;Settle();CheckCardBounds();
+            }
             var initial=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
             if(initial.Count!=55 || initial.Any(e=>!e.IsApiCompatible || e.Installed?.IsOutdated==true))
                 throw new Exception("New installer windows must block API-unavailable entries by default.");
+            if(language=="en" && bounds.TryGetValue("clear-installer-filters",out var clearDefault))
+            {
+                var countBounds=bounds["installer-result-count"];
+                if(clearDefault.Min.Y>=countBounds.Max.Y || clearDefault.Max.Y<=countBounds.Min.Y)
+                    throw new Exception("Default API block spent an extra Clear filter row instead of sharing result tools.");
+            }
             var output=Path.Combine(AppContext.BaseDirectory,"artifacts","installer",suffix);Directory.CreateDirectory(output);
             if(language is "en" or "ru" or "hi") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-default.png"),host);
             IReadOnlyList<InstallerEntry> CategoryResults()=>(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
@@ -579,6 +700,131 @@ internal static class InstallerUiTests
                     }
                 }
                 if(!seen) throw new Exception("Aspect-fit fixture did not exercise its native screenshot.");
+                var identity=InstallerCatalog.PluginIdentity(source,"Fixture0");
+                if(language=="hi")
+                {
+                    var title=bounds["card-title-"+identity];var actual=title.Max.Y-title.Min.Y;
+                    if(shapedTitleRequired<=0 || actual<shapedTitleRequired-.5f)
+                    {
+                        SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-shaped-title-clipped.png"),host);
+                        throw new Exception($"Two-line shaped title was clipped to native line metrics: reserved={actual}, required={shapedTitleRequired}.");
+                    }
+                }
+                var slot=bounds["preview-slot-"+identity];var card=bounds["card-"+identity];
+                var mediaProportion=(slot.Max.Y-slot.Min.Y)/(card.Max.X-card.Min.X);
+                if(mediaProportion<.4f || mediaProportion>.5f)
+                    throw new Exception("Screenshot band differs from the approved reference proportion.");
+                var densityKey=language+"/"+suffix;
+                var bodyProportion=((card.Max.Y-card.Min.Y)-(slot.Max.Y-slot.Min.Y))/bodyLineHeight;
+                if(compact && densityEvidence.TryGetValue(densityKey,out var regular))
+                {
+                    if(Math.Abs(mediaProportion-regular.Media)>.002f || Math.Abs(bodyFontSize-regular.Font)>.01f)
+                        throw new Exception("Compact changed relative media sizing or requested typography.");
+                    if(language=="en" && suffix=="wide" && bodyProportion>=regular.Body-.1f)
+                        throw new Exception("Compact did not meaningfully tighten the card body.");
+                }
+                else densityEvidence[densityKey]=(mediaProportion,bodyProportion,bodyFontSize);
+                var image=bounds["preview-image-"+identity];
+                var expected=Math.Min((slot.Max.X-slot.Min.X)/picture.Width,(slot.Max.Y-slot.Min.Y)/picture.Height);
+                if(Math.Abs(image.Max.X-image.Min.X-picture.Width*expected)>.5f || Math.Abs(image.Max.Y-image.Min.Y-picture.Height*expected)>.5f)
+                    throw new Exception("Screenshot retained an avoidable inner inset.");
+                if(suffix=="wide")
+                {
+                    WaitForPreview("https://fixture.invalid/icon.bmp",false);
+                    WaitForPreview("https://fixture.invalid/portrait.bmp",false);
+                    WaitForPreview("https://fixture.invalid/square.bmp",false);
+                    var deadline=DateTime.UtcNow.AddSeconds(5);
+                    foreach(var url in new[]{"https://fixture.invalid/missing.bmp","https://fixture.invalid/failed.bmp"})
+                        while(fixtureMedia.Get(url,false,out var failed) is not null || !failed)
+                        {
+                            if(DateTime.UtcNow>=deadline) throw new Exception("Native failure fixture did not settle.");
+                            host.Frame(Draw);Thread.Sleep(5);
+                        }
+                    Settle();CheckCardBounds();
+                    if(!fixtureMedia.IsMissing("https://fixture.invalid/missing.bmp",false) || fixtureMedia.IsMissing("https://fixture.invalid/failed.bmp",false))
+                        throw new Exception("Missing and failed previews lost their distinct states.");
+                    var knownHeaders=new[]{5,6}.Select(index=>"preview-slot-"+InstallerCatalog.PluginIdentity(index==6?InstallerCatalog.OfficialRepository:source,"Fixture"+index))
+                        .ToDictionary(key=>key,key=>bounds[key].Max-bounds[key].Min);
+                    backend.Installer=backend.Installer with { Entries=backend.Installer.Entries.Select(entry=>entry with { Manifest=entry.Manifest with { } }).ToArray() };
+                    typeof(MainWindow).GetField("nextInstallerSnapshot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(main,DateTime.MinValue);
+                    host.Frame(Draw);
+                    foreach(var (key,priorSize) in knownHeaders)
+                        if(Vector2.Distance(priorSize,bounds[key].Max-bounds[key].Min)>.5f)
+                            throw new Exception("An unchanged host refresh expanded a failed-preview card for one frame.");
+                    foreach(var index in new[]{2,5,6})
+                    {
+                        var key=InstallerCatalog.PluginIdentity(index==2||index==6?InstallerCatalog.OfficialRepository:source,"Fixture"+index);
+                        var header=bounds["preview-slot-"+key];
+                        var title=bounds["card-title-ink-"+key];
+                        if(title.Min.Y<header.Max.Y || Math.Abs((header.Max.Y-header.Min.Y)-(bounds["preview-slot-"+identity].Max.Y-bounds["preview-slot-"+identity].Min.Y))>.5f)
+                            throw new Exception("Icon-only/failed card changed the common media band or title placement.");
+                        if(index==2)
+                        {
+                            var ink=bounds["preview-icon-"+key];var side=ink.Max.X-ink.Min.X;
+                            var expectedSide=Math.Min(header.Max.X-header.Min.X,header.Max.Y-header.Min.Y);
+                            if(Math.Abs(side-expectedSide)>.5f || Math.Abs(side-(ink.Max.Y-ink.Min.Y))>.5f
+                                || Vector2.Distance((ink.Min+ink.Max)*.5f,(header.Min+header.Max)*.5f)>.5f)
+                                throw new Exception("Small real plugin icon did not fill and center within the shared media band proportionally.");
+                        }
+                    }
+                    SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-loading.png"),host);
+                }
+                var anchorField=typeof(MainWindow).GetField("browseAnchor",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
+                var anchorBefore=anchorField.GetValue(main);
+                var readyDimensions=bounds.Where(pair=>pair.Key.StartsWith("card-",StringComparison.Ordinal)
+                    && backend.Installer.Entries.Any(entry=>pair.Key=="card-"+entry.Identity)).ToDictionary(pair=>pair.Key,pair=>pair.Value.Max-pair.Value.Min);
+                fixtureImages!.CompleteLoading();
+                host.Frame(Draw);CheckCardBounds();
+                foreach(var (key,size) in readyDimensions)
+                    if(bounds.TryGetValue(key,out var current) && Vector2.Distance(size,current.Max-current.Min)>.5f)
+                        throw new Exception("A media readiness transition resized a card.");
+                if(suffix=="wide") WaitForPreview("https://fixture.invalid/loading.bmp",false);
+                Settle();CheckCardBounds();
+                if(!Equals(anchorBefore,anchorField.GetValue(main))) throw new Exception("Media readiness moved the logical browse anchor.");
+                if(suffix=="wide")
+                {
+                    var steady=backend.Installer;
+                    var first=bounds["card-"+identity];
+                    requestedScroll=browseScrollMax;scrollRequest=true;Settle();CheckCardBounds();
+                    if(browseScroll<=0 || Math.Abs(browseScroll-browseScrollMax)>1) throw new Exception("Variable card rows lost the bottom scroll extent.");
+                    var outlier=InstallerCatalog.PluginIdentity(source,"Fixture40");
+                    if(!bounds.ContainsKey("card-"+outlier))
+                    {
+                        var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+                        var current=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",flags)!.Invoke(main,null)!;
+                        var index=Enumerable.Range(0,current.Count).Single(i=>current[i].Identity==outlier);
+                        var columns=(int)typeof(MainWindow).GetField("previousColumns",flags)!.GetValue(main)!;
+                        var rows=(float[])typeof(MainWindow).GetField("cardRowOffsets",flags)!.GetValue(main)!;
+                        requestedScroll=rows[index/columns];scrollRequest=true;Settle();
+                    }
+                    var tall=bounds["card-"+outlier];
+                    SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-outlier-bottom.png"),host);
+                    backend.Installer=steady with { Entries=steady.Entries.Select(entry=>entry.Manifest.InternalName=="Fixture40"
+                        ?entry with { Manifest=entry.Manifest with { Name="Plugin 40" } }:entry).ToArray() };
+                    typeof(MainWindow).GetField("nextInstallerSnapshot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(main,DateTime.MinValue);
+                    Settle();
+                    var shortCard=bounds["card-"+outlier];
+                    if(Vector2.Distance(tall.Max-tall.Min,shortCard.Max-shortCard.Min)>.5f)
+                        throw new Exception("Changing a multiline title resized its card instead of retaining the shared allocation.");
+                    backend.Installer=steady;
+                    typeof(MainWindow).GetField("nextInstallerSnapshot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(main,DateTime.MinValue);
+                    Settle();
+                    requestedScroll=0;scrollRequest=true;Settle();CheckCardBounds();
+                    var unchanged=bounds["card-"+identity];
+                    if(Vector2.Distance(first.Max-first.Min,unchanged.Max-unchanged.Min)>.5f)
+                        throw new Exception("A distant title outlier changed another card's dimensions or column packing.");
+                    requestedScroll=browseScrollMax*.5f;scrollRequest=true;Settle();
+                    var densityAnchor=anchorField.GetValue(main);
+                    var priorDensity=theme.Density;
+                    theme.Density=priorDensity==MaterialDensity.Compact?MaterialDensity.Standard:MaterialDensity.Compact;
+                    Settle();CheckCardBounds();
+                    if(!Equals(densityAnchor,anchorField.GetValue(main)))
+                        throw new Exception("An in-place density toggle moved the logical browse anchor.");
+                    theme.Density=priorDensity;Settle();CheckCardBounds();
+                    if(!Equals(densityAnchor,anchorField.GetValue(main)))
+                        throw new Exception("Restoring density moved the logical browse anchor.");
+                    requestedScroll=0;scrollRequest=true;Settle();
+                }
             }
             if(language=="en" && !compact && suffix.Length==0)
             {
@@ -615,13 +861,11 @@ internal static class InstallerUiTests
                 }
             }
             if(language is "en" or "ru" or "ja" or "hi") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-folded.png"),host);
-            foreach(var label in bounds.Where(p=>p.Key.StartsWith("preview-label-",StringComparison.Ordinal)))
-                if(bounds.TryGetValue(label.Key.Replace("preview-label-","preview-icon-"),out var picture) && picture.Max.Y>label.Value.Min.Y)
-                    throw new Exception("Missing-media caption overlaps its icon: "+language);
+            CheckCardBounds();
             foreach(var index in new[]{0,1})
                 if(bounds.TryGetValue("card-text-end-"+InstallerCatalog.PluginIdentity(source,"Fixture"+index),out var content)
                     && bounds.TryGetValue("details-"+index,out var action) && action.Min.Y<content.Max.Y)
-                    throw new Exception("Card action overlaps translated text: "+language);
+                    throw new Exception($"Card action overlaps translated text: {language}/{suffix}; action={action.Min.Y}, textEnd={content.Max.Y}.");
             if(language=="en")
             {
                 using var locale=text.Enter();
@@ -656,7 +900,7 @@ internal static class InstallerUiTests
             host.Click(new((repoRow.Min.X+repoRow.Max.X)*.5f,repoRow.Min.Y+(repoRow.Max.Y-repoRow.Min.Y)*.75f),Draw); Settle();
             var railEntries=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
             if(railEntries.Count!=36 || railEntries.Any(e=>e.Repository.Url!=source) || browseScroll>.5f || !bounds.ContainsKey("active-pin-filter"))
-                throw new Exception("Pinned repository status-line click did not filter and reveal its results: "+language);
+                throw new Exception($"Pinned repository status-line click did not filter and reveal its results: {language}; results={railEntries.Count}, scroll={browseScroll}, active={bounds.ContainsKey("active-pin-filter")}.");
             repoRow=bounds["repo-pin-"+source];
             host.Click(new((repoRow.Min.X+repoRow.Max.X)*.5f,repoRow.Min.Y+(repoRow.Max.Y-repoRow.Min.Y)*.25f),Draw); Settle();
             if(bounds.ContainsKey("active-pin-filter")) throw new Exception("Repeated repository selection did not clear its filter.");
@@ -712,6 +956,10 @@ internal static class InstallerUiTests
                 railEntries=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
                 if(railEntries.Count!=11) throw new Exception("Repeated right click did not clear the blocked author.");
                 Click("clear-pin-filter");
+                var cleared=CategoryResults();
+                var clearAnchor=typeof(MainWindow).GetField("browseAnchor",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(main);
+                if(browseScroll>.5f || !Equals(clearAnchor,cleared[0].Identity) || !bounds.ContainsKey("details-0"))
+                    throw new Exception("Clear filter retained the old filtered anchor instead of revealing the beginning of the new results.");
                 backend.Configuration.PinnedRepositories.Remove(InstallerCatalog.OfficialRepository);
                 backend.Configuration.PinnedAuthors.Remove("OtherAuthor"); Settle();
             }
@@ -744,7 +992,11 @@ internal static class InstallerUiTests
                 WaitForPreview(gif,false); Click("media-1"); WaitForPreview(gif,true); Settle();
                 if(bounds.ContainsKey("media-2")) throw new Exception("A missing publisher image left a gallery placeholder.");
                 Click("media-play");
-                if(!fixtureMedia.IsPlaying(gif)) throw new Exception("The native gallery Play action did not start its selected GIF.");
+                if(!fixtureMedia.IsPlaying(gif))
+                {
+                    SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-gallery-play-failed.png"),host);
+                    throw new Exception($"The native gallery Play action did not start its selected GIF: {language}/{compact}; button={bounds["media-play"]}, gallery clip={galleryClip}, content clip={contentClip}.");
+                }
                 Click("media-play");
                 if(fixtureMedia.IsPlaying(gif)) throw new Exception("The native gallery Stop action retained playback.");
                 Click("media-0"); WaitForPreview(still,true);
@@ -796,13 +1048,19 @@ internal static class InstallerUiTests
                 {
                     var identity=stateEntries[entryIndex].Identity;
                     if(!bounds.TryGetValue("card-"+identity,out var card)) continue;
-                    if(bounds["card-state-"+identity].Max.X>card.Max.X-10*scale || bounds["card-compatibility-"+identity].Max.X>card.Max.X-10*scale
-                        || bounds.TryGetValue("details-"+entryIndex,out var action) && bounds["card-text-end-"+identity].Min.Y>action.Min.Y)
-                        throw new Exception("Translated eligibility/compatibility ink exceeds its card: "+language);
+                    var inset=bounds["card-state-"+identity].Min.X-card.Min.X;
+                    var hasAction=bounds.TryGetValue("details-"+entryIndex,out var action);
+                    if(bounds["card-state-"+identity].Max.X>card.Max.X-inset+.5f || bounds["card-compatibility-"+identity].Max.X>card.Max.X-inset+.5f
+                        || hasAction && (bounds["card-text-end-"+identity].Min.Y>action.Min.Y || action.Max.X>card.Max.X-inset+.5f))
+                    {
+                        SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-state-ink-failed.png"),host);
+                        throw new Exception($"Translated eligibility/compatibility ink exceeds its card: {language}/{compact}/{suffix}/{stateMode}/{identity}; card={card}, inset={inset}, state={bounds["card-state-"+identity]}, compatibility={bounds["card-compatibility-"+identity]}, textEnd={bounds["card-text-end-"+identity]}, action={bounds.GetValueOrDefault("details-"+entryIndex)}.");
+                    }
                 }
                 if(backend.Actions.Count!=1) throw new Exception("Eligibility-state browsing dispatched an operation.");
                 if(language=="en") SoftwarePreview.Save(Path.Combine(output,$"en-states-{(compact?"compact":"regular")}-{stateMode}.png"),host);
             }
+            Console.WriteLine($"Native installer case passed: {language}/{(compact?"Compact":"Regular")}/{width}x{height}/{scale:F1}/{suffix}.");
         }
         Console.WriteLine("Native installer checks passed in "+selectedLanguages.Length+" locales and "+cases.Count+" size/density/scale/theme cases: cards/table, folded rail reflow, clickable unadded details, pin changes and side-effect-free browsing.");
     }
@@ -810,13 +1068,19 @@ internal static class InstallerUiTests
     private sealed class PreviewImages : HttpMessageHandler
     {
         private readonly byte[] screenshot;
+        private readonly TaskCompletionSource loading=new(TaskCreationOptions.RunContinuationsAsynchronously);
         internal PreviewImages(int width,int height) { screenshot=Screenshot(width,height); }
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)
+        internal void CompleteLoading()=>loading.TrySetResult();
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)
         {
             if(request.RequestUri?.Host!="fixture.invalid") throw new InvalidOperationException("Unexpected fixture image host.");
-            if(request.RequestUri.AbsolutePath=="/missing.bmp") return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
-            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-            { Content=new ByteArrayContent(request.RequestUri.AbsolutePath.EndsWith(".gif",StringComparison.Ordinal)?InstallerMediaTests.Gif():screenshot) });
+            var path=request.RequestUri.AbsolutePath;
+            if(path=="/missing.bmp") return new HttpResponseMessage(System.Net.HttpStatusCode.NotFound);
+            if(path=="/failed.bmp") return new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError);
+            if(path=="/loading.bmp") await loading.Task.WaitAsync(token);
+            var bytes=path switch { "/icon.bmp"=>Screenshot(48,48),"/portrait.bmp"=>Screenshot(96,192),"/square.bmp"=>Screenshot(192,192),
+                _=>path.EndsWith(".gif",StringComparison.Ordinal)?InstallerMediaTests.Gif():screenshot };
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content=new ByteArrayContent(bytes) };
         }
         private static byte[] Screenshot(int width,int height)
         {
@@ -826,9 +1090,16 @@ internal static class InstallerUiTests
             writer.Write(0);writer.Write(width*height*4);writer.Write(0);writer.Write(0);writer.Write(0);writer.Write(0);
             for(var y=0;y<height;y++) for(var x=0;x<width;x++)
             {
-                var grid=x%40<2||y%30<2;
-                writer.Write((byte)(grid?230:90+x/5));writer.Write((byte)(grid?205:40+y/2));
-                writer.Write((byte)(grid?80:20+x/4));writer.Write((byte)255);
+                // A fabricated dense UI screenshot, with all geometry relative to this source image.
+                var top=y>height*.86f;var sidebar=x<width*.22f;
+                var row=(int)(y/(height*.12f));
+                var text=y%(Math.Max(1,(int)(height*.12f)))<Math.Max(1,height*.025f)
+                    && x>width*(sidebar?.035f:.28f) && x<width*(sidebar?.17f:row%2==0?.86f:.69f);
+                var tile=x>width*.89f && x<width*.96f && y<height*.8f && row%2==0;
+                var blue=text?190:tile?110:top?65:sidebar?40:48;
+                var green=text?205:tile?170:top?48:sidebar?30:36;
+                var red=text?215:tile?55:top?35:sidebar?23:26;
+                writer.Write((byte)blue);writer.Write((byte)green);writer.Write((byte)red);writer.Write((byte)255);
             }
             return stream.ToArray();
         }

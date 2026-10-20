@@ -41,12 +41,12 @@ public sealed partial class MainWindow
             var current=((nint)ImGui.GetFont().Handle,ImGui.GetFontSize(),MaterialTheme.Metrics.Scale,MaterialControls.Metrics,UiText.Current.Language);
             if(Starts.Length==Items.Length && current==metrics && (Items.Length==0 || Width>0)) return;
             metrics=current;Starts=new float[Items.Length];Widths=new float[Items.Length];
-            var controls=MaterialControls.Metrics;var gap=8*MaterialTheme.Metrics.Scale;
+            var controls=MaterialControls.Metrics;var gap=controls.Gap;
             Height=controls.Height;Width=0;
             for(var index=0;index<Items.Length;index++)
             {
                 var text=MaterialText.Measure(Items[index].DisplayCaption);
-                Height=Math.Max(Height,text.Y+2*MaterialTheme.Metrics.Scale);
+                Height=Math.Max(Height,text.Y+2*controls.Padding.Y);
                 Starts[index]=Width;
                 Widths[index]=text.X+2*controls.Padding.X+controls.IconSize+controls.Gap;
                 Width+=Widths[index]+gap;
@@ -89,24 +89,27 @@ public sealed partial class MainWindow
     private void DrawInstallerCategories()
     {
         var s=MaterialTheme.Metrics.Scale;
-        using var controls=MaterialControls.Push(BotologyPresentation.Controls(BotologyPresentation.Compact?28:32,16,preserveHeight:true));
+        using var controls=MaterialControls.Push(InstallerControls());
         var metrics=MaterialControls.Metrics;
+        var pad=metrics.Padding.Y;var gap=metrics.ItemSpacing.Y;
+        var edge=ImGui.GetTextLineHeight()*.1f;
         var headerHeight=Math.Max(metrics.Height,new[]{"Categories & tags","Clear categories"}.Max(value=>MaterialText.Measure(UiText.T(value)).Y)+2*metrics.Padding.Y);
-        var width=ImGui.GetContentRegionAvail().X-16*s;
+        var width=ImGui.GetContentRegionAvail().X-2*pad;
         var titleWidth=MaterialText.Measure(UiText.T("Categories & tags")).X+2*metrics.Padding.X+metrics.IconSize+metrics.Gap;
         var clearWidth=MaterialText.Measure(UiText.T("Clear categories")).X+2*metrics.Padding.X;
-        var clearFits=titleWidth+clearWidth+12*s<=width;
-        var searchFits=clearFits && width-titleWidth-clearWidth-24*s>=160*s;
-        var summaryFits=clearFits && width-titleWidth-clearWidth-24*s>=80*s;
+        var clearFits=titleWidth+clearWidth+metrics.Gap<=width;
+        var searchFits=clearFits && width-titleWidth-clearWidth-2*metrics.Gap>=MaterialText.Measure(UiText.T("Find a tag...")).X+2*metrics.Padding.X+metrics.IconSize+metrics.Gap;
+        var summaryFits=clearFits && width-titleWidth-clearWidth-2*metrics.Gap>=2*metrics.Height;
         if(categoriesExpanded) { dalamudCategories.Measure();botologyCategories.Measure();thirdPartyCategories.Measure(); }
         else selectedCategories.Measure();
         var trackHeight=categoriesExpanded?Math.Max(Math.Max(dalamudCategories.Height,botologyCategories.Height),thirdPartyCategories.Height):selectedCategories.Height;
         var headerRows=1+(clearFits?0:1)+(categoriesExpanded&&!searchFits?1:0);
-        var height=headerRows*(headerHeight+4*s)+16*s;
+        if(!categoriesExpanded && selectedCategories.Items.Length>0 && summaryFits) headerHeight=Math.Max(headerHeight,trackHeight+2*edge);
+        var height=headerRows*headerHeight+(headerRows-1)*gap+2*pad;
         var hint=UiText.T("Left-click: require. Right-click: block. Click again to clear.");
-        if(categoriesExpanded) height+=3*(trackHeight+8*s)+MaterialText.Measure(hint,false,Math.Max(1,width)).Y+4*s;
-        else if(selectedCategories.Items.Length>0 && !summaryFits) height+=trackHeight+8*s;
-        using var surface=InstallerSurface("InstallerCategories",new(-1,height/s),outline:true,padding:8,radius:6,
+        if(categoriesExpanded) height+=gap+3*(trackHeight+2*edge+gap)+MaterialText.Measure(hint,false,Math.Max(1,width)).Y;
+        else if(selectedCategories.Items.Length>0 && !summaryFits) height+=gap+trackHeight+2*edge;
+        using var surface=InstallerSurface("InstallerCategories",new(-1,height/s),outline:true,padding:pad/s,radius:metrics.Rounding/s,
             flags:ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoScrollWithMouse);
         MeasureBounds?.Invoke("category-surface",ImGui.GetWindowPos(),ImGui.GetWindowPos()+ImGui.GetWindowSize());
         var wasExpanded=categoriesExpanded;
@@ -115,7 +118,7 @@ public sealed partial class MainWindow
         if(categoriesExpanded && searchFits)
         {
             ImGui.SameLine();
-            DrawCategorySearch((width-titleWidth-clearWidth-24*s)/s);
+            DrawCategorySearch((width-titleWidth-clearWidth-2*metrics.Gap)/s);
         }
         if(clearFits) ImGui.SameLine(Math.Max(ImGui.GetCursorPosX(),ImGui.GetWindowContentRegionMax().X-clearWidth));
         ImGui.BeginDisabled(dalamudCategoryFilters.Count+botologyCategoryFilters.Count+thirdPartyCategoryFilters.Count==0);
@@ -135,11 +138,11 @@ public sealed partial class MainWindow
         else if(selectedCategories.Items.Length>0)
         {
             // Share the header line with the summary when it fits, otherwise use a horizontally clipped second row.
-            var remaining=width-titleWidth-clearWidth-24*s;
+            var remaining=width-titleWidth-clearWidth-2*metrics.Gap;
             if(summaryFits)
             {
                 var position=ImGui.GetCursorPos();
-                ImGui.SetCursorPos(new(8*s+titleWidth+8*s,position.Y-headerHeight-ImGui.GetStyle().ItemSpacing.Y));
+                ImGui.SetCursorPos(new(pad+titleWidth+metrics.Gap,position.Y-headerHeight-ImGui.GetStyle().ItemSpacing.Y));
                 DrawCategoryTrack("Selected",selectedCategories,false,remaining);
             }
             else DrawCategoryTrack("Selected",selectedCategories,false);
@@ -158,22 +161,23 @@ public sealed partial class MainWindow
         track.Measure();
         var s=MaterialTheme.Metrics.Scale;var origin=ImGui.GetCursorPos();
         var width=requestedWidth>0?requestedWidth:ImGui.GetContentRegionAvail().X;
-        var labelWidth=label?Math.Max(70*s,Math.Max(MaterialText.Measure("Botology").X,MaterialText.Measure(UiText.T("Third-party")).X)+12*s):0;
+        var metrics=MaterialControls.Metrics;var edge=ImGui.GetTextLineHeight()*.1f;
+        var labelWidth=label?new[]{"Dalamud","Botology","Third-party"}.Max(value=>MaterialText.Measure(UiText.T(value)).X)+metrics.Gap:0;
         var overflow=track.Width>width-labelWidth;
-        var arrow=24*s;var childWidth=Math.Max(1,width-labelWidth-(overflow?2*arrow+8*s:0));
+        var arrow=metrics.Height;var childWidth=Math.Max(1,width-labelWidth-(overflow?2*arrow+2*metrics.Gap:0));
         if(label) { MaterialText.Text(UiText.T(id));ImGui.SameLine(labelWidth+origin.X); }
         if(overflow)
         {
-            if(MaterialButton.IconButton("category-left-"+id,MaterialIcon.Return,size:24)) track.ScrollRequest-=childWidth*.7f;
+            if(MaterialButton.IconButton("category-left-"+id,MaterialIcon.Return,size:arrow/s)) track.ScrollRequest-=childWidth*.7f;
             if(ImGui.IsItemHovered()) MaterialText.SetTooltip(UiText.T("Scroll categories left"));
-            ImGui.SameLine(0,4*s);
+            ImGui.SameLine(0,metrics.Gap);
         }
         ImGui.SetNextWindowContentSize(new(track.Width,track.Height));
         CategoryChip? clicked=null;var blocked=false;
         using(var style=new MaterialStyleScope())
         {
-            style.Style(ImGuiStyleVar.WindowPadding,new Vector2(0,2*s));
-            ImGui.BeginChild("CategoryTrack-"+id,new(childWidth,track.Height+4*s),false,ImGuiWindowFlags.HorizontalScrollbar|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.AlwaysUseWindowPadding);
+            style.Style(ImGuiStyleVar.WindowPadding,new Vector2(0,edge));
+            ImGui.BeginChild("CategoryTrack-"+id,new(childWidth,track.Height+2*edge),false,ImGuiWindowFlags.HorizontalScrollbar|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.AlwaysUseWindowPadding);
             MeasureBounds?.Invoke("category-track-"+id,ImGui.GetWindowPos(),ImGui.GetWindowPos()+ImGui.GetWindowSize());
             if(track.ScrollRequest!=0) { ImGui.SetScrollX(ImGui.GetScrollX()+track.ScrollRequest);track.ScrollRequest=0; }
             if(track.Items.Length>0 && ImGui.IsWindowFocused())
@@ -204,7 +208,7 @@ public sealed partial class MainWindow
                 ImGui.SetCursorPos(cursor+new Vector2(track.Starts[index],0));
                 ImGui.PushID((int)item.Source);
                 if(track.FocusRequest==index) { ImGui.SetKeyboardFocusHere();track.FocusRequest=-1; }
-                var left=MaterialButton.Draw(item.Key,item.DisplayCaption,new MaterialControlAppearance(active?MaterialColor.Alpha(color,.16f):Vector4.Zero,color,active?color:c.Outline,6),
+                var left=MaterialButton.Draw(item.Key,item.DisplayCaption,new MaterialControlAppearance(active?MaterialColor.Alpha(color,.16f):Vector4.Zero,color,active?color:c.Outline,metrics.Rounding/s),
                     new(track.Widths[index]/s,track.Height/s),leading:active?mode==InstallerFilterMode.Required?MaterialIcon.Check:MaterialIcon.Close:MaterialIcon.None);
                 var right=ImGui.IsItemClicked(ImGuiMouseButton.Right);
                 if(ImGui.IsItemFocused()) track.FocusIndex=index;
@@ -220,12 +224,12 @@ public sealed partial class MainWindow
         }
         if(overflow)
         {
-            ImGui.SameLine(0,4*s);
-            if(MaterialButton.IconButton("category-right-"+id,MaterialIcon.ArrowRight,size:24)) track.ScrollRequest+=childWidth*.7f;
+            ImGui.SameLine(0,metrics.Gap);
+            if(MaterialButton.IconButton("category-right-"+id,MaterialIcon.ArrowRight,size:arrow/s)) track.ScrollRequest+=childWidth*.7f;
             MeasureBounds?.Invoke("category-next-"+id,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
             if(ImGui.IsItemHovered()) MaterialText.SetTooltip(UiText.T("Scroll categories right"));
         }
-        ImGui.SetCursorPos(new(origin.X,origin.Y+track.Height+8*s));
+        ImGui.SetCursorPos(new(origin.X,origin.Y+track.Height+2*edge+ImGui.GetStyle().ItemSpacing.Y));
         if(clicked is { } choice)
         {
             ToggleInstallerFilter(CategoryFilters(choice.Source),choice.Key,blocked?InstallerFilterMode.Blocked:InstallerFilterMode.Required);
