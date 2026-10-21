@@ -81,6 +81,9 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     private string appliedLanguage = "";
     private uint appliedAccent;
     private System.Numerics.Vector3 accentDraft;
+    private MaterialColorSettings colorDraft = new();
+    private MaterialColorSettings? appliedColors;
+    private MaterialColorSettings? appliedSavedColors;
     private AethertekUI.MaterialOptions<string> languageOptions = null!;
     private int checkedFontGeneration=-1;
     private bool fontIssueLogged;
@@ -246,10 +249,17 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
             checkedFontGeneration=-1;
             fontIssueLogged=false;
         }
-        if(uiTheme is null || (Configuration.UiAccentRgb & 0xFFFFFF)!=appliedAccent)
+        var savedColors = Configuration.UiColors ?? new MaterialColorSettings();
+        if (savedColors != appliedSavedColors)
+        {
+            colorDraft = savedColors;
+            appliedSavedColors = savedColors;
+        }
+        if(uiTheme is null || (Configuration.UiAccentRgb & 0xFFFFFF)!=appliedAccent || colorDraft != appliedColors)
         {
             appliedAccent=Configuration.UiAccentRgb & 0xFFFFFF;
-            uiTheme=BotologyPresentation.Theme(appliedAccent);
+            appliedColors = colorDraft;
+            uiTheme=BotologyPresentation.Theme(appliedAccent, colorDraft);
             var color=BotologyPresentation.Rgb(appliedAccent);
             accentDraft=new(color.X,color.Y,color.Z);
         }
@@ -1065,14 +1075,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         { Configuration.UiCompact = compact; Configuration.Save(); }
         using (MaterialControls.Push(BotologyPresentation.Controls(28, 18)))
         {
-            if (MaterialAppearanceSelector.DrawAccent("appearance", ref accentDraft,
-                new(UiText.T("Color"), UiText.T("Language"), UiText.T("Teal"), UiText.T("Blue"), UiText.T("Pink"), UiText.T("Custom RGB"))))
-            {
-                Configuration.UiAccentRgb = ((uint)Math.Clamp((int)MathF.Round(accentDraft.X * 255), 0, 255) << 16)
-                    | ((uint)Math.Clamp((int)MathF.Round(accentDraft.Y * 255), 0, 255) << 8)
-                    | (uint)Math.Clamp((int)MathF.Round(accentDraft.Z * 255), 0, 255);
-                Configuration.Save();
-            }
+            DrawTitleBarColour();
         }
         DrawAppearanceSelector();
         var compactVisible = Configuration.UiCompactVisibleOnMainWindow;
@@ -1108,11 +1111,15 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
 
     private void DrawTitleBarColour()
     {
-        if (!MaterialAppearanceSelector.DrawPalette("appearance", ref accentDraft,
-                new(UiText.T("Color"), UiText.T("Language"), UiText.T("Teal"), UiText.T("Blue"), UiText.T("Pink"), UiText.T("Custom RGB")))) return;
-        Configuration.UiAccentRgb = ((uint)Math.Clamp((int)MathF.Round(accentDraft.X * 255), 0, 255) << 16)
-            | ((uint)Math.Clamp((int)MathF.Round(accentDraft.Y * 255), 0, 255) << 8)
-            | (uint)Math.Clamp((int)MathF.Round(accentDraft.Z * 255), 0, 255);
+        if (!MaterialAppearanceSelector.DrawColors("appearance", ref colorDraft, ref accentDraft,
+                new(UiText.T("Color"), UiText.T("Language"), UiText.T("Teal"), UiText.T("Blue"), UiText.T("Pink"), UiText.T("Custom RGB")),
+                new(UiText.T("Auto"), UiText.T("Picker"), UiText.T("Default"), UiText.T("Background, controls and text follow your theme."),
+                    UiText.T("Theme colour"), UiText.T("Choose each colour independently."), UiText.T("Background"), UiText.T("Controls"),
+                    UiText.T("Text"), UiText.T("Aa  Preview text"), UiText.T("Control"),
+                    UiText.T("Switch to Picker to set each colour yourself."), UiText.T("Switch back to Auto to use the automatic theme.")),
+                Configuration.UiCompact ? 298 : 316)) return;
+        Configuration.UiColors = colorDraft;
+        Configuration.UiAccentRgb = MaterialColorSettings.ToRgb(accentDraft);
         Configuration.Save();
     }
 

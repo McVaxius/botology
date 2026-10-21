@@ -49,7 +49,8 @@ internal static class BotologyPresentation
     // ImGui's TTF loader takes that full pixel height rather than a CSS/Windows em size.
     internal static float AtlasHeight(UiFontRole role) => FontSizes[(int)role]*4/3;
     internal static readonly string[] FontFiles=["segoeui.ttf","seguisb.ttf","segoeuib.ttf","seguisb.ttf","seguisb.ttf","seguisb.ttf","segoeuib.ttf"];
-    private static bool IsReferenceTheme => MaterialTheme.Current.Colors.Primary==Rgb(ReferenceAccent);
+    private static bool IsReferenceTheme => MaterialTheme.Current.Colors.Primary==Rgb(ReferenceAccent)
+        && MaterialTheme.Current.Colors.Background==Rgb(0x111E2A) && MaterialTheme.Current.Colors.Surface==Rgb(0x152633);
     internal static Vector4 PanelTop => Compact ? MaterialTheme.Current.Colors.SurfaceContainerLow : IsReferenceTheme ? Rgb(0x192B39)
         : MaterialColor.Layer(MaterialTheme.Current.Colors.SurfaceContainerLow,MaterialTheme.Current.Colors.OnSurface,.025f);
     internal static Vector4 PanelBottom => Compact ? MaterialTheme.Current.Colors.SurfaceContainerLowest : MaterialTheme.Current.Colors.SurfaceContainerLow;
@@ -57,7 +58,9 @@ internal static class BotologyPresentation
     internal static Vector4 VisibleCounter => IsReferenceTheme ? Rgb(0x486077)
         : MaterialColor.Layer(MaterialTheme.Current.Colors.Outline,MaterialTheme.Current.Colors.OnSurfaceVariant,.125f);
     internal static Vector4 Rgb(uint rgb) => new(((rgb>>16)&255)/255f,((rgb>>8)&255)/255f,(rgb&255)/255f,1);
-    internal static MaterialTheme Theme(uint accent)
+    internal static MaterialTheme Theme(uint accent) => Theme(accent, new MaterialColorSettings());
+
+    internal static MaterialTheme Theme(uint accent, MaterialColorSettings colorSettings)
     {
         accent &= 0xFFFFFF;
         var selectedRgb=Rgb(accent);
@@ -97,7 +100,7 @@ internal static class BotologyPresentation
             InverseSurface=RelativeColor(referenceColors.InverseSurface), InverseOnSurface=RelativeColor(referenceColors.InverseOnSurface),
             InversePrimary=RelativeColor(referenceColors.InversePrimary),
         };
-        return new(colors, MaterialDensity.Standard) { SurfaceOpacity=1 };
+        return new(colorSettings.Apply(colors), MaterialDensity.Standard) { SurfaceOpacity=1 };
     }
     internal static MaterialControlAppearance Action(bool emphasized=false)
     {

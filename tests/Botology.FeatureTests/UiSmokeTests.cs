@@ -355,11 +355,28 @@ internal static class BotologyUiSmoke
         Console.WriteLine("Native filtering/clear, stable header sorting, resized widths and optional-column preservation passed.");
     }
 
-    internal static void CheckPreferencesAndResources()
+    internal static unsafe void CheckPreferencesAndResources()
     {
         var configuration=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>("{\"Version\":1,\"PluginEnabled\":false,\"ShowAuthorColumn\":true,\"IgnoredPluginIds\":[\"fixture\"]}")!;
         if(!configuration.UiShowTitlebarStatus || !configuration.UiDetailedTitlebarStatus || configuration.UiLanguage!="en" || configuration.UiAccentRgb!=0x1CC9E6 || configuration.Version!=1 || configuration.PluginEnabled || !configuration.ShowAuthorColumn || configuration.IgnoredPluginIds.Single()!="fixture")
             throw new InvalidOperationException("Existing configuration defaults were reset.");
+        if(configuration.UiColors.Mode!=MaterialColorMode.Auto) throw new InvalidOperationException("Legacy colours must default to Auto.");
+        var automatic=BotologyPresentation.Theme(0x1CC9E6).Colors;
+        if(automatic.Background!=BotologyPresentation.Rgb(0x111E2A) || automatic.Primary!=BotologyPresentation.Rgb(0x1CC9E6)
+            || automatic.OnSurface!=BotologyPresentation.Rgb(0xDFECFC) || automatic.SecondaryContainer!=BotologyPresentation.Rgb(0x1B2C3C))
+            throw new InvalidOperationException("The existing automatic palette changed.");
+        configuration.UiColors=new() { Mode=MaterialColorMode.Picker,BackgroundRgb=0x192F41,ControlsRgb=0x1CC9E6,TextRgb=0xF1F4F7 };
+        var picked=BotologyPresentation.Theme(configuration.UiAccentRgb,configuration.UiColors);
+        using(var host=new NativeTestContext(400,300,1,"en"))
+        using(MaterialTheme.Push(picked))
+        {
+            if(picked.Colors.Background!=BotologyPresentation.Rgb(0x192F41) || picked.Colors.Primary!=automatic.Primary
+                || picked.Colors.OnSurface!=BotologyPresentation.Rgb(0xF1F4F7) || picked.Colors.Error!=automatic.Error
+                || BotologyPresentation.PanelTop==BotologyPresentation.Rgb(0x192B39)
+                || BotologyPresentation.VisibleCounter==BotologyPresentation.Rgb(0x486077)
+                || BotologyPresentation.SourceBadge(Vector4.One).Fill==BotologyPresentation.Rgb(0x2B3B4C))
+                throw new InvalidOperationException("Cyan Picker controls overrode independent background roles or semantic colours.");
+        }
         var property=typeof(Plugin).GetProperty("PluginInterface",BindingFlags.Static|BindingFlags.NonPublic)!;
         var previous=property.GetValue(null);
         var save=DispatchProxy.Create<IDalamudPluginInterface,ConfigurationSaveProxy>();
@@ -380,14 +397,88 @@ internal static class BotologyUiSmoke
                 configuration.UiLanguageVisibleOnMainWindow=false;configuration.UiCompactVisibleOnMainWindow=true;configuration.UiTransparencyVisibleOnMainWindow=false;
                 configuration.Save();
                 var saved=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(((ConfigurationSaveProxy)save).Json!)!;
-                if(saved.UiShowTitlebarStatus || saved.UiDetailedTitlebarStatus || saved.UiLanguageVisibleOnMainWindow || !saved.UiCompactVisibleOnMainWindow || saved.UiTransparencyVisibleOnMainWindow || saved.UiLanguage!=language.Code || saved.UiAccentRgb!=0xC98542 || saved.Version!=1 || saved.PluginEnabled || !saved.ShowAuthorColumn || saved.IgnoredPluginIds.Single()!="fixture")
+                if(saved.UiColors!=configuration.UiColors || saved.UiShowTitlebarStatus || saved.UiDetailedTitlebarStatus || saved.UiLanguageVisibleOnMainWindow || !saved.UiCompactVisibleOnMainWindow || saved.UiTransparencyVisibleOnMainWindow || saved.UiLanguage!=language.Code || saved.UiAccentRgb!=0xC98542 || saved.Version!=1 || saved.PluginEnabled || !saved.ShowAuthorColumn || saved.IgnoredPluginIds.Single()!="fixture")
                     throw new InvalidOperationException("UI preferences did not use the existing save path: "+language.Code);
+            }
+            foreach(var (compact,scale) in new[]{(false,1f),(true,1.5f)})
+            {
+                using var host=new NativeTestContext((int)(1000*scale),(int)(900*scale),scale,"en");
+                using var text=new UiText("en",host.PushFont);
+                var cfg=new Configuration { UiCompact=compact,PluginEnabled=false,IgnoredPluginIds=["fixture"] };
+                var plugin=(Plugin)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Plugin));
+                typeof(Plugin).GetField("<Configuration>k__BackingField",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(plugin,cfg);
+                typeof(Plugin).GetField("appliedLanguage",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(plugin,"en");
+                var apply=typeof(Plugin).GetMethod("ApplyAppearance",BindingFlags.Instance|BindingFlags.NonPublic)!;
+                var draw=typeof(Plugin).GetMethod("DrawTitleBarColour",BindingFlags.Instance|BindingFlags.NonPublic)!;
+                var themeField=typeof(Plugin).GetField("uiTheme",BindingFlags.Instance|BindingFlags.NonPublic)!;
+                var saves=new List<string>();
+                ((ConfigurationSaveProxy)(object)save).Handler=(method,values)=>
+                {
+                    if(method.Name!="SavePluginConfig") throw new InvalidOperationException("Unexpected colour callback access.");
+                    saves.Add(Newtonsoft.Json.JsonConvert.SerializeObject(values![0]));return null;
+                };
+                ImDrawListPtr list=default;
+                void Draw()
+                {
+                    apply.Invoke(plugin,null);
+                    using var locale=text.Enter();using var font=UiText.Font(UiFontRole.Body);
+                    using var material=MaterialTheme.Push((MaterialTheme)themeField.GetValue(plugin)!,scale,MaterialStyleMode.ColorsOnly);
+                    ImGui.SetNextWindowPos(new(20,20));ImGui.SetNextWindowSize(new(700*scale,800*scale));
+                    ImGui.Begin("Botology colour callback",ImGuiWindowFlags.NoSavedSettings);
+                    draw.Invoke(plugin,null);list=ImGui.GetWindowDrawList();ImGui.End();
+                }
+                Vector2 Center(string caption)
+                {
+                    using var font=host.PushFont(UiFontRole.Body);
+                    for(var index=0;index+caption.Length*4<=list.VtxBuffer.Size;index++)
+                    {
+                        var matches=true;
+                        for(var character=0;character<caption.Length;character++)
+                        {
+                            var glyph=ImGui.FindGlyphNoFallback(ImGui.GetFont(),caption[character]);
+                            if(list.VtxBuffer[index+character*4].Uv!=new Vector2(glyph.Handle->U0,glyph.Handle->V0)
+                                || list.VtxBuffer[index+character*4+2].Uv!=new Vector2(glyph.Handle->U1,glyph.Handle->V1))
+                            { matches=false;break; }
+                        }
+                        if(matches) return (list.VtxBuffer[index].Pos+list.VtxBuffer[index+caption.Length*4-2].Pos)/2;
+                    }
+                    throw new InvalidOperationException("Real colour callback did not show "+caption);
+                }
+                host.Frame(Draw);host.Frame(Draw);host.Click(Center("Picker"),Draw);
+                if(saves.Count!=1 || cfg.UiColors.Mode!=MaterialColorMode.Picker) throw new InvalidOperationException("Native Picker did not save once.");
+                var replacements=new[]{"#192F41","#1CC9E6","#F1F4F7"};
+                for(var field=0;field<3;field++)
+                {
+                    var before=cfg.UiColors;
+                    var original=field==0?before.BackgroundRgb:field==1?before.ControlsRgb:before.TextRgb;
+                    host.Click(Center("#"+original.ToString("X6")),Draw);
+                    var io=ImGui.GetIO();
+                    io.AddKeyEvent(ImGuiKey.ModCtrl,true);io.AddKeyEvent(ImGuiKey.A,true);host.Frame(Draw);
+                    io.AddKeyEvent(ImGuiKey.A,false);io.AddKeyEvent(ImGuiKey.ModCtrl,false);host.Frame(Draw);
+                    foreach(var character in replacements[field]) io.AddInputCharacter(character);
+                    host.Frame(Draw);host.Frame(Draw);
+                    if(saves.Count!=1+field || cfg.UiColors!=before) throw new InvalidOperationException("RGB draft saved before commit.");
+                    var draftTheme=((MaterialTheme)themeField.GetValue(plugin)!).Colors;
+                    var expected=BotologyPresentation.Rgb(Convert.ToUInt32(replacements[field][1..],16));
+                    if((field==0?draftTheme.Background:field==1?draftTheme.Primary:draftTheme.OnSurface)!=expected)
+                        throw new InvalidOperationException("RGB draft did not reach the next frame theme.");
+                    io.AddKeyEvent(ImGuiKey.Enter,true);host.Frame(Draw);io.AddKeyEvent(ImGuiKey.Enter,false);host.Frame(Draw);
+                    var restored=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(saves[^1])!;
+                    if(saves.Count!=2+field || restored.UiColors!=cfg.UiColors || restored.PluginEnabled || restored.IgnoredPluginIds.Single()!="fixture")
+                        throw new InvalidOperationException("Native RGB edit did not preserve the global save owner.");
+                }
+                var manual=cfg.UiColors;
+                host.Click(Center("Auto"),Draw);
+                if(saves.Count!=5 || cfg.UiColors!=(manual with { Mode=MaterialColorMode.Auto })) throw new InvalidOperationException("Returning to Auto lost Picker values.");
+                host.Click(Center("Picker"),Draw);
+                if(saves.Count!=6 || cfg.UiColors!=manual) throw new InvalidOperationException("Returning to Picker lost saved values.");
             }
         }
         finally { property.SetValue(null,previous); }
         using var english=new UiText("en",_=>throw new InvalidOperationException());
         var keys=english.Resources.Cast<DictionaryEntry>().ToDictionary(e=>(string)e.Key,e=>(string)e.Value!);
-        foreach(var statusKey in new[]{"Yes","No","Cancel","Other source installed","Testing only","Hidden plugin","Host not ready","Source unavailable","Source refresh required","Not available on this API","Required","Blocked","Left-click: require. Right-click: block. Click again to clear."})
+        foreach(var statusKey in new[]{"Yes","No","Cancel","Other source installed","Testing only","Hidden plugin","Host not ready","Source unavailable","Source refresh required","Not available on this API","Required","Blocked","Left-click: require. Right-click: block. Click again to clear.",
+            "Auto","Picker","Default","Background, controls and text follow your theme.","Theme colour","Choose each colour independently.","Background","Controls","Text","Aa  Preview text","Control","Switch to Picker to set each colour yourself.","Switch back to Auto to use the automatic theme."})
             if(!keys.ContainsKey(statusKey)) throw new InvalidOperationException("Installer status/action resource missing: "+statusKey);
         string Fields(string value)=>string.Join(",",System.Text.RegularExpressions.Regex.Matches(value,@"(?<!\{)\{(\d+)(?:[^{}]*)\}").Select(m=>m.Groups[1].Value).Distinct().Order());
         foreach(var language in UiText.Languages)
@@ -401,7 +492,7 @@ internal static class BotologyUiSmoke
                 System.Text.CompositeFormat.Parse(translated[key]);
             }
         }
-        Console.WriteLine($"Existing configuration defaults/save path and all {UiText.Languages.Length} keyed resource/placeholder sets passed.");
+        Console.WriteLine($"Existing configuration defaults/save path, native colour callback/draft commits in two density/scale cases, cyan decorative fills and all {UiText.Languages.Length} keyed resource/placeholder sets passed.");
     }
 
     private static unsafe void CheckNativeLocalizedControls()

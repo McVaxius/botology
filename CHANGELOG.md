@@ -1,3 +1,8 @@
+2026-10-20 - Independent appearance colours (local implementation)
+
+- Add Auto and Picker to Colour in the native titlebar and existing Settings. Auto keeps the existing palette and custom accent; Picker retains independent Background, Controls and Text choices through the existing global save path.
+- Keep cyan Controls independent of the chosen Background when drawing decorative panels and badges. Saved Picker choices remain available after returning to Auto.
+
 2026-10-20 - Uniform Discover cards (local implementation)
 
 - Use one shared card size and aligned media, title, metadata and action areas across the grid. Long titles and preview loading/failure no longer resize individual cards.
