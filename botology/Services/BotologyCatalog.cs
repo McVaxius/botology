@@ -89,6 +89,9 @@ public static class BotologyCatalog
     }
 
     public static string BuildAlertSummary(IEnumerable<PluginAssessmentRow> rows)
+        => BuildAlertSummary(rows, row => $"{row.Entry.DisplayName} ({row.Assessment.Severity}): {row.Assessment.Summary}");
+
+    internal static string BuildAlertSummary(IEnumerable<PluginAssessmentRow> rows, Func<PluginAssessmentRow, string> formatRow)
     {
         var actionableRows = rows
             .Where(row => row.IsAssessable && !row.Ignored && row.Assessment.Severity != AssessmentSeverity.Green)
@@ -99,7 +102,7 @@ public static class BotologyCatalog
 
         var labels = actionableRows
             .Take(4)
-            .Select(row => $"{row.Entry.DisplayName} ({row.Assessment.Severity})");
+            .Select(formatRow);
         var suffix = actionableRows.Count > 4 ? " ..." : string.Empty;
         return $"{actionableRows.Count} non-green plugin entries: {string.Join(", ", labels)}{suffix}";
     }

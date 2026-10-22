@@ -21,7 +21,9 @@ Scroll down to "The Dumpster Fire" channel to discuss issues / suggestions for s
 
 The current source opens a plugin installer with Discover cards, a table view, Installed, Updates and repository management. Known unadded sources remain searchable; review a source and explicitly add it before installing. Repository and author favourites use the existing configuration, with a folding side panel. Invalid favourites stay hidden without deleting saved choices. The Compatibility tab retains the existing grid, DTR and catalog tools.
 
-Plugin profiles load supplied screenshots on demand. GIF previews start with Play, stop when leaving the page, and use Windows' built-in decoder with no bundled codec or helper executable. WebM is deferred. Local checks use fabricated host data; live installation and Wine playback require separate acceptance. The source version remains `2.0.0.12`; this work has not been published.
+Compatibility alerts include the assessment reason and missing dependency names in the selected UI language. Ignored, absent and disabled plugins stay outside active alerts; the summary keeps its four-entry limit. Hover over a plugin's info control for a wrapped description that disappears when the pointer leaves and preserves keyboard focus. Runtime matching uses the host's installed-plugin identity and loaded state; an old directory alone does not establish that a plugin is loaded.
+
+Plugin profiles load supplied screenshots on demand. GIF previews start with Play, stop when leaving the page, and use Windows' built-in decoder with no bundled codec or helper executable. WebM is deferred. Local checks use fabricated host data; live installation and Wine playback require separate acceptance. The source version remains `3.0.0.1`; this work has not been published.
 
 Catalog entries can include an optional plugin-specific Discord HTTPS URL. Set it in the existing catalog editor; the supplied link appears beside that entry's repository actions. Local overrides preserve the URL across reloads, older entries need no change, and invalid supplied links stay disabled. Botology opens a link only when you click it.
 
@@ -56,8 +58,8 @@ are explicit; Windows fonts are never distributed with the plugin.
 The main window maps to `Z:\!prebuild\Botology-main-v1.png`, retaining native
 Dalamud chrome and adding the selectors. Settings, Catalog Editor and DTR
 Manager retain their layouts with shared fonts/theme and overflow corrections.
-Columns, patch notes, blocking alert, description, rule-info and appearance
-popups retain native interaction and identity. The measured 1440 × 942 content
+Columns, patch notes, blocking alert, rule-info and appearance popups retain
+native interaction and identity; descriptions use hover tooltips. The measured 1440 × 942 content
 uses 72/52/64/115/44/74/52-pixel header/actions/counters/filters/table-header/
 minimum-row/footer roles and 38/20/22/18/16-pixel em typography at 100%.
 

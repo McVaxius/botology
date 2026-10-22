@@ -54,7 +54,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         var loaded = UiText.F("{0} loaded", rows.Count(row => row.IsLoaded));
         var concise = state + " \u00b7 " + (issues > 0 ? issueText + " \u00b7 " : "") + loaded;
         var details = state + " \u00b7 " + (issues > 0 ? issueText + " \u00b7 " : "") + loaded;
-        var tooltip = details + "\n" + UiText.Alert(BotologyCatalog.BuildAlertSummary(rows));
+        var tooltip = details + "\n" + UiText.Alert(rows);
         return new(Configuration.UiDetailedTitlebarStatus ? details : concise, concise, tooltip,
             issues > 0 ? AethertekUI.MaterialTheme.Current.Colors.Error : AethertekUI.MaterialTheme.Current.Colors.OnSurfaceVariant);
     }
@@ -366,6 +366,12 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     }
 
     public void PrintStatus(string message) => ChatGui.Print($"[{PluginInfo.DisplayName}] {message}");
+
+    private string FormatAlertSummary(IEnumerable<PluginAssessmentRow> rows)
+    {
+        using var text = uiText.Enter();
+        return UiText.Alert(rows);
+    }
 
     public void RunTextCommand(string command)
     {
@@ -880,7 +886,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
 
         if (trimmed.Equals("status", StringComparison.OrdinalIgnoreCase))
         {
-            PrintStatus(BotologyCatalog.BuildAlertSummary(CaptureRows()));
+            PrintStatus(FormatAlertSummary(CaptureRows()));
             return;
         }
 
@@ -1011,7 +1017,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         if (alertRows.Count == 0)
             return;
 
-        var message = BotologyCatalog.BuildAlertSummary(alertRows);
+        var message = FormatAlertSummary(alertRows);
 
         if (Configuration.ToastNotifications)
             ToastGui.ShowNormal(new SeString(new TextPayload(message)));

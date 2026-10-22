@@ -312,7 +312,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
                 case 2: plugin.OpenCatalogFolder(); break;
                 case 3: ImGui.OpenPopup(PatchNotesPopupId); break;
                 case 4: plugin.RefreshMasterCatalog(force:true,silent:false); break;
-                case 5: plugin.PrintStatus(BotologyCatalog.BuildAlertSummary(rows)); break;
+                case 5: plugin.PrintStatus(UiText.Alert(rows)); break;
             }
         }
     }
@@ -704,17 +704,23 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         }
 
         ImGui.SameLine();
-        if (MaterialButton.IconButton("description", MaterialIcon.Info))
-            ImGui.OpenPopup("PluginDescription");
+        var controls = MaterialControls.Metrics;
+        var side = controls.Height;
+        var iconSize = Math.Min(controls.IconSize, Math.Max(1, side - 2 * MaterialTheme.Metrics.Scale));
+        var origin = ImGui.GetCursorScreenPos();
+        ImGui.Dummy(new Vector2(side));
+        if (ImGui.IsItemVisible())
+            MaterialIcons.Draw(MaterialIcon.Info, origin + new Vector2((side - iconSize) * .5f), iconSize,
+                MaterialTheme.Current.Colors.OnSurface);
         MeasureBounds?.Invoke("description-"+row.Entry.Id,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
 
-        ImGui.SetNextWindowSize(new Vector2(540f*MaterialTheme.Metrics.Scale, 0f));
-        if (ImGui.BeginPopup("PluginDescription"))
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenBlockedByActiveItem))
         {
+            ImGui.BeginTooltip();
             ImGui.PushTextWrapPos(500f*MaterialTheme.Metrics.Scale);
             MaterialText.TextWrapped(GetPluginDescription(row));
             ImGui.PopTextWrapPos();
-            ImGui.EndPopup();
+            ImGui.EndTooltip();
         }
     }
 
@@ -980,7 +986,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
             return;
 
         UiGui.Title(BlockingPopupId,UiText.T("Compatibility warning"));
-        MaterialText.TextWrapped(UiText.Alert(message));
+        MaterialText.TextWrapped(message);
         if (UiGui.Button("OK"))
         {
             plugin.AcknowledgeBlockingAlert();

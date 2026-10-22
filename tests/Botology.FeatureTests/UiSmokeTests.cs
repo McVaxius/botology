@@ -12,6 +12,89 @@ namespace AethertekUI.Tests;
 
 internal static class BotologyUiSmoke
 {
+    internal static unsafe void CheckDescriptionHover()
+    {
+        var cases = 0;
+        foreach (var language in new[] { "en", "de" })
+        foreach (var scale in new[] { 1f, 1.5f })
+        foreach (var compact in new[] { false, true })
+        {
+            using var host = new NativeTestContext((int)(1200 * scale), (int)(900 * scale), scale, language);
+            using var text = new UiText(language, host.PushFont);
+            var backend = new SnapshotUi(false, 0x1CC9E6, language, false, false);
+            using var main = new MainWindow(backend);
+            var row = backend.Rows[0] with { Entry = backend.Rows[0].Entry with
+            {
+                Description = string.Join(" ", Enumerable.Repeat("Long fixture description with readable wrapped information.", 12)),
+            } };
+            var drawCategory = typeof(MainWindow).GetMethod("DrawCategoryColumn", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var bounds = new Dictionary<string, (Vector2 Min, Vector2 Max)>();
+            var descriptionFocused = false;
+            main.MeasureBounds = (name, min, max) =>
+            {
+                bounds[name] = (min, max);
+                if (name == "description-" + row.Entry.Id) descriptionFocused = ImGui.IsItemFocused();
+            };
+            var theme = BotologyPresentation.Theme(0x1CC9E6);
+            theme.Motion.Enabled = false;
+            theme.Density = compact ? MaterialDensity.Compact : MaterialDensity.Standard;
+            var input = "Editable fixture";
+            void Draw()
+            {
+                using var locale = text.Enter();
+                using var material = MaterialTheme.Push(theme, scale, MaterialStyleMode.ColorsOnly);
+                using var geometry = BotologyPresentation.PushHostGeometry(scale, compact);
+                ImGui.SetNextWindowPos(new Vector2(10, 10) * scale);
+                ImGui.SetNextWindowSize(new Vector2(1000, 650) * scale);
+                ImGui.Begin("Description hover fixture", ImGuiWindowFlags.NoSavedSettings);
+                drawCategory.Invoke(main, [row]);
+                ImGui.InputText("Editable fixture", ref input, 256);
+                bounds["input"] = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+                ImGui.End();
+            }
+            ImGuiWindowPtr Tooltip()
+            {
+                var context = ImGui.GetCurrentContext();
+                for (var index = 0; index < context.Windows.Size; index++)
+                {
+                    var candidate = new ImGuiWindowPtr(context.Windows.Data[index]);
+                    if ((candidate.Flags & ImGuiWindowFlags.Tooltip) != 0 && candidate.LastFrameActive == ImGui.GetFrameCount()) return candidate;
+                }
+                return default;
+            }
+            Vector2 Center(string key) => (bounds[key].Min + bounds[key].Max) * .5f;
+            ImGui.GetIO().AddMousePosEvent(-1000, -1000);
+            for (var frame = 0; frame < 3; frame++) host.Frame(Draw);
+            host.Click(Center("input"), Draw);
+            var activeInput = ImGui.GetCurrentContext().ActiveId;
+            var navigationOwner = (nint)ImGui.GetCurrentContext().NavWindow.Handle;
+            if (activeInput == 0) throw new InvalidOperationException("Hover fixture did not focus its native input.");
+            var descriptionCenter = Center("description-" + row.Entry.Id);
+            ImGui.GetIO().AddMousePosEvent(descriptionCenter.X, descriptionCenter.Y);
+            for (var frame = 0; frame < 4; frame++) host.Frame(Draw);
+            var tooltip = Tooltip();
+            if (tooltip.IsNull || tooltip.Size.X > 550 * scale || tooltip.Size.Y < 90 * scale || tooltip.DrawList.VtxBuffer.Size == 0)
+                throw new InvalidOperationException($"Description hover is absent, unreadable or unwrapped: {language}/{scale}/{compact}.");
+            if ((tooltip.Flags & ImGuiWindowFlags.NoInputs) != ImGuiWindowFlags.NoInputs
+                || ImGui.GetCurrentContext().ActiveId != activeInput || (nint)ImGui.GetCurrentContext().NavWindow.Handle != navigationOwner
+                || ImGui.GetCurrentContext().OpenPopupStack.Size != 0)
+                throw new InvalidOperationException("Description hover captured input/focus or opened a persistent popup.");
+            host.Click(Center("description-" + row.Entry.Id), Draw);
+            if (ImGui.GetCurrentContext().OpenPopupStack.Size != 0) throw new InvalidOperationException("Clicking description opened a sticky popup.");
+            ImGui.GetIO().AddMousePosEvent(-1000, -1000);
+            for (var frame = 0; frame < 3; frame++) host.Frame(Draw);
+            if (!Tooltip().IsNull || descriptionFocused)
+                throw new InvalidOperationException("Clicking description retained a tooltip or focus outline after the pointer left.");
+            host.Click(Center("input"), Draw);
+            for (var frame = 0; frame < 2; frame++) host.Frame(Draw);
+            ImGui.GetIO().AddInputCharacter('!');
+            host.Frame(Draw);
+            if (!Tooltip().IsNull || !input.Contains('!')) throw new InvalidOperationException("Description stayed visible after hover or blocked normal input.");
+            cases++;
+        }
+        Console.WriteLine($"Description hover: {cases} native language/scale/density cases passed; wrapping, focus, dismissal and input verified.");
+    }
+
     public static unsafe void CheckConfirmationPopups(string[] assemblies)
     {
         var checkedPopups = 0;
@@ -171,7 +254,8 @@ internal static class BotologyUiSmoke
                 new("dtr-populated","dtr",900,700),new("dtr-empty","dtr",900,700,Empty:true),
                 new("compact-dtr","dtr",900,700,Compact:true),
             };
-            foreach(var popup in new[]{"columns","patch","blocking","description","rule","color","language"})
+            // Description hover/focus/dismissal is exercised by CheckDescriptionHover.
+            foreach(var popup in new[]{"columns","patch","blocking","rule","color","language"})
                 scenarios.Add(new("popup-"+popup,"main",Width:popup=="rule"?1880:1472,Extras:popup=="rule",Popup:popup));
             if(language=="en") scenarios.AddRange([
                 new("minimum","main",1240,640),new("maximum","main",1880,1400),
@@ -275,12 +359,12 @@ internal static class BotologyUiSmoke
                         (rows.Length < 2 || rows.Any(row => row.Max.Y - row.Min.Y >= 64 * scenario.Scale)))
                         throw new InvalidOperationException("Compact rows retained the oversized minimum height.");
                 }
-                if(scenario.Popup is "columns" or "patch" or "description" or "rule" or "color" or "language")
+                if(scenario.Popup is "columns" or "patch" or "rule" or "color" or "language")
                 {
                     Vector2 Center(string key)=>(bounds[key].Min+bounds[key].Max)*.5f;
                     host.Click(scenario.Popup switch
                     {
-                        "columns"=>Center("columns-button"),"patch"=>Center("action-3"),"description"=>Center("description-sample-0"),
+                        "columns"=>Center("columns-button"),"patch"=>Center("action-3"),
                         "rule"=>Center("rule-sample-0"),"color"=>backend.AccentCenter,_=>backend.LanguageCenter,
                     },Draw);
                     ImGui.GetIO().AddMousePosEvent(-1000,-1000);
@@ -804,7 +888,7 @@ internal sealed class SnapshotUi : IBotologyUi
     public bool TryGetGlobalDtrEntry(PluginAssessmentRow row,IReadOnlyList<DtrEntrySnapshot> entries,out DtrEntrySnapshot? entry)
     { entry=entries.FirstOrDefault(e=>e.OwnerInternalName==row.Entry.Id);return entry is not null; }
     public bool TryGetBlockingAlert(out string message,out bool shouldOpenPopup)
-    { message="2 non-green plugin entries: Sample B (Yellow), Sample C (Red)";shouldOpenPopup=BlockingPopup;BlockingPopup=false;return true; }
+    { message=UiText.Alert("2 non-green plugin entries: Sample B (Yellow), Sample C (Red)");shouldOpenPopup=BlockingPopup;BlockingPopup=false;return true; }
     public void AcknowledgeBlockingAlert()=>Actions.Add("acknowledge");
     public void OpenUrl(string url)=>Actions.Add("url");
     public void OpenConfigUi()=>Actions.Add("settings");

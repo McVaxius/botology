@@ -8,6 +8,18 @@ using botology.Windows;
 
 Console.OutputEncoding = new UTF8Encoding(false);
 
+if (args.FirstOrDefault() == "--compatibility-feedback")
+{
+    var product = typeof(BotologyCatalog).Assembly;
+    Console.WriteLine($"Product {product.GetName().Version}; Dalamud reference {product.GetReferencedAssemblies().Single(item => item.Name == "Dalamud").Version}.");
+    var result = CompatibilityFeedbackTests.Check(args.Skip(1).FirstOrDefault());
+    foreach (var failure in result.Failures) Console.Error.WriteLine("FAIL: " + failure);
+    Console.WriteLine($"Compatibility feedback: {result.Checks} checks, {result.Failures.Count} failures.");
+    try { AethertekUI.Tests.BotologyUiSmoke.CheckDescriptionHover(); }
+    catch (Exception exception) { Console.Error.WriteLine("FAIL: " + exception.Message); return 1; }
+    return result.Failures.Count == 0 ? 0 : 1;
+}
+
 if (args.FirstOrDefault() == "--installer-media") { InstallerMediaTests.Check(); await InstallerMediaTests.CheckOwnershipAsync(); return 0; }
 if (args.FirstOrDefault() == "--installer-ui") { InstallerUiTests.Check(args.Skip(1).ToArray()); return 0; }
 if (args.FirstOrDefault() == "--installer-performance") { InstallerUiTests.CheckPerformance(); return 0; }
@@ -258,6 +270,7 @@ finally
 }
 
 failures.AddRange(InstallerFeatureTests.Check());
+failures.AddRange(CompatibilityFeedbackTests.Check().Failures);
 failures.AddRange(await InstallerActionTests.CheckAsync());
 if (failures.Count > 0)
 {
@@ -271,6 +284,7 @@ InstallerMediaTests.Check();
 await InstallerMediaTests.CheckOwnershipAsync();
 InstallerUiTests.CheckTitle();
 InstallerUiTests.Check();
+AethertekUI.Tests.BotologyUiSmoke.CheckDescriptionHover();
 AethertekUI.Tests.BotologyUiSmoke.Run();
 Console.WriteLine("Botology feature tests passed: notification matching, duplicate prevention, AI storage, changelog cache fallback, grid sorting, and native main-window rendering.");
 return 0;

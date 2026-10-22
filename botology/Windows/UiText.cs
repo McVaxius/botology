@@ -48,13 +48,18 @@ internal sealed class UiText : IDisposable
         => result.UiUnderlyingAssessment is { } underlying
             ? F(result.UiSummaryKey!,result.UiSummaryArguments)+(string.IsNullOrWhiteSpace(underlying.Details)?"":Environment.NewLine+Environment.NewLine+underlying.Details)
             : result.Details;
-    internal static string Alert(string original)
+    internal static string Alert(IEnumerable<botology.Models.PluginAssessmentRow> rows)
+        => Alert(botology.Services.BotologyCatalog.BuildAlertSummary(rows,
+            row => $"{row.Entry.DisplayName} ({T(row.Assessment.Severity.ToString())}): {Assessment(row.Assessment)}"),false);
+    internal static string Alert(string original) => Alert(original,true);
+    private static string Alert(string original,bool translateSeverityLabels)
     {
         if(original=="All active tracked plugins are green.") return T(original);
         var match=System.Text.RegularExpressions.Regex.Match(original,@"^(\d+) non-green plugin entries: (.+)$");
         if(!match.Success) return original;
         var labels=match.Groups[2].Value;
-        foreach(var severity in new[]{"Green","Yellow","Red"}) labels=labels.Replace("("+severity+")","("+T(severity)+")",StringComparison.Ordinal);
+        if(translateSeverityLabels)
+            foreach(var severity in new[]{"Green","Yellow","Red"}) labels=labels.Replace("("+severity+")","("+T(severity)+")",StringComparison.Ordinal);
         return F("{0} non-green plugin entries: {1}",int.Parse(match.Groups[1].Value,CultureInfo.InvariantCulture),labels);
     }
     internal static IDisposable Font(UiFontRole role) => Current.pushFont(role);

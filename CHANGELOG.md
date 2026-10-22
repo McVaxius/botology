@@ -1,3 +1,9 @@
+2026-10-22 - Compatibility feedback and hover descriptions (local implementation)
+
+- Include each alert's actual assessment reason and missing dependency names while retaining ignored-row filtering, severity, total counts and the four-row summary limit. Format notification, status and titlebar reasons with the existing UI language resources.
+- Show wrapped plugin descriptions on hover over the existing info icon. Its display-only target cannot retain button focus or an outline after a click; descriptions disappear when the pointer leaves without a sticky popup or capturing keyboard focus.
+- Preserve exact normalized runtime-name matching and the host's loaded/disabled state. An old plugin directory alone is not evidence that the plugin is loaded.
+
 2026-10-20 - Independent appearance colours (local implementation)
 
 - Add Auto and Picker to Colour in the native titlebar and existing Settings. Auto keeps the existing palette and custom accent; Picker retains independent Background, Controls and Text choices through the existing global save path.
