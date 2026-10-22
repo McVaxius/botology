@@ -23,7 +23,7 @@ The current source opens a plugin installer with Discover cards, a table view, I
 
 Compatibility alerts include the assessment reason and missing dependency names in the selected UI language. Ignored, absent and disabled plugins stay outside active alerts; the summary keeps its four-entry limit. Hover over a plugin's info control for a wrapped description that disappears when the pointer leaves and preserves keyboard focus. Runtime matching uses the host's installed-plugin identity and loaded state; an old directory alone does not establish that a plugin is loaded.
 
-Plugin profiles load supplied screenshots on demand. GIF previews start with Play, stop when leaving the page, and use Windows' built-in decoder with no bundled codec or helper executable. WebM is deferred. Local checks use fabricated host data; live installation and Wine playback require separate acceptance. The source version remains `3.0.0.1`; this work has not been published.
+Plugin profiles load supplied screenshots on demand. GIF previews start with Play, stop when leaving the page, and use Windows' built-in decoder with no bundled codec or helper executable. WebM is deferred. Local checks use fabricated host data; live installation and Wine playback require separate acceptance. Compatibility feedback and description-hover verification used build `3.0.0.1`; release and live acceptance remain separate.
 
 Catalog entries can include an optional plugin-specific Discord HTTPS URL. Set it in the existing catalog editor; the supplied link appears beside that entry's repository actions. Local overrides preserve the URL across reloads, older entries need no change, and invalid supplied links stay disabled. Botology opens a link only when you click it.
 
