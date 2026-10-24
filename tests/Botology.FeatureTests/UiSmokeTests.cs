@@ -233,11 +233,11 @@ internal static class BotologyUiSmoke
     private sealed record Scenario(string Name,string Window,int Width=1472,int Height=996,float Scale=1,uint Accent=0x1CC9E6,
         bool Extras=false,bool Empty=false,bool Detailed=false,string? Popup=null,bool Editable=false,bool Ignored=false,bool Unavailable=false,bool Compact=false);
 
-    public static void Run(bool verifyBaselines = true)
+    public static void Run(bool verifyBaselines = true,bool lcars=false)
     {
-        CheckPreferencesAndResources();
-        CheckHindiNativeControls();
-        if(Environment.GetEnvironmentVariable("BOTOLOGY_HINDI_ONLY")!="1")
+        if(!lcars) CheckPreferencesAndResources();
+        if(!lcars) CheckHindiNativeControls();
+        if(!lcars && Environment.GetEnvironmentVariable("BOTOLOGY_HINDI_ONLY")!="1")
         {
             CheckNativeLocalizedControls();
             CheckReadableFields();
@@ -265,6 +265,13 @@ internal static class BotologyUiSmoke
                 new("columns","main",1880,1100,Extras:true),new("detailed","main",Detailed:true),
                 new("ignored","main",Ignored:true),new("unavailable","main",Detailed:true,Unavailable:true),
             ]);
+            if(lcars)
+            {
+                scenarios.RemoveAll(scenario=>scenario.Popup is not (null or "patch" or "blocking") || scenario.Accent!=0x1CC9E6);
+                scenarios.Add(new("lcars-settings-scaled","settings",1050,900,1.5f,Compact:true));
+                scenarios.Add(new("lcars-dtr-scaled","dtr",1050,900,1.5f,Compact:true));
+                scenarios.Add(new("lcars-catalog-scaled","catalog",1770,990,1.5f,Compact:true,Editable:true));
+            }
             foreach(var scenario in scenarios)
             {
                 if(Environment.GetEnvironmentVariable("BOTOLOGY_VISUAL_CASE") is { Length:>0 } selected && !selected.Split(',').Contains(language+"/"+scenario.Name,StringComparer.Ordinal)) continue;
@@ -281,6 +288,7 @@ internal static class BotologyUiSmoke
                 var bounds=new Dictionary<string,(Vector2 Min,Vector2 Max)>();
                 main.MeasureBounds=(name,min,max)=>bounds[name]=(min,max);
                 var settings=new ConfigWindow(backend);
+                settings.MeasureBounds=(name,min,max)=>bounds[name]=(min,max);
                 var catalog=new CatalogEditorWindow(backend);
                 if(backend.Entries.Length>0) catalog.DiagnosticSelect(backend.Entries[0],scenario.Editable);
                 object? hindiDraft=null;
@@ -294,7 +302,19 @@ internal static class BotologyUiSmoke
                 }
                 var dtr=new DtrManagerWindow(backend);
                 var text=new UiText(language,host.PushFont);
-                var theme=BotologyPresentation.Theme(scenario.Accent);
+                var theme=BotologyPresentation.Theme(scenario.Accent,new() { Mode=lcars?MaterialColorMode.Lcars:MaterialColorMode.Auto });
+                if(lcars && scenario.Window=="settings")
+                {
+                    backend.Configuration.UiColors=new() { Mode=MaterialColorMode.Lcars };
+                    var appearanceOwner=(Plugin)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Plugin));
+                    void Set(string name,object value)=>typeof(Plugin).GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(appearanceOwner,value);
+                    Set("<Configuration>k__BackingField",backend.Configuration);
+                    Set("uiTheme",theme);Set("appliedLanguage",language);
+                    Set("colorDraft",backend.Configuration.UiColors);
+                    var accent=BotologyPresentation.Rgb(scenario.Accent);Set("accentDraft",new Vector3(accent.X,accent.Y,accent.Z));
+                    Set("languageOptions",new MaterialOptions<string>(UiText.Languages.Select(item=>new MaterialOption<string>(item.Code,item.Code,item.Name)).ToArray()));
+                    backend.AppearanceDraw=appearanceOwner.DrawWindowAppearanceSettings;
+                }
                 PositionedWindow positionedOwner=scenario.Window switch { "settings"=>settings,"catalog"=>catalog,"dtr"=>dtr,_=>main };
                 theme.Density=scenario.Compact?MaterialDensity.Compact:MaterialDensity.Standard;
                 theme.Motion.Enabled=false;
@@ -328,7 +348,7 @@ internal static class BotologyUiSmoke
                     }
                     using(UiText.Font(UiFontRole.BodyStrong))
                     foreach(var column in new[]{"Source","Installed","Update","Enabled"})
-                        if(bounds.TryGetValue("column-"+column,out var cell) && cell.Max.X-cell.Min.X<MaterialText.Measure(UiText.T(column)).X+48*scenario.Scale-.5f)
+                        if(bounds.TryGetValue("column-"+column,out var cell) && cell.Max.X-cell.Min.X<MaterialText.Measure(UiText.T(column)).X+2*bounds["table-cell-padding"].Min.X+16*scenario.Scale-.5f)
                             throw new InvalidOperationException("Translated table header clipped: "+language+"/"+column);
                     if(scenario.Window=="main" && ImGui.GetCursorPosY()>scenario.Height-8*scenario.Scale)
                         throw new InvalidOperationException("Footer overflow: "+language+"/"+scenario.Name);
@@ -348,6 +368,12 @@ internal static class BotologyUiSmoke
                     priorGeometry=geometry;
                 }
                 if(stableFrames<3) throw new InvalidOperationException("Window geometry did not settle: "+language+"/"+scenario.Name);
+                if(lcars && scenario.Window=="settings")
+                {
+                    var tab=bounds["appearance-tab"];
+                    host.Click((tab.Min+tab.Max)*.5f,Draw);
+                    for(var frame=0;frame<3;frame++) host.Frame(Draw);
+                }
                 if (scenario.Compact && scenario.Window == "main")
                 {
                     var rows = bounds.Where(pair => pair.Key.StartsWith("row-", StringComparison.Ordinal))
@@ -388,9 +414,9 @@ internal static class BotologyUiSmoke
                 if(verifyBaselines && language=="en" && scenario.Name=="main" && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AETHERTEKUI_CANDIDATE_DIR"))) CheckDesign(host,bounds);
                 if(verifyBaselines) SoftwarePreview.Verify(name,host,Path.Combine(AppContext.BaseDirectory,"Baselines"),Path.Combine(AppContext.BaseDirectory,"artifacts"));
                 rendered++;
-                if(Environment.GetEnvironmentVariable("AETHERTEKUI_PREVIEW_DIR") is { Length:>0 } previews)
+                if((!lcars || language is "en" or "ru" or "hi") && Environment.GetEnvironmentVariable("AETHERTEKUI_PREVIEW_DIR") is { Length:>0 } previews)
                     SoftwarePreview.Save(Path.Combine(previews,name+".png"),host);
-                if(language=="en" && scenario.Name=="main") CheckNativeGrid(host,Draw,bounds,main,backend);
+                if(!lcars && language=="en" && scenario.Name=="main") CheckNativeGrid(host,Draw,bounds,main,backend);
                 if(backend.Actions.Count>0) throw new InvalidOperationException("A diagnostic render invoked an action: "+string.Join(",",backend.Actions));
             }
         }
@@ -444,7 +470,7 @@ internal static class BotologyUiSmoke
         var configuration=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>("{\"Version\":1,\"PluginEnabled\":false,\"ShowAuthorColumn\":true,\"IgnoredPluginIds\":[\"fixture\"]}")!;
         if(!configuration.UiShowTitlebarStatus || !configuration.UiDetailedTitlebarStatus || configuration.UiLanguage!="en" || configuration.UiAccentRgb!=0x1CC9E6 || configuration.Version!=1 || configuration.PluginEnabled || !configuration.ShowAuthorColumn || configuration.IgnoredPluginIds.Single()!="fixture")
             throw new InvalidOperationException("Existing configuration defaults were reset.");
-        if(configuration.UiColors.Mode!=MaterialColorMode.Auto) throw new InvalidOperationException("Legacy colours must default to Auto.");
+        if(configuration.UiColors.Mode!=MaterialColorMode.Auto || !configuration.UiSoundsMuted) throw new InvalidOperationException("Legacy colours must default to Auto with muted UI sounds.");
         var automatic=BotologyPresentation.Theme(0x1CC9E6).Colors;
         if(automatic.Background!=BotologyPresentation.Rgb(0x111E2A) || automatic.Primary!=BotologyPresentation.Rgb(0x1CC9E6)
             || automatic.OnSurface!=BotologyPresentation.Rgb(0xDFECFC) || automatic.SecondaryContainer!=BotologyPresentation.Rgb(0x1B2C3C))
@@ -502,6 +528,12 @@ internal static class BotologyUiSmoke
                     saves.Add(Newtonsoft.Json.JsonConvert.SerializeObject(values![0]));return null;
                 };
                 ImDrawListPtr list=default;
+                var nativeFeedback=new List<MaterialUiSoundCue>();
+                var drawFeedbackControls=false;
+                var feedbackButton=Vector2.Zero;
+                var disabledButton=Vector2.Zero;
+                using var actionOwner=new MainWindow(new SnapshotUi(true,0x1CC9E6,"en"));
+                var primaryAction=typeof(MainWindow).GetMethod("InstallerButton",BindingFlags.Instance|BindingFlags.NonPublic)!;
                 void Draw()
                 {
                     apply.Invoke(plugin,null);
@@ -509,7 +541,19 @@ internal static class BotologyUiSmoke
                     using var material=MaterialTheme.Push((MaterialTheme)themeField.GetValue(plugin)!,scale,MaterialStyleMode.ColorsOnly);
                     ImGui.SetNextWindowPos(new(20,20));ImGui.SetNextWindowSize(new(700*scale,800*scale));
                     ImGui.Begin("Botology colour callback",ImGuiWindowFlags.NoSavedSettings);
-                    draw.Invoke(plugin,null);list=ImGui.GetWindowDrawList();ImGui.End();
+                    draw.Invoke(plugin,null);
+                    if(drawFeedbackControls)
+                    {
+                        UiGui.Button("Native fixture action");feedbackButton=(ImGui.GetItemRectMin()+ImGui.GetItemRectMax())*.5f;
+                        ImGui.BeginDisabled();UiGui.Button("Disabled fixture action");disabledButton=(ImGui.GetItemRectMin()+ImGui.GetItemRectMax())*.5f;ImGui.EndDisabled();
+                        var actionList=ImGui.GetWindowDrawList();var firstVertex=actionList.VtxBuffer.Size;
+                        primaryAction.Invoke(actionOwner,["Install","lcars-primary-fixture",false,Vector2.Zero,MaterialIcon.None,MaterialIcon.None,true,false,true]);
+                        var darkCaption=0;
+                        for(var vertex=firstVertex;vertex<actionList.VtxBuffer.Size;vertex++)
+                            if(actionList.VtxBuffer[vertex].Col==MaterialCanvas.Color(MaterialLcars.Background)) darkCaption++;
+                        if(darkCaption<"Install".Length*4) throw new InvalidOperationException("Actual LCARS primary action lost its contrasting dark caption.");
+                    }
+                    list=ImGui.GetWindowDrawList();ImGui.End();
                 }
                 Vector2 Center(string caption)
                 {
@@ -556,13 +600,61 @@ internal static class BotologyUiSmoke
                 if(saves.Count!=5 || cfg.UiColors!=(manual with { Mode=MaterialColorMode.Auto })) throw new InvalidOperationException("Returning to Auto lost Picker values.");
                 host.Click(Center("Picker"),Draw);
                 if(saves.Count!=6 || cfg.UiColors!=manual) throw new InvalidOperationException("Returning to Picker lost saved values.");
+                host.Click(Center("LCARS"),Draw);
+                host.Frame(Draw);
+                if(saves.Count!=7 || cfg.UiColors!=(manual with { Mode=MaterialColorMode.Lcars }) || !((MaterialTheme)themeField.GetValue(plugin)!).IsLcars)
+                    throw new InvalidOperationException($"Native LCARS did not retain Picker colours and save once: saves={saves.Count}, mode={cfg.UiColors.Mode}, theme={((MaterialTheme)themeField.GetValue(plugin)!).IsLcars}.");
+                ((MaterialTheme)themeField.GetValue(plugin)!).Feedback=nativeFeedback.Add;
+                drawFeedbackControls=true;host.Frame(Draw);host.Click(feedbackButton,Draw);
+                if(!nativeFeedback.SequenceEqual([MaterialUiSoundCue.Click])) throw new InvalidOperationException("Retained native button did not emit exactly one LCARS cue.");
+                host.Click(disabledButton,Draw);
+                if(nativeFeedback.Count!=1) throw new InvalidOperationException("Disabled native action emitted LCARS feedback.");
+                drawFeedbackControls=false;
+                using(var speakerMain=new MainWindow(plugin))
+                using(var speakerSettings=new ConfigWindow(plugin))
+                using(var speakerDtr=new DtrManagerWindow(plugin))
+                using(var speakerCatalog=new CatalogEditorWindow(plugin))
+                {
+                    var windows=new global::Dalamud.Interface.Windowing.WindowSystem("Botology LCARS fixture");
+                    foreach(var owner in new global::Dalamud.Interface.Windowing.Window[]{speakerMain,speakerSettings,speakerDtr,speakerCatalog}) windows.AddWindow(owner);
+                    var originalButtons=speakerMain.TitleBarButtons.ToArray();
+                    foreach(var fieldName in new[]{"appearanceTitleBars","soundTitleButtons"})
+                    {
+                        var field=typeof(Plugin).GetField(fieldName,BindingFlags.Instance|BindingFlags.NonPublic)!;
+                        field.SetValue(plugin,Activator.CreateInstance(field.FieldType));
+                    }
+                    var prepare=typeof(Plugin).GetMethod("PrepareAppearanceTitleBars",BindingFlags.Instance|BindingFlags.NonPublic)!;
+                    prepare.Invoke(plugin,[windows]);
+                    if(!speakerMain.TitleBarButtons.Take(originalButtons.Length).SequenceEqual(originalButtons))
+                        throw new InvalidOperationException("LCARS shortcuts replaced existing native title actions.");
+                    var speakers=(System.Collections.IDictionary)typeof(Plugin).GetField("soundTitleButtons",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(plugin)!;
+                    var before=saves.Count;
+                    foreach(var owner in windows.Windows.Cast<global::Dalamud.Interface.Windowing.Window>())
+                    {
+                        var muted=cfg.UiSoundsMuted;
+                        ((global::Dalamud.Interface.Windowing.TitleBarButton)speakers[owner]!).Click(ImGuiMouseButton.Left);
+                        if(cfg.UiSoundsMuted==muted || Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(saves[^1])!.UiSoundsMuted!=cfg.UiSoundsMuted)
+                            throw new InvalidOperationException("Actual titlebar speaker did not share the saved mute preference.");
+                    }
+                    if(saves.Count!=before+4 || !cfg.UiSoundsMuted) throw new InvalidOperationException("Speaker shortcut saved more than once.");
+                    saves.RemoveRange(before,4);
+                }
+                plugin.SetUiSoundsMuted(false);
+                var soundSaved=Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(saves[^1])!;
+                if(saves.Count!=8 || soundSaved.UiSoundsMuted || soundSaved.PluginEnabled || soundSaved.IgnoredPluginIds.Single()!="fixture")
+                    throw new InvalidOperationException("UI sound preference lost the existing save owner.");
+                plugin.SetUiSoundsMuted(true);
+                if(!Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(saves[^1])!.UiSoundsMuted)
+                    throw new InvalidOperationException("UI sound mute did not survive reload.");
+                host.Click(Center("Picker"),Draw);
+                if(saves.Count!=10 || cfg.UiColors!=manual) throw new InvalidOperationException("Leaving LCARS lost saved Picker colours.");
             }
         }
         finally { property.SetValue(null,previous); }
         using var english=new UiText("en",_=>throw new InvalidOperationException());
         var keys=english.Resources.Cast<DictionaryEntry>().ToDictionary(e=>(string)e.Key,e=>(string)e.Value!);
         foreach(var statusKey in new[]{"Yes","No","Cancel","Other source installed","Testing only","Hidden plugin","Host not ready","Source unavailable","Source refresh required","Not available on this API","Required","Blocked","Left-click: require. Right-click: block. Click again to clear.",
-            "Auto","Picker","Default","Background, controls and text follow your theme.","Theme colour","Choose each colour independently.","Background","Controls","Text","Aa  Preview text","Control","Switch to Picker to set each colour yourself.","Switch back to Auto to use the automatic theme."})
+            "Auto","Picker","LCARS","Mute UI sounds","Unmute UI sounds","LCARS panels and outlined controls. Picker colours are retained.","Audio output is unavailable.","Default","Background, controls and text follow your theme.","Theme colour","Choose each colour independently.","Background","Controls","Text","Aa  Preview text","Control","Switch to Picker to set each colour yourself.","Switch back to Auto to use the automatic theme."})
             if(!keys.ContainsKey(statusKey)) throw new InvalidOperationException("Installer status/action resource missing: "+statusKey);
         string Fields(string value)=>string.Join(",",System.Text.RegularExpressions.Regex.Matches(value,@"(?<!\{)\{(\d+)(?:[^{}]*)\}").Select(m=>m.Groups[1].Value).Distinct().Order());
         foreach(var language in UiText.Languages)
@@ -868,7 +960,12 @@ internal sealed class SnapshotUi : IBotologyUi
         if(unavailable && Rows.Length>0) Rows[0]=Plugin.ApplyPatchCompatibilityAssessment(Rows[0] with { Metadata=Rows[0].Metadata! with { DalamudApiLevel=14 } });
         DtrEntries=empty?[]:[new("Sample A","Sample","",true,false,false,0,"sample-0"),new("Sample B","Sample","",true,true,false,1,"sample-1")];
     }
-    public void DrawWindowAppearanceSettings() => DrawAppearanceSelector();
+    public Action? AppearanceDraw { get; set; }
+    public void DrawWindowAppearanceSettings()
+    {
+        if(AppearanceDraw is { } draw) { ImGui.SetNextItemOpen(true,ImGuiCond.Always);draw(); }
+        else DrawAppearanceSelector();
+    }
     public void DrawAppearanceSelector()
     {
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(28,18));

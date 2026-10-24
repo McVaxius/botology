@@ -9,6 +9,39 @@ namespace botology.Windows;
 // This also preserves English-derived helper IDs and existing saved window identities.
 internal static class UiGui
 {
+    internal static MaterialTabs.TabItemScope TabItem(string label,ImGuiTabItemFlags flags=ImGuiTabItemFlags.None)
+    {
+        if(!MaterialTheme.Current.IsLcars) return MaterialTabs.Item(label,flags);
+        using var style=new MaterialStyleScope();
+        style.Color(ImGuiCol.TabActive,MaterialLcars.Lilac);
+        style.Color(ImGuiCol.TabUnfocusedActive,MaterialLcars.Lilac);
+        style.Color(ImGuiCol.TabHovered,MaterialLcars.Lilac);
+        style.Color(ImGuiCol.Border,MaterialLcars.Lilac);
+        style.Color(ImGuiCol.Text,Vector4.Zero);
+        var tab=MaterialTabs.Item(label,flags);
+        try
+        {
+        var min=ImGui.GetItemRectMin();var max=ImGui.GetItemRectMax();
+        var bar=ImGui.GetCurrentContext().CurrentTabBar;
+        var caption=label.Split("##",2)[0];var measured=MaterialText.Measure(caption);
+        var clipMin=new Vector2(Math.Max(min.X,bar.ScrollingRectMinX),min.Y);
+        var clipMax=new Vector2(Math.Min(max.X,bar.ScrollingRectMaxX),max.Y);
+        if(clipMax.X>clipMin.X && clipMax.Y>clipMin.Y)
+        {
+            var draw=ImGui.GetWindowDrawList();draw.PushClipRect(clipMin,clipMax,true);
+            try
+            {
+                draw.AddRect(min,max,MaterialCanvas.Color(MaterialLcars.Lilac),6*MaterialTheme.Metrics.Scale,ImDrawFlags.None,MaterialTheme.Metrics.Scale);
+                MaterialText.AddText(draw,min+new Vector2(bar.FramePadding.X,(max.Y-min.Y-measured.Y)*.5f),
+                    MaterialCanvas.Color(tab.Visible || ImGui.IsItemHovered() ? MaterialLcars.Background : MaterialLcars.Text),caption);
+            }
+            finally { draw.PopClipRect(); }
+        }
+        return tab;
+        }
+        catch { tab.Dispose();throw; }
+    }
+
     // A normal popup retains the dialog's title/ID without a viewport dimmer.
     internal static bool BeginConfirmationPopup(string name, ImGuiWindowFlags flags)
     {
@@ -47,6 +80,7 @@ internal static class UiGui
         using var controls = ImGui.GetStyle().FramePadding.Y == 0 || MaterialControls.Context == MaterialControlContext.Dense
             ? default(MaterialControls.ControlScope) : MaterialControls.Push(MaterialControlContext.Toolbar);
         using var height=MaterialText.PushLineHeight(translated);
+        using var lcars=MaterialLcars.NativeButtonStyle();
         var width=MaterialLayout.FitNextItemWidth(0,MaterialText.Measure(translated).X+2*ImGui.GetStyle().FramePadding.X);
         var foreground=ImGui.GetStyle().Colors[(int)ImGuiCol.Text];
         ImGui.PushStyleColor(ImGuiCol.Text,Vector4.Zero);
@@ -57,6 +91,7 @@ internal static class UiGui
         ImGui.GetWindowDrawList().PushClipRect(min,max,true);
         try { MaterialText.AddText(ImGui.GetWindowDrawList(),min+(max-min-MaterialText.Measure(translated))*.5f,ImGui.ColorConvertFloat4ToU32(foreground),translated); }
         finally { ImGui.GetWindowDrawList().PopClipRect(); }
+        MaterialLcars.Feedback(clicked);
         return clicked;
     }
     internal static bool SmallButton(string label,string? display=null)
@@ -85,6 +120,7 @@ internal static class UiGui
             MaterialText.RequiresShaping(translated) ? (ImGui.GetFrameHeight()-MaterialText.Measure(translated).Y)*.5f : ImGui.GetStyle().FramePadding.Y);
         foreground.W*=ImGui.GetStyle().Alpha;
         MaterialText.AddText(ImGui.GetWindowDrawList(),p,ImGui.ColorConvertFloat4ToU32(foreground),translated);
+        MaterialLcars.Feedback(changed, MaterialUiSoundCue.Toggle);
         return changed;
     }
     internal static bool Selectable(string original,bool selected,string? display=null)

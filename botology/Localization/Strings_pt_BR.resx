@@ -362,5 +362,10 @@
   <data name="Control" xml:space="preserve"><value>Controle</value></data>
   <data name="Switch to Picker to set each colour yourself." xml:space="preserve"><value>Mude para Seletor para definir cada cor.</value></data>
   <data name="Switch back to Auto to use the automatic theme." xml:space="preserve"><value>Volte para Automático para usar o tema automático.</value></data>
+  <data name="LCARS" xml:space="preserve"><value>LCARS</value></data>
+  <data name="Mute UI sounds" xml:space="preserve"><value>Silenciar sons da interface</value></data>
+  <data name="Unmute UI sounds" xml:space="preserve"><value>Ativar sons da interface</value></data>
+  <data name="LCARS panels and outlined controls. Picker colours are retained." xml:space="preserve"><value>Painéis LCARS e controles com contorno. As cores do seletor são mantidas.</value></data>
+  <data name="Audio output is unavailable." xml:space="preserve"><value>A saída de áudio está indisponível.</value></data>
 </root>
 

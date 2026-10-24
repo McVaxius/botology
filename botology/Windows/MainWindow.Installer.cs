@@ -33,7 +33,7 @@ public sealed partial class MainWindow
     private InstallerEntry[] cardLayoutEntries=[];
     private float cardHeight,cardTitleHeight,cardMediaHeight;
     private float[] cardRowOffsets=[0];
-    private (float Width,float Scale,nint Font,float FontSize,nint TitleFont,float TitleSize,bool Compact,string Language,int Columns) cardLayoutKey;
+    private (float Width,float Scale,nint Font,float FontSize,nint TitleFont,float TitleSize,bool Compact,bool Lcars,string Language,int Columns) cardLayoutKey;
     internal bool DiagnosticCompatibilityOnly { get; set; }
 
     // Reference proportions follow the current text and container, rather than a design resolution.
@@ -45,21 +45,25 @@ public sealed partial class MainWindow
         return new() { Height=line+2*padding.Y,Padding=padding,IconSize=line,Gap=line*.4f,
             Rounding=line*.3f,ItemSpacing=new(line*.55f,line*(compact?.2f:.4f)),CellPadding=padding };
     }
-    private static float CardInset(float width)=>width*(BotologyPresentation.Compact?.04f:.055f);
+    private static float CardInset(float width)=>MaterialTheme.Current.IsLcars ? Math.Max(18*MaterialTheme.Metrics.Scale,width*(BotologyPresentation.Compact?.04f:.055f)) : width*(BotologyPresentation.Compact?.04f:.055f);
     private static float CardContentGap()=>ImGui.GetTextLineHeight()*(BotologyPresentation.Compact?.18f:.3f);
 
     private static Vector4 InstallerShade(Vector4 color,float strength)=>new(color.X*strength,color.Y*strength,color.Z*strength,color.W);
 
     private static MaterialSurface.SurfaceScope InstallerSurface(string id,Vector2 size,MaterialElevation elevation=MaterialElevation.Low,
-        bool outline=false,float? padding=null,float? radius=null,ImGuiWindowFlags flags=ImGuiWindowFlags.None)
+        bool outline=false,float? padding=null,float? radius=null,ImGuiWindowFlags flags=ImGuiWindowFlags.None,int accent=0)
     {
-        var surface=MaterialSurface.Begin(id,size,elevation,outline,padding,radius,flags);
+        var lcars=MaterialTheme.Current.IsLcars;
+        var insetPadding=lcars && id!="Card" ? Math.Max(16,padding??16) : padding;
+        if(lcars && id is not ("Card" or "InstallerPins") && size.Y>0) size.Y+=2*Math.Max(0,(insetPadding??16)-(padding??16));
+        var surface=MaterialSurface.Begin(id,size,elevation,outline,insetPadding,radius,flags);
         if(surface.Visible)
         {
             var c=MaterialTheme.Current.Colors;
             var inset=new Vector2(outline?MaterialTheme.Metrics.Scale:0);
             MaterialCanvas.Surface(ImGui.GetWindowPos()+inset,ImGui.GetWindowPos()+ImGui.GetWindowSize()-inset,
                 InstallerShade(c.SurfaceContainerLow,.8f),InstallerShade(c.SurfaceContainerLowest,.8f),Math.Max(0,(radius??8)-1)*MaterialTheme.Metrics.Scale);
+            if(lcars) BotologyPresentation.LcarsFrame(id switch { "ProfileAssessment"=>2,"ProfileSource"=>1,"RepositoryCard"=>1,_=>accent });
         }
         return surface;
     }
@@ -71,7 +75,13 @@ public sealed partial class MainWindow
         var fill=textOnly?Vector4.Zero:primary?c.Primary:selected?c.PrimaryContainer:c.SurfaceContainerHigh;
         var foreground=primary?(MaterialColor.Contrast(c.Primary,c.Background)>MaterialColor.Contrast(c.Primary,c.OnSurface)?c.Background:c.OnSurface)
             :selected||textOnly&&linkColour?c.Primary:c.OnSurface;
-        var clicked=MaterialButton.Draw(id,UiText.T(label),new MaterialControlAppearance(fill,foreground,textOnly?Vector4.Zero:selected||primary?c.Primary:c.Outline,MaterialControls.Metrics.Rounding/MaterialTheme.Metrics.Scale),
+        if(MaterialTheme.Current.IsLcars)
+        {
+            fill=primary?MaterialLcars.ControlBlue:selected?MaterialLcars.Lilac:MaterialLcars.Background;
+            foreground=selected||primary?MaterialLcars.Background:MaterialLcars.Text;
+        }
+        var border=MaterialTheme.Current.IsLcars ? selected||primary?MaterialLcars.ControlBlue:MaterialLcars.Lilac : textOnly?Vector4.Zero:selected||primary?c.Primary:c.Outline;
+        var clicked=MaterialButton.Draw(id,UiText.T(label),new MaterialControlAppearance(fill,foreground,border,MaterialControls.Metrics.Rounding/MaterialTheme.Metrics.Scale),
             size,leading:leading,trailing:trailing);
         MeasureBounds?.Invoke(id,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
         return clicked;
@@ -132,7 +142,7 @@ public sealed partial class MainWindow
                 if(page!="Discover") { installerFilters.Remove("Installed"); installerFilters.Remove("Not installed"); }
                 ResetInstallerResults(); installerMedia?.Clear();
             }
-            if(selected)
+            if(selected && !MaterialTheme.Current.IsLcars)
                 ImGui.GetWindowDrawList().AddLine(ImGui.GetItemRectMin()+new Vector2(0,ImGui.GetItemRectSize().Y),ImGui.GetItemRectMax(),
                     MaterialCanvas.Color(MaterialTheme.Current.Colors.Primary),3*MaterialTheme.Metrics.Scale);
         }
@@ -175,13 +185,14 @@ public sealed partial class MainWindow
         var background=ImGui.GetCursorScreenPos();
         MaterialCanvas.Surface(background,background+new Vector2(width,ImGui.GetContentRegionAvail().Y),InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLowest,.8f),
             InstallerShade(MaterialTheme.Current.Colors.Background,.65f),0);
-        var rail=line*(pinsExpanded?13:1.875f);
+        var rail=line*(pinsExpanded?13:MaterialTheme.Current.IsLcars?3.25f:1.875f);
         using(var panel=InstallerSurface("InstallerPins",new(rail/s,ImGui.GetContentRegionAvail().Y/s),MaterialElevation.Lowest,padding:(pinsExpanded?metrics.Padding.X:line*.1f)/s,radius:0))
         DrawPinnedRail();
         ImGui.SameLine();
         ImGui.BeginChild("InstallerContent",new(Math.Max(1,width-rail-ImGui.GetStyle().ItemSpacing.X),-1),false);
         MeasureBounds?.Invoke("installer-content",ImGui.GetWindowPos(),ImGui.GetWindowPos()+ImGui.GetWindowSize());
         DrawInstallerNavigation();
+        if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelHeading(UiText.T(selectedInstaller is null ? installerPage : "View details"),1);
         if(plugin.InstallerOperation is { } operation)
             MaterialText.TextWrapped(UiText.T(operation.IsRunning ? "Working..." : operation.Succeeded ? "Completed" : "Operation failed")+": "+UiText.T(operation.Message));
         if(installerSnapshot.Error is { Length:>0 } error) MaterialText.TextWrapped(error);
@@ -502,7 +513,7 @@ public sealed partial class MainWindow
             var entry=entries[i];
             ImGui.PushID(entry.Identity);
             using(var card=InstallerSurface("Card",new(cardWidth/s,height/s),MaterialElevation.Low,outline:true,padding:0,radius:inset*.65f/s,
-                flags:ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoScrollWithMouse))
+                flags:ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoScrollWithMouse,accent:i%3))
             {
             MeasureBounds?.Invoke("card-"+entry.Identity,ImGui.GetWindowPos(),ImGui.GetWindowPos()+ImGui.GetWindowSize());
             using var cardSpacing=new MaterialStyleScope();
@@ -584,7 +595,7 @@ public sealed partial class MainWindow
         var font=(nint)ImGui.GetFont().Handle;var fontSize=ImGui.GetFontSize();
         nint titleFont;float titleSize;
         using(UiText.Font(UiFontRole.BodyStrong)) { titleFont=(nint)ImGui.GetFont().Handle;titleSize=ImGui.GetFontSize(); }
-        var key=(width,s,font,fontSize,titleFont,titleSize,compact,UiText.Current.Language,columns);
+        var key=(width,s,font,fontSize,titleFont,titleSize,compact,MaterialTheme.Current.IsLcars,UiText.Current.Language,columns);
         var changed=key!=cardLayoutKey || entries.Count!=cardLayoutEntries.Length;
         for(var i=0;!changed && i<entries.Count;i++)
         {
@@ -907,11 +918,11 @@ public sealed partial class MainWindow
                 using var tabs=MaterialTabs.Begin("ProfileSections",new[]{UiText.T("Overview"),UiText.T("Release notes"),UiText.T("Compatibility")});
                 if(tabs.Visible)
                 {
-                    using(var tab=MaterialTabs.Item(UiText.T("Overview")+"##Overview"))
+                    using(var tab=UiGui.TabItem(UiText.T("Overview")+"##Overview"))
                         if(tab.Visible) MaterialText.TextWrapped(entry.Manifest.Description);
-                    using(var tab=MaterialTabs.Item(UiText.T("Release notes")+"##Notes"))
+                    using(var tab=UiGui.TabItem(UiText.T("Release notes")+"##Notes"))
                         if(tab.Visible) MaterialText.TextWrapped(string.IsNullOrWhiteSpace(entry.Manifest.Changelog)?UiText.T("No release notes supplied."):entry.Manifest.Changelog);
-                    using(var tab=MaterialTabs.Item(UiText.T("Compatibility")+"##Compatibility"))
+                    using(var tab=UiGui.TabItem(UiText.T("Compatibility")+"##Compatibility"))
                         if(tab.Visible) DrawInstallerCompatibility(entry);
                 }
             }
@@ -1018,6 +1029,7 @@ public sealed partial class MainWindow
             var height=Math.Max(150*s,urlHeight+nameHeight+2*ImGui.GetTextLineHeight()+(repo.IsOfficial?1:repo.IsAdded?3:2)*(MaterialControls.Metrics.Height+10*s)+44*s+(pendingRemoval==repo.Url?180*s:0));
             using(var card=InstallerSurface("RepositoryCard",new(-1,height/s),outline:true,padding:16,radius:8))
             {
+            MeasureBounds?.Invoke("repository-card-"+repo.Url,ImGui.GetWindowPos(),ImGui.GetWindowPos()+ImGui.GetWindowSize());
             using(UiText.Font(UiFontRole.BodyStrong)) MaterialText.TextWrapped(repo.Name);
             MaterialText.TextWrapped(repo.Url); MaterialText.TextWrapped(RepositoryState(repo));
             if(plugin.DiscoveryErrors.TryGetValue(repo.Url,out var error)) MaterialText.TextWrapped(UiText.T("Discovery failed")+": "+error);
@@ -1148,6 +1160,11 @@ public sealed partial class MainWindow
         var url=images.Length>0?images[Math.Clamp(full?galleryIndex:0,0,images.Length-1)]:entry.Manifest.PublisherIconUrl;
         var origin=ImGui.GetCursorScreenPos(); var size=new Vector2(Math.Max(1,ImGui.GetContentRegionAvail().X),height);
         var s=MaterialTheme.Metrics.Scale;
+        if(!full && MaterialTheme.Current.IsLcars)
+        {
+            origin+=new Vector2(16*s,10*s);
+            size-=new Vector2(32*s,10*s);
+        }
         var draw=ImGui.GetWindowDrawList();
         var failed=false;
         Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap? texture=null;
@@ -1182,7 +1199,7 @@ public sealed partial class MainWindow
                 var side=Math.Min(size.X,size.Y);
                 var min=origin+(size-new Vector2(side))*.5f;
                 MaterialIcons.Draw(MaterialIcon.Cube,min,side,MaterialColor.Alpha(c.OnSurfaceVariant,.65f));
-                MeasureBounds?.Invoke("preview-icon-"+entry.Identity,min,min+new Vector2(side));
+                MeasureBounds?.Invoke("preview-placeholder-"+entry.Identity,min,min+new Vector2(side));
             }
             MeasureBounds?.Invoke("preview-slot-"+entry.Identity,origin,origin+size);
             ImGui.SetCursorScreenPos(origin);ImGui.Dummy(size);
@@ -1207,7 +1224,7 @@ public sealed partial class MainWindow
         {
             var iconMin=origin+new Vector2((size.X-placeholderSide)*.5f,placeholderTop);
             MaterialIcons.Draw(MaterialIcon.Cube,iconMin,placeholderSide,MaterialColor.Alpha(MaterialTheme.Current.Colors.OnSurfaceVariant,full?1:.55f));
-            MeasureBounds?.Invoke("preview-icon-"+entry.Identity,iconMin,iconMin+new Vector2(placeholderSide));
+            MeasureBounds?.Invoke("preview-placeholder-"+entry.Identity,iconMin,iconMin+new Vector2(placeholderSide));
         }
         if(label is not null)
         {

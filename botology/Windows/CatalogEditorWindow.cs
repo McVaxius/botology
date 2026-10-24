@@ -52,6 +52,8 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         UiGui.TitleWithButtons(PluginInfo.DisplayName+" Catalog Editor",PluginInfo.DisplayName+" "+UiText.T("Catalog Editor"), this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
+        using var lcars=MaterialLcars.NativeButtonStyle();
+        BotologyPresentation.LcarsHeader(UiText.T("Catalog Editor"));
         var scale=AethertekUI.MaterialTheme.Metrics.Scale;
         var entries = plugin.CaptureCatalogEditorEntries();
         var localChangeCount = entries.Count(entry => entry.HasLocalChanges);
@@ -135,8 +137,9 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         var availableHeight = ImGui.GetContentRegionAvail().Y;
         var listWidth = 390f*AethertekUI.MaterialTheme.Metrics.Scale;
 
-        if (ImGui.BeginChild("##CatalogList", new Vector2(listWidth, availableHeight), true))
+        if (ImGui.BeginChild("##CatalogList", new Vector2(listWidth, availableHeight), true,ImGuiWindowFlags.AlwaysUseWindowPadding))
         {
+            BotologyPresentation.LcarsFrame(1);
             foreach (var entry in filteredEntries)
             {
                 var isSelected = draft != null && entry.Id.Equals(draft.OriginalId, StringComparison.OrdinalIgnoreCase);
@@ -154,8 +157,9 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         ImGui.SameLine();
 
-        if (ImGui.BeginChild("##CatalogEditorPane", new Vector2(0f, availableHeight), true))
+        if (ImGui.BeginChild("##CatalogEditorPane", new Vector2(0f, availableHeight), true,ImGuiWindowFlags.AlwaysUseWindowPadding))
         {
+            BotologyPresentation.LcarsFrame(2);
             DrawEditorPane(entries);
         }
         ImGui.EndChild();

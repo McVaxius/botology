@@ -98,6 +98,8 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         windowMotion.DrawChrome();
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(34,20));
+        using var lcars=MaterialLcars.NativeButtonStyle();
+        BotologyPresentation.LcarsHeader(PluginInfo.DisplayName);
         DrawInstaller();
     }
 
@@ -152,6 +154,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
                 using(UiText.Font(UiFontRole.BodyStrong))
                     UiGui.TableHeadersRow(BotologyPresentation.TableHeaderHeight*MaterialTheme.Metrics.Scale);
                 var nativeTable=ImGuiP.GetCurrentTable();
+                MeasureBounds?.Invoke("table-cell-padding",ImGui.GetStyle().CellPadding,ImGui.GetStyle().CellPadding);
                 MeasureBounds?.Invoke("table-header",new Vector2(nativeTable.WorkRect.Min.X,nativeTable.RowPosY1),new Vector2(nativeTable.WorkRect.Max.X,nativeTable.RowPosY2));
                 unsafe
                 {
@@ -344,6 +347,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
             var p=ImGui.GetCursorScreenPos(); var dl=ImGui.GetWindowDrawList();
             var c=MaterialTheme.Current.Colors;
             MaterialCanvas.Surface(p,p+new Vector2(width,height),BotologyPresentation.PanelTop,BotologyPresentation.PanelBottom,4*s);
+            if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelFrame(p,p+new Vector2(width,height),index);
             dl.AddRect(p,p+new Vector2(width,height),MaterialCanvas.Color(c.OutlineVariant),4*s);
             dl.AddCircleFilled(p+new Vector2((inline && index==0 ? 35 : 31)*s,height*.5f),13*s,MaterialCanvas.Color(counter.Color),24);
             MaterialText.AddText(dl,p+new Vector2(labelX*s,inline ? (height-ImGui.GetTextLineHeight())*.5f : 10*s),MaterialCanvas.Color(c.OnSurfaceVariant),label);
@@ -403,6 +407,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         var height=Math.Max(BotologyPresentation.FilterHeight*s,y+rowHeight+padding);
         var c=MaterialTheme.Current.Colors; var dl=ImGui.GetWindowDrawList();
         MaterialCanvas.Surface(origin,origin+new Vector2(width,height),BotologyPresentation.PanelTop,BotologyPresentation.PanelBottom,4*s);
+        if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelFrame(origin,origin+new Vector2(width,height),1);
         dl.AddRect(origin,origin+new Vector2(width,height),MaterialCanvas.Color(c.OutlineVariant),4*s);
         ImGui.SetCursorScreenPos(positions[0]); ImGui.BeginGroup();
         MaterialText.Text(UiText.T("Category"));
@@ -681,7 +686,9 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         }
 
         var nativeTable=ImGuiP.GetCurrentTable();
-        MeasureBounds?.Invoke("row-"+row.Entry.Id,new Vector2(nativeTable.WorkRect.Min.X,nativeTable.RowPosY1),new Vector2(nativeTable.WorkRect.Max.X,nativeTable.RowPosY2));
+        // The final cell closes at the next row; include its submitted text before that native update.
+        var rowBottom=Math.Max(nativeTable.RowPosY2,ImGuiP.GetCurrentWindow().DC.CursorMaxPos.Y+ImGui.GetStyle().CellPadding.Y);
+        MeasureBounds?.Invoke("row-"+row.Entry.Id,new Vector2(nativeTable.WorkRect.Min.X,nativeTable.RowPosY1),new Vector2(nativeTable.WorkRect.Max.X,rowBottom));
         ImGui.PopID();
     }
 
@@ -986,6 +993,8 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
             return;
 
         UiGui.Title(BlockingPopupId,UiText.T("Compatibility warning"));
+        BotologyPresentation.LcarsHeader(UiText.T("Compatibility warning"));
+        BotologyPresentation.LcarsOwnerFrame(1);
         MaterialText.TextWrapped(message);
         if (UiGui.Button("OK"))
         {
@@ -1002,6 +1011,8 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         if (!UiGui.BeginConfirmationPopup(PatchNotesPopupId, ImGuiWindowFlags.None))
             return;
         UiGui.Title(PatchNotesPopupId,UiText.T("Patch Notes"));
+        BotologyPresentation.LcarsHeader(UiText.T("Patch Notes"));
+        BotologyPresentation.LcarsOwnerFrame(2);
 
         var releases = plugin.CaptureCatalogReleases();
         if (ImGui.BeginChild("##PatchNotesScroll", new Vector2(0f, -40f*MaterialTheme.Metrics.Scale), true))

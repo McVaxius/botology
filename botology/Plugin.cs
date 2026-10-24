@@ -71,6 +71,9 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     private readonly DtrManagerWindow dtrManagerWindow;
     private readonly CatalogEditorWindow catalogEditorWindow;
     private MaterialTheme uiTheme = null!;
+    private readonly MaterialUiSoundPlayer uiSoundPlayer = new();
+    private readonly Dictionary<Dalamud.Interface.Windowing.Window, TitleBarButton> soundTitleButtons = new();
+    private bool appliedUiSoundEnabled;
     private readonly Dictionary<Dalamud.Interface.Windowing.Window, AethertekUI.Dalamud.MaterialAppearanceTitleBar> appearanceTitleBars = new();
     private readonly MaterialWindowFold fontStatusFold = new();
     private readonly MaterialWindowDecorations fontStatusDecorations = new();
@@ -152,6 +155,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         dtrManagerWindow.Dispose();
         configWindow.Dispose();
         mainWindow.Dispose();
+        uiSoundPlayer.Dispose();
         uiFonts.Dispose();
         uiText.Dispose();
         uiTextHost.Dispose();
@@ -260,10 +264,26 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
             appliedAccent=Configuration.UiAccentRgb & 0xFFFFFF;
             appliedColors = colorDraft;
             uiTheme=BotologyPresentation.Theme(appliedAccent, colorDraft);
+            uiTheme.Feedback=PlayUiSound;
             var color=BotologyPresentation.Rgb(appliedAccent);
             accentDraft=new(color.X,color.Y,color.Z);
         }
         uiTheme.Density = Configuration.UiCompact ? MaterialDensity.Compact : MaterialDensity.Standard;
+        var soundEnabled=uiTheme.IsLcars && !Configuration.UiSoundsMuted;
+        if(appliedUiSoundEnabled && !soundEnabled) uiSoundPlayer?.Stop();
+        appliedUiSoundEnabled=soundEnabled;
+    }
+
+    private void PlayUiSound(MaterialUiSoundCue cue)
+    {
+        if(uiTheme.IsLcars && !Configuration.UiSoundsMuted) uiSoundPlayer?.TryPlay(cue);
+    }
+
+    internal void SetUiSoundsMuted(bool muted)
+    {
+        Configuration.UiSoundsMuted=muted;
+        if(muted) uiSoundPlayer?.Stop();
+        Configuration.Save();
     }
 
     public void DrawAppearanceSelector()
@@ -1070,6 +1090,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     public void DrawWindowAppearanceSettings()
     {
         if (!MaterialText.CollapsingHeader(UiText.T("Window appearance") + "###UiWindowAppearance")) return;
+        if(uiTheme.IsLcars) MaterialLcars.PanelHeading(UiText.T("Window appearance"),2);
         var showTitlebarStatus = Configuration.UiShowTitlebarStatus;
         if (UiGui.Checkbox(UiText.T("Show titlebar status") + "###UiShowTitlebarStatus", ref showTitlebarStatus))
         { Configuration.UiShowTitlebarStatus = showTitlebarStatus; Configuration.Save(); }
@@ -1084,6 +1105,9 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
             DrawTitleBarColour();
         }
         DrawAppearanceSelector();
+        var muted=Configuration.UiSoundsMuted;
+        if(UiGui.Checkbox("Mute UI sounds", ref muted)) SetUiSoundsMuted(muted);
+        if(!muted && uiSoundPlayer?.Error is { } soundError) MaterialText.TextWrapped(UiText.T(soundError));
         var compactVisible = Configuration.UiCompactVisibleOnMainWindow;
         if (UiGui.Checkbox("Compact visible on main window", ref compactVisible))
         { Configuration.UiCompactVisibleOnMainWindow = compactVisible; Configuration.Save(); }
@@ -1111,7 +1135,22 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
                         ? new(Configuration.UiLanguageVisibleOnMainWindow, Configuration.UiCompactVisibleOnMainWindow,
                             Configuration.UiTransparencyVisibleOnMainWindow, true)
                         : new(true, true, true, true)));
+            appearanceTitleBars[window].SetLcarsIcons(uiTheme.IsLcars);
             appearanceTitleBars[window].RefreshVisibility();
+            if(!soundTitleButtons.TryGetValue(window,out var sound))
+            {
+                sound=new()
+                {
+                    Priority=window.TitleBarButtons.Min(button=>button.Priority)-1,
+                    IconOffset=new(2,1),
+                    Click=button=> { if(button==ImGuiMouseButton.Left) SetUiSoundsMuted(!Configuration.UiSoundsMuted); },
+                    ShowTooltip=()=>MaterialText.SetTooltip(UiText.T(Configuration.UiSoundsMuted ? "Unmute UI sounds" : "Mute UI sounds")),
+                };
+                soundTitleButtons.Add(window,sound);
+            }
+            sound.Icon=Configuration.UiSoundsMuted ? Dalamud.Interface.FontAwesomeIcon.VolumeMute : Dalamud.Interface.FontAwesomeIcon.VolumeUp;
+            if(uiTheme.IsLcars) { if(!window.TitleBarButtons.Contains(sound)) window.TitleBarButtons.Add(sound); }
+            else window.TitleBarButtons.Remove(sound);
         }
     }
 
@@ -1122,7 +1161,8 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
                 new(UiText.T("Auto"), UiText.T("Picker"), UiText.T("Default"), UiText.T("Background, controls and text follow your theme."),
                     UiText.T("Theme colour"), UiText.T("Choose each colour independently."), UiText.T("Background"), UiText.T("Controls"),
                     UiText.T("Text"), UiText.T("Aa  Preview text"), UiText.T("Control"),
-                    UiText.T("Switch to Picker to set each colour yourself."), UiText.T("Switch back to Auto to use the automatic theme.")),
+                    UiText.T("Switch to Picker to set each colour yourself."), UiText.T("Switch back to Auto to use the automatic theme."))
+                    { Lcars=UiText.T("LCARS"), LcarsHelp=UiText.T("LCARS panels and outlined controls. Picker colours are retained.") },
                 Configuration.UiCompact ? 298 : 316)) return;
         Configuration.UiColors = colorDraft;
         Configuration.UiAccentRgb = MaterialColorSettings.ToRgb(accentDraft);

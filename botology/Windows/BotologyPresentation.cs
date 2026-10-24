@@ -12,7 +12,7 @@ internal static class BotologyPresentation
     internal static MaterialStyleScope PushHostGeometry(float scale, bool compact)
     {
         var style = new MaterialStyleScope();
-        style.Style(ImGuiStyleVar.WindowPadding, new Vector2((compact ? 10 : 16) * scale));
+        style.Style(ImGuiStyleVar.WindowPadding, new Vector2((MaterialTheme.Current.IsLcars ? 16 : compact ? 10 : 16) * scale));
         if (compact)
         {
             style.Style(ImGuiStyleVar.ItemSpacing, new Vector2(8, 4) * scale);
@@ -20,6 +20,32 @@ internal static class BotologyPresentation
             style.Style(ImGuiStyleVar.CellPadding, new Vector2(6, 3) * scale);
         }
         return style;
+    }
+
+    internal static void LcarsHeader(string title)
+    {
+        if (MaterialTheme.Current.IsLcars) MaterialLcars.Header(title);
+    }
+
+    // Draw before this owner's controls. Keep the library's twelve-pixel rail outside content.
+    internal static void LcarsFrame(int accent = 0)
+    {
+        if (!MaterialTheme.Current.IsLcars) return;
+        var min = ImGui.GetWindowPos();
+        var max = min + ImGui.GetWindowSize();
+        MaterialLcars.PanelFrame(min, max, accent);
+    }
+
+    internal static void LcarsOwnerFrame(int accent = 0)
+    {
+        if (!MaterialTheme.Current.IsLcars) return;
+        var scale = MaterialTheme.Metrics.Scale;
+        var position = ImGui.GetWindowPos();
+        // The owner's LCARS padding leaves the side rail outside the existing controls.
+        var min = new Vector2(position.X + scale, ImGui.GetCursorScreenPos().Y);
+        var max = position + ImGui.GetWindowSize() - new Vector2(scale);
+        if (max.Y > min.Y + 12 * scale) MaterialLcars.PanelFrame(min, max, accent);
+        ImGui.Dummy(new(0, 12 * scale));
     }
 
     // Dalamud owns the shared texture through render submission; callers borrow its wrapper.

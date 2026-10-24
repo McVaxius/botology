@@ -11,6 +11,7 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
     private readonly AethertekUI.Dalamud.MaterialSupportLog supportLog = new();
     private static readonly string[] DtrModes = { "Text only", "Icon + text", "Icon only" };
     private readonly IBotologyUi plugin;
+    internal Action<string,Vector2,Vector2>? MeasureBounds { get; set; }
 
     public ConfigWindow(Plugin plugin) : this((IBotologyUi)plugin) { }
 
@@ -41,30 +42,37 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
         UiGui.TitleWithButtons(PluginInfo.DisplayName+" Settings",PluginInfo.DisplayName+" "+UiText.T("Settings"), this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
+        using var lcars=MaterialLcars.NativeButtonStyle();
+        BotologyPresentation.LcarsHeader(UiText.T("Settings"));
+        BotologyPresentation.LcarsOwnerFrame(1);
         var settingsRoot = ImGui.GetID("");
         using var tabs = MaterialTabs.Begin("BotologySettingsTabs", new[] { UiText.T("Settings"), UiText.T("Window appearance") }, ImGuiTabBarFlags.FittingPolicyScroll);
         if (tabs.Visible)
         {
-            using (var general = MaterialTabs.Item(UiText.T("Settings") + "###Settings", ImGuiTabItemFlags.NoPushId))
+            using (var general = UiGui.TabItem(UiText.T("Settings") + "###Settings", ImGuiTabItemFlags.NoPushId))
                 if (general.Visible)
                 {
                     ImGuiP.PushOverrideID(settingsRoot);
                     try { DrawGeneralSettings(); }
                     finally { ImGui.PopID(); }
                 }
-            using (var appearance = MaterialTabs.Item(UiText.T("Window appearance") + "###WindowAppearance", ImGuiTabItemFlags.NoPushId))
+            using (var appearance = UiGui.TabItem(UiText.T("Window appearance") + "###WindowAppearance", ImGuiTabItemFlags.NoPushId))
+            {
+                MeasureBounds?.Invoke("appearance-tab",ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
                 if (appearance.Visible)
                 {
                     ImGuiP.PushOverrideID(settingsRoot);
                     try { plugin.DrawWindowAppearanceSettings(); }
                     finally { ImGui.PopID(); }
                 }
+            }
         }
         FinalizePendingWindowPlacement();
     }
 
     private void DrawGeneralSettings()
     {
+        if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelHeading(UiText.T("Settings"),1);
         supportLog.Draw(Plugin.PluginInterface, key => UiText.T(key),
             path => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = path, UseShellExecute = true }), ex => Plugin.Log.Error(ex, "Dalamud log export failed."), Plugin.CommandManager);
         var cfg = plugin.Configuration;

@@ -363,9 +363,14 @@ internal static class InstallerUiTests
         Console.WriteLine("Actual MainWindow title hooks removed original caption ink in eight atlas/density/scale cases.");
     }
 
-    internal static unsafe void Check(string[]? languages=null)
+    internal static unsafe void Check(string[]? languages=null,bool lcars=false)
     {
         BotologyUiSmoke.CheckPreferencesAndResources();
+        void SavePreview(string path,NativeTestContext context)
+        {
+            if(!lcars || path.EndsWith("-default.png",StringComparison.Ordinal) || path.Contains("-profile-",StringComparison.Ordinal)
+                || path.Contains("failed",StringComparison.Ordinal) || path.Contains("clipped",StringComparison.Ordinal)) SoftwarePreview.Save(path,context);
+        }
         var selectedLanguages=(languages is { Length:>0 }?languages:UiText.Languages.Select(l=>l.Code)).ToArray();
         var densityEvidence=new Dictionary<string,(float Media,float Body,float Font)>();
         var cases=selectedLanguages.SelectMany(language=>new[]{false,true}.Select(compact=>(language,compact,width:1440,height:960,scale:1f,accent:0x1CC9E6u,suffix:""))).ToList();
@@ -380,9 +385,13 @@ internal static class InstallerUiTests
             cases.Add(("en",true,1240,1000,1,0xFFFFFF,"white"));
         }
         if(selectedLanguages.Contains("ru")) cases.Add(("ru",true,1860,1440,1.5f,0xCF79AE,"translated-scaled-custom"));
+        var checkedCases=0;
+        var checkedLanguages=new HashSet<string>(StringComparer.Ordinal);
         foreach(var scenario in cases)
         {
             var (language,compact,width,height,scale,accent,suffix)=scenario;
+            if(lcars && Environment.GetEnvironmentVariable("BOTOLOGY_VISUAL_CASE") is { Length:>0 } selected
+                && !selected.Split(',').Contains(language+"/"+(suffix.Length==0?"installer":suffix),StringComparer.Ordinal)) continue;
             using var host=new NativeTestContext(width,height,scale,language);
             using var icon=new BotologyOriginalIcon(host);
             using var text=new UiText(language,host.PushFont);
@@ -486,7 +495,7 @@ internal static class InstallerUiTests
                     browseScrollMax=ImGui.GetScrollMaxY();
                 }
             };
-            var theme=BotologyPresentation.Theme(accent); theme.Density=compact?MaterialDensity.Compact:MaterialDensity.Standard; theme.Motion.Enabled=false;
+            var theme=BotologyPresentation.Theme(accent,new() { Mode=lcars?MaterialColorMode.Lcars:MaterialColorMode.Auto }); theme.Density=compact?MaterialDensity.Compact:MaterialDensity.Standard; theme.Motion.Enabled=false;
             void Draw()
             {
                 bounds.Clear(); clippedPin=null;shapedTitleRequired=0;using var locale=text.Enter(); using var material=MaterialTheme.Push(theme,scale,MaterialStyleMode.ColorsOnly);
@@ -507,8 +516,17 @@ internal static class InstallerUiTests
             {
                 if(!bounds.TryGetValue(id,out var rect))
                 {
-                    SoftwarePreview.Save(Path.Combine(AppContext.BaseDirectory,"artifacts","installer",suffix,language+(compact?"-compact":"-regular")+"-interaction-failed.png"),host);
+                    SavePreview(Path.Combine(AppContext.BaseDirectory,"artifacts","installer",suffix,language+(compact?"-compact":"-regular")+"-interaction-failed.png"),host);
                     throw new Exception("Missing installer action: "+id+" in "+language+"/"+compact+"/"+suffix);
+                }
+                // A wholly clipped child has not submitted its buttons yet. Reveal the real
+                // repository card before using the button's native item rectangle.
+                if(id.StartsWith("repo-add-",StringComparison.Ordinal) && bounds.TryGetValue("repository-card-"+id[9..],out var repoCard)
+                    && (repoCard.Min.Y>=contentClip.Max.Y || repoCard.Max.Y<=contentClip.Min.Y))
+                {
+                    requestedContentScroll=Math.Max(0,contentScroll+repoCard.Min.Y-contentClip.Min.Y+8*scale);
+                    contentScrollRequest=true;Settle();
+                    if(!bounds.TryGetValue(id,out rect)) throw new Exception("Revealed repository card did not submit its action: "+id);
                 }
                 if((id.StartsWith("repo-add-",StringComparison.Ordinal) || id.StartsWith("nav-",StringComparison.Ordinal)
                     || id.StartsWith("profile-",StringComparison.Ordinal) || id.StartsWith("media-",StringComparison.Ordinal))
@@ -517,7 +535,10 @@ internal static class InstallerUiTests
                     requestedContentScroll=Math.Max(0,contentScroll+(rect.Max.Y>contentClip.Max.Y?rect.Max.Y-contentClip.Max.Y+8*scale:rect.Min.Y-contentClip.Min.Y-8*scale));
                     contentScrollRequest=true;Settle();
                     if(!bounds.TryGetValue(id,out rect) || rect.Min.Y<contentClip.Min.Y-1 || rect.Max.Y>contentClip.Max.Y+1)
-                        throw new Exception("Native content scrolling did not reveal its action: "+id+" in "+language+"/"+compact+"/"+suffix);
+                    {
+                        SavePreview(Path.Combine(AppContext.BaseDirectory,"artifacts","installer",suffix,language+(compact?"-compact":"-regular")+"-scroll-failed.png"),host);
+                        throw new Exception("Native content scrolling did not reveal its action: "+id+" in "+language+"/"+compact+"/"+suffix+"; item="+rect+", clip="+contentClip+", scroll="+contentScroll+", requested="+requestedContentScroll);
+                    }
                 }
                 if(id.StartsWith("details-",StringComparison.Ordinal) && (rect.Min.Y<browseClip.Min.Y || rect.Max.Y>browseClip.Max.Y))
                 {
@@ -566,10 +587,10 @@ internal static class InstallerUiTests
                             || Vector2.Distance((iconInk.Min+iconInk.Max)*.5f,(slot.Min+slot.Max)*.5f)>.5f)
                             throw new Exception("Plugin icon lost full aspect-fit or media prominence: "+identity);
                     }
-                    foreach(var prefix in new[]{"card-title-","card-state-","card-compatibility-","preview-slot-","preview-image-","preview-icon-","preview-label-"})
+                    foreach(var prefix in new[]{"card-title-","card-state-","card-compatibility-","preview-slot-","preview-image-","preview-icon-","preview-placeholder-","preview-label-"})
                         if(bounds.TryGetValue(prefix+identity,out var ink) && (ink.Min.X<card.Min.X-.5f || ink.Max.X>card.Max.X+.5f || ink.Min.Y<card.Min.Y-.5f || ink.Max.Y>card.Max.Y+.5f))
                             throw new Exception("Card content exceeds its measured bounds: "+prefix+language+"/"+compact+"/"+suffix);
-                    if(bounds.TryGetValue("preview-label-"+identity,out var label) && bounds.TryGetValue("preview-icon-"+identity,out var picture)
+                    if(bounds.TryGetValue("preview-label-"+identity,out var label) && (bounds.TryGetValue("preview-icon-"+identity,out var picture) || bounds.TryGetValue("preview-placeholder-"+identity,out picture))
                         && picture.Min.X<label.Max.X && picture.Max.X>label.Min.X && picture.Min.Y<label.Max.Y && picture.Max.Y>label.Min.Y)
                         throw new Exception("Missing-media caption overlaps its icon: "+language);
                 }
@@ -613,7 +634,7 @@ internal static class InstallerUiTests
                     throw new Exception("Default API block spent an extra Clear filter row instead of sharing result tools.");
             }
             var output=Path.Combine(AppContext.BaseDirectory,"artifacts","installer",suffix);Directory.CreateDirectory(output);
-            if(language is "en" or "ru" or "hi") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-default.png"),host);
+            if(language is "en" or "ru" or "hi") SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-default.png"),host);
             IReadOnlyList<InstallerEntry> CategoryResults()=>(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
             void CheckCategoryBounds()
             {
@@ -626,7 +647,7 @@ internal static class InstallerUiTests
             if(!bounds.ContainsKey("category-search") || !bounds.ContainsKey("category-track-Dalamud") || !bounds.ContainsKey("category-track-Botology") || !bounds.ContainsKey("category-track-Third-party"))
                 throw new Exception("Category expansion lost a source track/chooser: "+language);
             CheckCategoryBounds();
-            if(language is "en" or "ru" or "hi") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-categories-expanded.png"),host);
+            if(language is "en" or "ru" or "hi") SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-categories-expanded.png"),host);
             Click("category-third-party-UI");Click("category-botology-DOH/L Content Bots");
             if(CategoryResults().Count!=2 || CategoryResults().Any(entry=>entry.BotologyCategory!="DOH/L Content Bots" || entry.Repository.IsOfficial || !entry.ManifestTags!.Contains("UI")))
                 throw new Exception("Category source intersection lost uninstalled catalog matches: "+language);
@@ -674,7 +695,7 @@ internal static class InstallerUiTests
             if(CategoryResults().Count!=2 || !bounds.ContainsKey("category-track-Selected") || bounds.ContainsKey("category-search"))
                 throw new Exception("Folded categories lost hidden selections/results or retained the chooser: "+language);
             CheckCategoryBounds();
-            if(language is "en" or "ru" or "hi") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-categories-selected.png"),host);
+            if(language is "en" or "ru" or "hi") SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-categories-selected.png"),host);
             Click("categories-clear");
             if(CategoryResults().Count!=initial.Count || backend.Actions.Count!=0) throw new Exception("Category clear altered status criteria or dispatched plugin/source work in "+language+"/"+compact+"/"+suffix+": "+CategoryResults().Count+" results, "+backend.Actions.Count+" actions.");
             Click("filter-All plugins");
@@ -706,7 +727,7 @@ internal static class InstallerUiTests
                     var title=bounds["card-title-"+identity];var actual=title.Max.Y-title.Min.Y;
                     if(shapedTitleRequired<=0 || actual<shapedTitleRequired-.5f)
                     {
-                        SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-shaped-title-clipped.png"),host);
+                        SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-shaped-title-clipped.png"),host);
                         throw new Exception($"Two-line shaped title was clipped to native line metrics: reserved={actual}, required={shapedTitleRequired}.");
                     }
                 }
@@ -767,7 +788,7 @@ internal static class InstallerUiTests
                                 throw new Exception("Small real plugin icon did not fill and center within the shared media band proportionally.");
                         }
                     }
-                    SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-loading.png"),host);
+                    SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-loading.png"),host);
                 }
                 var anchorField=typeof(MainWindow).GetField("browseAnchor",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
                 var anchorBefore=anchorField.GetValue(main);
@@ -798,7 +819,7 @@ internal static class InstallerUiTests
                         requestedScroll=rows[index/columns];scrollRequest=true;Settle();
                     }
                     var tall=bounds["card-"+outlier];
-                    SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-outlier-bottom.png"),host);
+                    SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-outlier-bottom.png"),host);
                     backend.Installer=steady with { Entries=steady.Entries.Select(entry=>entry.Manifest.InternalName=="Fixture40"
                         ?entry with { Manifest=entry.Manifest with { Name="Plugin 40" } }:entry).ToArray() };
                     typeof(MainWindow).GetField("nextInstallerSnapshot",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.SetValue(main,DateTime.MinValue);
@@ -860,7 +881,7 @@ internal static class InstallerUiTests
                         throw new Exception("Card compatibility discarded the existing ignore choice.");
                 }
             }
-            if(language is "en" or "ru" or "ja" or "hi") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-folded.png"),host);
+            if(language is "en" or "ru" or "ja" or "hi") SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-folded.png"),host);
             CheckCardBounds();
             foreach(var index in new[]{0,1})
                 if(bounds.TryGetValue("card-text-end-"+InstallerCatalog.PluginIdentity(source,"Fixture"+index),out var content)
@@ -893,7 +914,7 @@ internal static class InstallerUiTests
             if(bounds["repo-pin-name-"+source].Max.X>bounds["repo-pin-"+source].Max.X-4*scale)
                 throw new Exception("Translated rail status resized or clipped the source label: "+language);
             ImGui.GetIO().AddMousePosEvent(-100,-100);host.Frame(Draw);
-            if(language is "en" or "ru" or "ja" or "hi") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-expanded.png"),host);
+            if(language is "en" or "ru" or "ja" or "hi") SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-expanded.png"),host);
             // Click the actual rail row, including the status line which used to be inert.
             scrollRequest=true; requestedScroll=680; Settle();
             var repoRow=bounds["repo-pin-"+source];
@@ -912,7 +933,7 @@ internal static class InstallerUiTests
             railEntries=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
             if(railEntries.Count!=2 || !railEntries.Any(e=>e.Manifest.InternalName=="StateApi") || !railEntries.Any(e=>e.Installed?.IsOutdated==true))
                 throw new Exception("API filter must include incompatible catalog entries and installed outdated entries.");
-            if(language is "en" or "ru") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-api-filter.png"),host);
+            if(language is "en" or "ru") SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-api-filter.png"),host);
             Click("repo-pin-"+source);
             railEntries=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
             if(railEntries.Count!=1 || railEntries[0].Manifest.InternalName!="Fixture7") throw new Exception("API and repository filters did not intersect.");
@@ -927,7 +948,7 @@ internal static class InstallerUiTests
             Click("filter-Not installed",ImGuiMouseButton.Right); Click("filter-Not available on this API",ImGuiMouseButton.Right);
             railEntries=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
             if(railEntries.Count!=3) throw new Exception("Multiple required and blocked status filters did not coexist.");
-            if(language is "en" or "ru") SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-require-block.png"),host);
+            if(language is "en" or "ru") SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-require-block.png"),host);
             Click("repo-pin-"+source,ImGuiMouseButton.Right);
             railEntries=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
             if(railEntries.Count!=0) throw new Exception("A blocked repository still contributed matching plugins.");
@@ -948,7 +969,7 @@ internal static class InstallerUiTests
                 Click("repo-pin-"+source,ImGuiMouseButton.Right); Click("author-pin-SampleAuthor",ImGuiMouseButton.Right);
                 railEntries=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
                 if(railEntries.Count!=11) throw new Exception("Multiple blocked sources/authors did not override matching requirements.");
-                SoftwarePreview.Save(Path.Combine(output,"en-multiple-pinned-filters.png"),host);
+                SavePreview(Path.Combine(output,"en-multiple-pinned-filters.png"),host);
                 Click("author-pin-OtherAuthor",ImGuiMouseButton.Right);
                 railEntries=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
                 if(railEntries.Count!=0) throw new Exception("Opposite click did not switch a required author to blocked.");
@@ -968,7 +989,7 @@ internal static class InstallerUiTests
             if(Math.Abs(bounds["installer-search"].Min.X-folded)>1) throw new Exception("Folded pins retained an empty sidebar.");
             Click("view-table");
             ImGui.GetIO().AddMousePosEvent(-100,-100);host.Frame(Draw);
-            if(language is "en" or "ru") SoftwarePreview.Save(Path.Combine(output,language+"-"+(compact?"table-compact.png":"table-regular.png")),host);
+            if(language is "en" or "ru") SavePreview(Path.Combine(output,language+"-"+(compact?"table-compact.png":"table-regular.png")),host);
             if(language=="en" && !compact && suffix.Length==0)
             {
                 Click("installer-column-Author");
@@ -978,7 +999,7 @@ internal static class InstallerUiTests
             }
             Click("pins-toggle");
             ImGui.GetIO().AddMousePosEvent(-100,-100);host.Frame(Draw);
-            if(language is "en" or "ru") SoftwarePreview.Save(Path.Combine(output,language+"-"+(compact?"table-compact-expanded.png":"table-regular-expanded.png")),host);
+            if(language is "en" or "ru") SavePreview(Path.Combine(output,language+"-"+(compact?"table-compact-expanded.png":"table-regular-expanded.png")),host);
             Click("pins-toggle");
             if(backend.Actions.Count!=0) throw new Exception("View switching dispatched an action.");
             Click("view-cards"); Click("details-0");
@@ -986,7 +1007,7 @@ internal static class InstallerUiTests
             if(bounds["profile-source-content"].Max.Y>bounds["profile-source-surface"].Max.Y+1) throw new Exception("The profile source panel clipped its own content: "+language);
             if(!bounds.ContainsKey("profile-pin-repo") || backend.Actions.Count!=0) throw new Exception("Unadded-source details lost interactivity or mutated the source.");
             ImGui.GetIO().AddMousePosEvent(-100,-100);host.Frame(Draw);
-            if(language is "en" or "ru") SoftwarePreview.Save(Path.Combine(output,language+"-"+(compact?"profile-compact.png":"profile-regular.png")),host);
+            if(language is "en" or "ru") SavePreview(Path.Combine(output,language+"-"+(compact?"profile-compact.png":"profile-regular.png")),host);
             if(fixtureMedia is not null)
             {
                 WaitForPreview(gif,false); Click("media-1"); WaitForPreview(gif,true); Settle();
@@ -994,7 +1015,7 @@ internal static class InstallerUiTests
                 Click("media-play");
                 if(!fixtureMedia.IsPlaying(gif))
                 {
-                    SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-gallery-play-failed.png"),host);
+                    SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-gallery-play-failed.png"),host);
                     throw new Exception($"The native gallery Play action did not start its selected GIF: {language}/{compact}; button={bounds["media-play"]}, gallery clip={galleryClip}, content clip={contentClip}.");
                 }
                 Click("media-play");
@@ -1003,7 +1024,7 @@ internal static class InstallerUiTests
             }
             Click("pins-toggle");
             ImGui.GetIO().AddMousePosEvent(-100,-100);host.Frame(Draw);
-            if(language is "en" or "ru") SoftwarePreview.Save(Path.Combine(output,language+"-"+(compact?"profile-compact-expanded.png":"profile-regular-expanded.png")),host);
+            if(language is "en" or "ru") SavePreview(Path.Combine(output,language+"-"+(compact?"profile-compact-expanded.png":"profile-regular-expanded.png")),host);
             Click("repo-pin-"+source);
             if(!bounds.ContainsKey("installer-search") || !bounds.ContainsKey("active-pin-filter") || browseScroll>.5f)
                 throw new Exception("Pinned repository did not return from the profile to visible filtered results.");
@@ -1011,11 +1032,11 @@ internal static class InstallerUiTests
             Click("pins-toggle");
             Click("profile-back"); Click("nav-Pinned sources");
             ImGui.GetIO().AddMousePosEvent(-100,-100);host.Frame(Draw);
-            if(language is "en" or "ru") SoftwarePreview.Save(Path.Combine(output,language+"-"+(compact?"pins-compact.png":"pins-regular.png")),host);
+            if(language is "en" or "ru") SavePreview(Path.Combine(output,language+"-"+(compact?"pins-compact.png":"pins-regular.png")),host);
             Click("pins-toggle");
             ImGui.GetIO().AddMousePosEvent(-100,-100);host.Frame(Draw);
             if(clippedPin is not null) throw new Exception("Pinned action exceeds its surface: "+language+"/"+suffix+"/"+clippedPin);
-            if(language is "en" or "ru") SoftwarePreview.Save(Path.Combine(output,language+"-"+(compact?"pins-compact-expanded.png":"pins-regular-expanded.png")),host);
+            if(language is "en" or "ru") SavePreview(Path.Combine(output,language+"-"+(compact?"pins-compact-expanded.png":"pins-regular-expanded.png")),host);
             Click("pins-toggle"); Click("pin-repo-view-"+source);
             var filtered=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.Invoke(main,null)!;
             if(filtered.Count!=36 || filtered.Any(e=>e.Repository.Url!=source)) throw new Exception("A repository pin did not filter its own plugins.");
@@ -1053,16 +1074,17 @@ internal static class InstallerUiTests
                     if(bounds["card-state-"+identity].Max.X>card.Max.X-inset+.5f || bounds["card-compatibility-"+identity].Max.X>card.Max.X-inset+.5f
                         || hasAction && (bounds["card-text-end-"+identity].Min.Y>action.Min.Y || action.Max.X>card.Max.X-inset+.5f))
                     {
-                        SoftwarePreview.Save(Path.Combine(output,language+(compact?"-compact":"-regular")+"-state-ink-failed.png"),host);
+                        SavePreview(Path.Combine(output,language+(compact?"-compact":"-regular")+"-state-ink-failed.png"),host);
                         throw new Exception($"Translated eligibility/compatibility ink exceeds its card: {language}/{compact}/{suffix}/{stateMode}/{identity}; card={card}, inset={inset}, state={bounds["card-state-"+identity]}, compatibility={bounds["card-compatibility-"+identity]}, textEnd={bounds["card-text-end-"+identity]}, action={bounds.GetValueOrDefault("details-"+entryIndex)}.");
                     }
                 }
                 if(backend.Actions.Count!=1) throw new Exception("Eligibility-state browsing dispatched an operation.");
-                if(language=="en") SoftwarePreview.Save(Path.Combine(output,$"en-states-{(compact?"compact":"regular")}-{stateMode}.png"),host);
+                if(language=="en") SavePreview(Path.Combine(output,$"en-states-{(compact?"compact":"regular")}-{stateMode}.png"),host);
             }
             Console.WriteLine($"Native installer case passed: {language}/{(compact?"Compact":"Regular")}/{width}x{height}/{scale:F1}/{suffix}.");
+            checkedCases++;checkedLanguages.Add(language);
         }
-        Console.WriteLine("Native installer checks passed in "+selectedLanguages.Length+" locales and "+cases.Count+" size/density/scale/theme cases: cards/table, folded rail reflow, clickable unadded details, pin changes and side-effect-free browsing.");
+        Console.WriteLine("Native installer checks passed in "+checkedLanguages.Count+" locales and "+checkedCases+" size/density/scale/theme cases: cards/table, folded rail reflow, clickable unadded details, pin changes and side-effect-free browsing.");
     }
     // Fabricated image data stays in this fixture and never enters publisher metadata or product fallbacks.
     private sealed class PreviewImages : HttpMessageHandler

@@ -1,3 +1,9 @@
+2026-10-23 - LCARS appearance (local implementation)
+
+- Add LCARS after Auto and Picker through the existing shared appearance configuration, retaining Picker RGB values and the automatic palette. Use segmented headers, elbow rails, alternating installer frames and outlined actions across Main, Settings, plugin details and confirmations, DTR Manager and Catalog Editor.
+- Share one default-muted UI sound preference between Appearance and native speaker shortcuts. Only LCARS activations request the owned optional tones; muting, leaving LCARS and unload stop or release owned playback. Translate the controls and help in all 15 locales.
+- Pin consumer CI to the published AethertekUI 0.3.0 baseline. Preserve version 3.0.0.3, native IDs, action eligibility and the existing manual per-plugin updater.
+
 2026-10-22 - Compatibility feedback and hover descriptions (local implementation)
 
 - Include each alert's actual assessment reason and missing dependency names while retaining ignored-row filtering, severity, total counts and the four-row summary limit. Format notification, status and titlebar reasons with the existing UI language resources.

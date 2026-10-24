@@ -22,6 +22,13 @@ if (args.FirstOrDefault() == "--compatibility-feedback")
 
 if (args.FirstOrDefault() == "--installer-media") { InstallerMediaTests.Check(); await InstallerMediaTests.CheckOwnershipAsync(); return 0; }
 if (args.FirstOrDefault() == "--installer-ui") { InstallerUiTests.Check(args.Skip(1).ToArray()); return 0; }
+if (args.FirstOrDefault() == "--lcars")
+{
+    InstallerUiTests.Check(args.Skip(1).ToArray(), lcars: true);
+    AethertekUI.Tests.BotologyUiSmoke.Run(verifyBaselines: false, lcars: true);
+    return 0;
+}
+if (args.FirstOrDefault() == "--lcars-owners") { AethertekUI.Tests.BotologyUiSmoke.Run(verifyBaselines: false, lcars: true); return 0; }
 if (args.FirstOrDefault() == "--installer-performance") { InstallerUiTests.CheckPerformance(); return 0; }
 if (args.FirstOrDefault() == "--installer-title") { InstallerUiTests.CheckTitle(); return 0; }
 if (args.FirstOrDefault() == "--installer-discovery") { await InstallerDiscoveryTests.CheckAsync(); return 0; }

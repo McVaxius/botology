@@ -91,7 +91,7 @@ public sealed partial class MainWindow
         var s=MaterialTheme.Metrics.Scale;
         using var controls=MaterialControls.Push(InstallerControls());
         var metrics=MaterialControls.Metrics;
-        var pad=metrics.Padding.Y;var gap=metrics.ItemSpacing.Y;
+        var pad=MaterialTheme.Current.IsLcars?Math.Max(16*s,metrics.Padding.Y):metrics.Padding.Y;var gap=metrics.ItemSpacing.Y;
         var edge=ImGui.GetTextLineHeight()*.1f;
         var headerHeight=Math.Max(metrics.Height,new[]{"Categories & tags","Clear categories"}.Max(value=>MaterialText.Measure(UiText.T(value)).Y)+2*metrics.Padding.Y);
         var width=ImGui.GetContentRegionAvail().X-2*pad;
