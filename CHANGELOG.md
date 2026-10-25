@@ -1,3 +1,10 @@
+2026-10-24 - Manual Update all (local implementation)
+
+- Add an explicit Update all action on Updates for every currently eligible installed plugin, including entries hidden by search and filters. Retain the individual Update action, native source and testing-channel selection; assess updates against the native selected channel's API while preserving stable Install eligibility.
+- Await each native update serially under the existing installer operation gate. Recheck host, safe-mode, development, banned, API and repository eligibility before each dispatch; stop on the first failure and show completed counts and the affected source. Translate the action and results in all 15 locales.
+- Preserve version 3.0.0.4. No background update scheduling or saved update preference is added.
+- Validation: Debug/x64 product and existing feature harness build cleanly. Installer core and focused native Update all checks pass, including normal/LCARS interactions, seven selected-channel API/fallback cases, stale eligibility and all fifteen resource/placeholder catalogs. In-game updater acceptance remains pending; no client updates or baseline changes were performed.
+
 2026-10-23 - LCARS appearance (local implementation)
 
 - Add LCARS after Auto and Picker through the existing shared appearance configuration, retaining Picker RGB values and the automatic palette. Use segmented headers, elbow rails, alternating installer frames and outlined actions across Main, Settings, plugin details and confirmations, DTR Manager and Catalog Editor.

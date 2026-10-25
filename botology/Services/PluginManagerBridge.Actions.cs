@@ -12,8 +12,6 @@ public sealed partial class PluginManagerBridge
     public async Task<InstallerOperation> ExecuteInstallerActionAsync(InstallerAction action, string repository, string internalName = "")
     {
         var identity = internalName.Length == 0 ? repository : InstallerCatalog.PluginIdentity(repository, internalName);
-        if (Interlocked.CompareExchange(ref installerActionRunning, 1, 0) != 0)
-            return new(identity, action, false, false, "Another operation is in progress.");
         try
         {
             var manager = GetPluginManager();
@@ -22,7 +20,7 @@ public sealed partial class PluginManagerBridge
             var profiles = GetHostService("Dalamud.Plugin.Internal.Profiles.ProfileManager");
             var player = action is InstallerAction.Enable or InstallerAction.Disable
                 ? GetHostService("Dalamud.Game.Player.PlayerState") : null;
-            return await ExecuteHostActionAsync(manager, configuration, profiles, action, repository, internalName,
+            return await ExecuteInstallerActionAsync(manager, configuration, profiles, action, repository, internalName,
                 player is null ? 0 : Read(player, "ContentId") is ulong contentId ? contentId : 0);
         }
         catch (Exception ex)
@@ -30,10 +28,20 @@ public sealed partial class PluginManagerBridge
             log.Warning(ex, "[botology] Installer operation failed: {Action}", action);
             return new(identity, action, false, false, ex.GetBaseException().Message);
         }
-        finally { Volatile.Write(ref installerActionRunning, 0); }
     }
 
     // Offline fixtures exercise the same boundary with fabricated host objects; never resolve live services in tests.
+    internal async Task<InstallerOperation> ExecuteInstallerActionAsync(
+        object manager, object configuration, object profiles, InstallerAction action,
+        string repository, string internalName = "", ulong contentId = 0)
+    {
+        var identity = internalName.Length == 0 ? repository : InstallerCatalog.PluginIdentity(repository, internalName);
+        if (Interlocked.CompareExchange(ref installerActionRunning, 1, 0) != 0)
+            return new(identity, action, false, false, "Another operation is in progress.");
+        try { return await ExecuteHostActionAsync(manager, configuration, profiles, action, repository, internalName, contentId); }
+        finally { Volatile.Write(ref installerActionRunning, 0); }
+    }
+
     internal static async Task<InstallerOperation> ExecuteHostActionAsync(
         object manager, object configuration, object profiles, InstallerAction action,
         string repository, string internalName = "", ulong contentId = 0)
@@ -89,6 +97,30 @@ public sealed partial class PluginManagerBridge
         if (!ReadBool(manager, "PluginsReady") || !ReadBool(manager, "ReposReady") || ReadBool(profiles, "IsBusy"))
             throw new InvalidOperationException("The host is busy. Wait for its current operation to finish.");
         var installed = GetEnumerableProperty(manager, "InstalledPlugins");
+        if (action == InstallerAction.UpdateAll)
+        {
+            if (ReadBool(manager, "SafeMode")) throw new InvalidOperationException("This operation is unavailable in safe mode.");
+            // Select from the current native host, independently of the visible page's filters.
+            var updates = installed.Select(plugin => (Local: plugin, Source: InstalledSource(plugin), Name: ReadString(plugin, "InternalName")))
+                .Where(item => FindInstallerUpdate(manager, item.Local, item.Source) is not null).ToArray();
+            if (updates.Length == 0) return Done("No eligible updates.");
+            var completed = 0;
+            foreach (var update in updates)
+            {
+                try
+                {
+                    // Keep the outer operation gate while each native update is awaited, and recheck every gate at dispatch.
+                    await ExecuteHostActionAsync(manager, configuration, profiles, InstallerAction.Update, update.Source, update.Name);
+                    completed++;
+                }
+                catch (Exception ex)
+                {
+                    return new(identity, action, false, false, "Update all stopped after {0} of {1} updates: {2}. {3}")
+                    { MessageArguments = [completed, updates.Length, update.Name + " (" + update.Source + ")", ex.GetBaseException().Message] };
+                }
+            }
+            return new(identity, action, false, true, "Completed {0} updates.") { MessageArguments = [completed] };
+        }
         var local = installed.FirstOrDefault(p => string.Equals(ReadString(p, "InternalName"), internalName, StringComparison.OrdinalIgnoreCase)
             && InstalledSource(p) == source);
         if (action == InstallerAction.Install)
@@ -114,12 +146,8 @@ public sealed partial class PluginManagerBridge
         if (local is null) throw new InvalidOperationException("The installed plugin no longer matches this source.");
         if (action == InstallerAction.Update)
         {
-            if (ReadBool(manager, "SafeMode") || ReadBool(local, "IsDev"))
-                throw new InvalidOperationException("This operation is unavailable in the current host state.");
-            RequireEnabledRepository(manager, source);
-            var update = GetEnumerableProperty(manager, "UpdatablePlugins").SingleOrDefault(u =>
-                ReferenceEquals(Read(u, "InstalledPlugin"), local) && Read(u, "UpdateManifest") is { } manifest && ManifestSource(manifest) == source)
-                ?? throw new InvalidOperationException("No update is available from the installed source.");
+            var update = FindInstallerUpdate(manager, local, source)
+                ?? throw new InvalidOperationException("No eligible update is available from the installed source.");
             var result = await InvokeHostAsync(manager, "UpdateSinglePluginAsync", update, true, false);
             var status = result is null ? "" : ReadString(result, "Status");
             if (status is not ("Success" or "AlreadyUpToDate")) throw new InvalidOperationException(status.Length == 0 ? "Update failed" : status);
@@ -180,6 +208,25 @@ public sealed partial class PluginManagerBridge
     }
     private static string? ManifestSource(object manifest)
         => Read(manifest, "SourceRepo") is { } repo ? InstallerCatalog.NormalizeRepository(ReadString(repo, "PluginMasterUrl")) : null;
+    private static object? FindInstallerUpdate(object manager, object local, string source)
+    {
+        if (ReadBool(manager, "SafeMode") || ReadBool(local, "IsDev") || ReadBool(local, "IsBanned")) return null;
+        if (!GetEnumerableProperty(manager, "Repos").Any(repo => InstallerCatalog.NormalizeRepository(ReadString(repo, "PluginMasterUrl")) == source
+            && ReadBool(repo, "IsEnabled") && ReadString(repo, "State") == "Success")) return null;
+        if (!GetEnumerableProperty(manager, "AvailablePlugins").Any(manifest =>
+            string.Equals(ReadString(manifest, "InternalName"), ReadString(local, "InternalName"), StringComparison.OrdinalIgnoreCase)
+            && ManifestSource(manifest) == source)) return null;
+        // Native testing-channel selection is retained; stable-install-only flags do not apply to an installed plugin's update.
+        return GetEnumerableProperty(manager, "UpdatablePlugins").SingleOrDefault(update =>
+            ReferenceEquals(Read(update, "InstalledPlugin"), local) && Read(update, "UpdateManifest") is { } manifest
+            && ManifestSource(manifest) == source && InstallerUpdateApiLevel(update) == PluginAssessmentRow.CurrentDalamudApiLevel);
+    }
+    private static int InstallerUpdateApiLevel(object update)
+    {
+        if (Read(update, "UpdateManifest") is not { } manifest) return 0;
+        return ReadBool(update, "UseTesting") && Read(manifest, "TestingDalamudApiLevel") is int testingApi ? testingApi
+            : Read(manifest, "DalamudApiLevel") is int stableApi ? stableApi : 0;
+    }
     private static void RequireEnabledRepository(object manager, string source)
     {
         if (!GetEnumerableProperty(manager, "Repos").Any(r => InstallerCatalog.NormalizeRepository(ReadString(r, "PluginMasterUrl")) == source

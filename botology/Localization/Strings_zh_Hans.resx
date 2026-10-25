@@ -369,4 +369,10 @@
   <data name="Unmute UI sounds" xml:space="preserve"><value>启用界面音效</value></data>
   <data name="LCARS panels and outlined controls. Picker colours are retained." xml:space="preserve"><value>LCARS面板与描边控件。保留选色器颜色。</value></data>
   <data name="Audio output is unavailable." xml:space="preserve"><value>音频输出不可用。</value></data>
+  <data name="Update all" xml:space="preserve"><value>全部更新</value></data>
+  <data name="Updates every eligible plugin, including plugins hidden by the current filters." xml:space="preserve"><value>更新所有符合条件的插件，包括被当前筛选条件隐藏的插件。</value></data>
+  <data name="No eligible updates." xml:space="preserve"><value>没有符合条件的更新。</value></data>
+  <data name="Completed {0} updates." xml:space="preserve"><value>已完成 {0} 项更新。</value></data>
+  <data name="Update all stopped after {0} of {1} updates: {2}. {3}" xml:space="preserve"><value>全部更新在完成 {0}/{1} 项更新后停止：{2}。{3}</value></data>
+  <data name="No eligible update is available from the installed source." xml:space="preserve"><value>安装来源中没有符合条件的更新。</value></data>
 </root>

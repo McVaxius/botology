@@ -367,5 +367,11 @@
   <data name="Unmute UI sounds" xml:space="preserve"><value>Aktifkan suara antarmuka</value></data>
   <data name="LCARS panels and outlined controls. Picker colours are retained." xml:space="preserve"><value>Panel LCARS dan kontrol bergaris tepi. Warna pemilih tetap disimpan.</value></data>
   <data name="Audio output is unavailable." xml:space="preserve"><value>Keluaran audio tidak tersedia.</value></data>
+  <data name="Update all" xml:space="preserve"><value>Perbarui semua</value></data>
+  <data name="Updates every eligible plugin, including plugins hidden by the current filters." xml:space="preserve"><value>Memperbarui semua plugin yang memenuhi syarat, termasuk yang disembunyikan oleh filter saat ini.</value></data>
+  <data name="No eligible updates." xml:space="preserve"><value>Tidak ada pembaruan yang memenuhi syarat.</value></data>
+  <data name="Completed {0} updates." xml:space="preserve"><value>{0} pembaruan selesai.</value></data>
+  <data name="Update all stopped after {0} of {1} updates: {2}. {3}" xml:space="preserve"><value>Perbarui semua berhenti setelah {0} dari {1} pembaruan: {2}. {3}</value></data>
+  <data name="No eligible update is available from the installed source." xml:space="preserve"><value>Tidak ada pembaruan yang memenuhi syarat dari sumber instalasi.</value></data>
 </root>
 

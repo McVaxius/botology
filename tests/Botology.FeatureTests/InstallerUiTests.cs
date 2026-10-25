@@ -366,6 +366,7 @@ internal static class InstallerUiTests
     internal static unsafe void Check(string[]? languages=null,bool lcars=false)
     {
         BotologyUiSmoke.CheckPreferencesAndResources();
+        CheckUpdateAll(lcars);
         void SavePreview(string path,NativeTestContext context)
         {
             if(!lcars || path.EndsWith("-default.png",StringComparison.Ordinal) || path.Contains("-profile-",StringComparison.Ordinal)
@@ -1085,6 +1086,113 @@ internal static class InstallerUiTests
             checkedCases++;checkedLanguages.Add(language);
         }
         Console.WriteLine("Native installer checks passed in "+checkedLanguages.Count+" locales and "+checkedCases+" size/density/scale/theme cases: cards/table, folded rail reflow, clickable unadded details, pin changes and side-effect-free browsing.");
+    }
+
+    internal static unsafe void CheckUpdateAll(bool lcars)
+    {
+        using var host=new NativeTestContext(1200,960,1,"en");
+        using var icon=new BotologyOriginalIcon(host);
+        using var text=new UiText("en",host.PushFont);
+        var backend=new SnapshotUi(true,0x1CC9E6,"en");
+        const string source=InstallerCatalog.OfficialRepository;
+        var repository=new InstallerRepository(source,"Dalamud",true,true,true,"Success");
+        var entries=new[]{"Visible","Hidden"}.Select(name=>new InstallerEntry(new(name,name,source,ApiLevel:15),repository,
+            new(new PluginRuntimeState(name,name,new(1,0),false,true,null,null,new object(),null,null,null),source,"Unloaded"),null,false,true)).ToArray();
+        var snapshot=new InstallerCatalogSnapshot([repository],entries,true,false);
+        backend.Installer=snapshot;
+        using var main=new MainWindow(backend);
+        var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+        typeof(MainWindow).GetField("installerPage",flags)!.SetValue(main,"Updates");
+        typeof(MainWindow).GetField("installerSearch",flags)!.SetValue(main,"no visible matches");
+        var bounds=new Dictionary<string,(Vector2 Min,Vector2 Max)>();
+        main.MeasureBounds=(id,min,max)=>bounds[id]=(min,max);
+        var theme=BotologyPresentation.Theme(0x1CC9E6,new() { Mode=lcars?MaterialColorMode.Lcars:MaterialColorMode.Auto });
+        theme.Motion.Enabled=false;
+        void Draw()
+        {
+            using var locale=text.Enter(); using var material=MaterialTheme.Push(theme,1,MaterialStyleMode.ColorsOnly);
+            using var geometry=BotologyPresentation.PushHostGeometry(1,false); using var chrome=MaterialWindowChrome.Push();
+            main.PreDraw(); ImGui.SetNextWindowPos(Vector2.Zero); ImGui.SetNextWindowSize(new(1200,960));
+            var open=true; ImGui.Begin(main.WindowName,ref open,main.Flags|ImGuiWindowFlags.NoSavedSettings);
+            main.Draw(); ImGui.End(); main.PostDraw();
+        }
+        void Settle()
+        {
+            typeof(MainWindow).GetField("nextInstallerSnapshot",flags)!.SetValue(main,DateTime.MinValue);
+            for(var frame=0;frame<4;frame++) { bounds.Clear();host.Frame(Draw); }
+        }
+        void Click()
+        {
+            var button=bounds["installer-update-all"];
+            host.Click((button.Min+button.Max)*.5f,Draw);
+            Settle();
+        }
+        Settle();
+        if(backend.Actions.Count!=0 || !bounds.ContainsKey("installer-update-all")) throw new Exception("Opening Updates must expose Update all without dispatching it.");
+        var visible=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",flags)!.Invoke(main,null)!;
+        if(visible.Count!=0) throw new Exception("Update-all filter fixture must hide every eligible plugin.");
+        Click();
+        if(!backend.Actions.SequenceEqual(["UpdateAll::"])) throw new Exception("An explicit Update all click must dispatch one batch even when all eligible rows are filtered out.");
+        backend.Actions.Clear();
+        typeof(MainWindow).GetField("installerSearch",flags)!.SetValue(main,"");
+        typeof(MainWindow).GetField("selectedInstaller",flags)!.SetValue(main,entries[0].Identity);Settle();
+        var rowUpdate=bounds["plugin-action-Update"];
+        host.Click((rowUpdate.Min+rowUpdate.Max)*.5f,Draw);Settle();
+        if(!backend.Actions.SequenceEqual(["Update:"+source+":Visible"])) throw new Exception("The existing individual Update action must retain its source and plugin identity.");
+        backend.Actions.Clear();
+        typeof(MainWindow).GetField("selectedInstaller",flags)!.SetValue(main,null);
+        typeof(MainWindow).GetField("installerSearch",flags)!.SetValue(main,"no visible matches");
+        foreach(var blocked in new[]{"empty","not-ready","safe-mode","running"})
+        {
+            backend.Installer=snapshot with { Ready=blocked!="not-ready",SafeMode=blocked=="safe-mode",Entries=blocked=="empty"?[]:entries };
+            backend.InstallerOperation=blocked=="running"?new("",InstallerAction.UpdateAll,true,false,"Working..."):null;
+            Settle();Click();
+            if(backend.Actions.Count!=0) throw new Exception("Update all must stay disabled for "+blocked+".");
+        }
+        backend.Installer=snapshot;
+        backend.InstallerOperation=new("",InstallerAction.UpdateAll,false,false,
+            "Update all stopped after {0} of {1} updates: {2}. {3}") { MessageArguments=[1,2,"Hidden ("+source+")","FailedDownload"] };
+        Settle();
+        if(backend.Actions.Count!=0) throw new Exception("Displaying a partial-update result must not dispatch more work.");
+        backend.InstallerOperation=null;
+        typeof(MainWindow).GetField("installerSearch",flags)!.SetValue(main,"");
+        foreach(var channel in new (int Stable,int? Testing,bool UseTesting,bool Eligible)[]
+        {
+            (14,15,true,true),(15,14,true,false),(15,null,true,true),(14,null,true,false),
+            (14,15,false,false),(15,14,false,true),(15,null,false,true),
+        })
+        {
+            var nativeRepo=new { PluginMasterUrl=source,IsEnabled=true,State="Success",IsThirdParty=false };
+            var nativeLocal=new { InternalName="ChannelFixture",IsThirdParty=false,IsDev=false,IsTesting=false,IsBanned=false,State="Unloaded",
+                Manifest=new { InstalledFromUrl=source,ScheduledForDeletion=false } };
+            var nativeManifest=new { InternalName=nativeLocal.InternalName,Name="Channel fixture",SourceRepo=nativeRepo,
+                DalamudApiLevel=channel.Stable,TestingDalamudApiLevel=channel.Testing };
+            var manager=new { Repos=new[]{nativeRepo},AvailablePlugins=new[]{nativeManifest},PluginsReady=true,ReposReady=true,SafeMode=false,
+                UpdatablePlugins=new[]{new { InstalledPlugin=nativeLocal,UpdateManifest=nativeManifest,UseTesting=channel.UseTesting }} };
+            var runtime=new PluginRuntimeState(nativeLocal.InternalName,nativeLocal.InternalName,new(1,0),false,true,null,null,nativeLocal,null,null,null);
+            backend.Installer=InstallerCatalog.Merge(PluginManagerBridge.CaptureInstallerHost(manager,new { ThirdRepoList=Array.Empty<object>() },new([runtime])),[],[],[]);
+            var entry=backend.Installer.Entries.Single();
+            var description=$"stable {channel.Stable}, testing {channel.Testing}, UseTesting {channel.UseTesting}, LCARS {lcars}";
+            if(entry.CanUpdate!=channel.Eligible || (entry with { Installed=null }).CanInstall!=(channel.Stable==15))
+                throw new Exception("Captured update/stable Install gates disagree with native channels: "+description);
+            Settle();
+            visible=(IReadOnlyList<InstallerEntry>)typeof(MainWindow).GetMethod("FilterInstallerEntries",flags)!.Invoke(main,null)!;
+            if(visible.Count!=(channel.Stable==15?1:0)) throw new Exception("Default API filtering must retain stable manifest semantics: "+description);
+            Click();
+            if(!backend.Actions.SequenceEqual(channel.Eligible?new[]{"UpdateAll::"}:Array.Empty<string>()))
+                throw new Exception("Update all must use selected-channel eligibility even when the default filter hides the only testing update: "+description);
+            backend.Actions.Clear();
+            typeof(MainWindow).GetField("selectedInstaller",flags)!.SetValue(main,entry.Identity);Settle();
+            rowUpdate=bounds["plugin-action-Update"];
+            host.Click((rowUpdate.Min+rowUpdate.Max)*.5f,Draw);Settle();
+            if(!backend.Actions.SequenceEqual(channel.Eligible?new[]{"Update:"+source+":"+nativeLocal.InternalName}:Array.Empty<string>()))
+                throw new Exception("Individual Update must retain native selected-channel eligibility: "+description);
+            backend.Actions.Clear();
+            typeof(MainWindow).GetField("selectedInstaller",flags)!.SetValue(main,null);
+        }
+        typeof(MainWindow).GetField("installerPage",flags)!.SetValue(main,"Discover");Settle();
+        if(bounds.ContainsKey("installer-update-all")) throw new Exception("Update all must be scoped to the Updates page.");
+        Console.WriteLine("Native Update all interaction passed: explicit click, hidden eligible rows, host gates, selected-channel API/fallback matrix, individual Update and terminal result; LCARS "+lcars+".");
     }
     // Fabricated image data stays in this fixture and never enters publisher metadata or product fallbacks.
     private sealed class PreviewImages : HttpMessageHandler

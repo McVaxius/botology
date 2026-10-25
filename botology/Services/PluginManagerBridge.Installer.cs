@@ -55,6 +55,7 @@ public sealed partial class PluginManagerBridge
                 ReadString(manifest, "IconUrl"), ReadStrings(manifest, "ImageUrls"), ReadStrings(manifest, "Tags"),
                 ReadBool(manifest, "IsTestingExclusive"), ReadBool(manifest, "IsHide"), ReadString(manifest, "Changelog"), ReadString(manifest, "Dip17Channel"),ReadStrings(manifest,"CategoryTags")));
         }
+        var updates = GetEnumerableProperty(manager, "UpdatablePlugins");
         var locals = installed.Plugins.Select(runtime =>
         {
             var local = runtime.LocalPluginHandle;
@@ -66,9 +67,12 @@ public sealed partial class PluginManagerBridge
                 : !thirdParty ? InstallerCatalog.OfficialRepository
                 : InstallerCatalog.NormalizeRepository(manifest is null ? null : ReadString(manifest, "InstalledFromUrl"))
                     ?? "unknown:" + runtime.InternalName;
+            var update = updates.SingleOrDefault(candidate => ReferenceEquals(Read(candidate, "InstalledPlugin"), local)
+                && Read(candidate, "UpdateManifest") is { } remote && ManifestSource(remote) == source);
             return new InstallerInstalledPlugin(runtime, source, ReadString(local, "State"), dev,
                 ReadBool(local, "IsTesting"), ReadBool(local, "IsBanned"), ReadBool(local, "IsOutdated"),
-                manifest is not null && ReadBool(manifest, "ScheduledForDeletion"));
+                manifest is not null && ReadBool(manifest, "ScheduledForDeletion"))
+            { UpdateApiLevel = update is null ? null : InstallerUpdateApiLevel(update) };
         }).ToArray();
         return new(repos.Values.ToArray(), manifests, locals,
             ReadBool(manager, "PluginsReady") && ReadBool(manager, "ReposReady"), ReadBool(manager, "SafeMode"));

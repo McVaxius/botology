@@ -194,7 +194,9 @@ public sealed partial class MainWindow
         DrawInstallerNavigation();
         if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelHeading(UiText.T(selectedInstaller is null ? installerPage : "View details"),1);
         if(plugin.InstallerOperation is { } operation)
-            MaterialText.TextWrapped(UiText.T(operation.IsRunning ? "Working..." : operation.Succeeded ? "Completed" : "Operation failed")+": "+UiText.T(operation.Message));
+            MaterialText.TextWrapped(UiText.T(operation.IsRunning ? "Working..." : operation.Succeeded ? "Completed" : "Operation failed")+": "+
+                (operation.MessageArguments is { } arguments?UiText.F(operation.Message,
+                    arguments.Select(argument=>argument is string message?UiText.T(message):argument).ToArray()):UiText.T(operation.Message)));
         if(installerSnapshot.Error is { Length:>0 } error) MaterialText.TextWrapped(error);
         if(installerSnapshot.SafeMode) MaterialText.TextWrapped(UiText.T("Safe mode"));
         if(resetInstallerContentScroll) { ImGui.SetScrollY(0); resetInstallerContentScroll=false; }
@@ -377,6 +379,16 @@ public sealed partial class MainWindow
         var width=ImGui.GetContentRegionAvail().X;
         using var controls=MaterialControls.Push(InstallerControls());
         var metrics=MaterialControls.Metrics;
+        if(installerPage=="Updates")
+        {
+            ImGui.BeginDisabled(plugin.InstallerOperation?.IsRunning==true || !installerSnapshot.Ready || installerSnapshot.SafeMode
+                || !installerSnapshot.Entries.Any(entry=>entry.CanUpdate));
+            if(InstallerButton("Update all","installer-update-all",primary:true,leading:MaterialIcon.Refresh))
+                plugin.RunInstallerAction(InstallerAction.UpdateAll,"");
+            if(ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                MaterialText.SetTooltip(UiText.T("Updates every eligible plugin, including plugins hidden by the current filters."));
+            ImGui.EndDisabled();
+        }
         var switchWidth=2*(metrics.IconSize+2*metrics.Padding.X+metrics.Gap);
         if(MaterialTextField.SearchField("##InstallerSearch",ref installerSearch,
             BotologyPresentation.Field with { CornerRadius=metrics.Rounding/s },UiText.T("Search plugins, authors or repositories"),(width-switchWidth-ImGui.GetStyle().ItemSpacing.X)/s,maxLength:512)) ResetInstallerResults();

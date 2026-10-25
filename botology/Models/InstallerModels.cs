@@ -41,7 +41,10 @@ public sealed record InstallerInstalledPlugin(
     bool IsTesting = false,
     bool IsBanned = false,
     bool IsOutdated = false,
-    bool ScheduledForDeletion = false);
+    bool ScheduledForDeletion = false)
+{
+    public int? UpdateApiLevel { get; init; }
+}
 
 public sealed record InstallerHostSnapshot(
     IReadOnlyList<InstallerRepository> Repositories,
@@ -78,7 +81,8 @@ public sealed record InstallerEntry(
         : Repository.Status != "Success" ? "Source unavailable" : !AvailableFromHost ? "Source refresh required" : null;
     public bool CanInstall => InstallBlockReason is null;
     public bool CanUpdate => HostReady && !HostSafeMode && HasUpdate && Installed is { IsDevelopment: false, IsBanned: false }
-        && Repository.IsAdded && Repository.IsEnabled && Repository.Status == "Success" && AvailableFromHost && IsApiCompatible;
+        && Repository.IsAdded && Repository.IsEnabled && Repository.Status == "Success" && AvailableFromHost
+        && (Installed.UpdateApiLevel ?? Manifest.ApiLevel) == PluginAssessmentRow.CurrentDalamudApiLevel;
     public bool CanUninstall => HostReady && Installed is { IsDevelopment: false } && !IsLoaded
         && Installed.State is not ("Loading" or "Unloading");
 }
@@ -97,7 +101,10 @@ public sealed record InstallerCatalogSnapshot(
     public static InstallerCatalogSnapshot Empty { get; } = new([], [], false, false);
 }
 
-public enum InstallerAction { Install, Update, Uninstall, Enable, Disable, AddRepository, EnableRepository, DisableRepository, RemoveRepository, Refresh }
+public enum InstallerAction { Install, Update, Uninstall, Enable, Disable, AddRepository, EnableRepository, DisableRepository, RemoveRepository, Refresh, UpdateAll }
 
 public sealed record InstallerOperation(
-    string Identity, InstallerAction Action, bool IsRunning, bool Succeeded, string Message);
+    string Identity, InstallerAction Action, bool IsRunning, bool Succeeded, string Message)
+{
+    public object[]? MessageArguments { get; init; }
+}

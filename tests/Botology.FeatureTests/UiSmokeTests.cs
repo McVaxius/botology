@@ -928,7 +928,7 @@ internal sealed class SnapshotUi : IBotologyUi
     public InstallerCatalogSnapshot CaptureInstaller()=>Installer;
     public bool DiscoveryRunning=>false;
     public IReadOnlyDictionary<string,string> DiscoveryErrors=>new Dictionary<string,string>();
-    public InstallerOperation? InstallerOperation=>null;
+    public InstallerOperation? InstallerOperation { get; set; }
     public void RefreshInstaller()=>Actions.Add("installer-refresh");
     public void RunInstallerAction(InstallerAction action,string repository,string internalName="")=>Actions.Add(action+":"+repository+":"+internalName);
     public void ToggleRepositoryPin(string repository)=>botology.Services.InstallerCatalog.ToggleRepositoryPin(Configuration,repository);

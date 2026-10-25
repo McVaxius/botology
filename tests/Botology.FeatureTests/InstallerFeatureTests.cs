@@ -175,6 +175,31 @@ internal static class InstallerFeatureTests
         Require(InstallerCatalog.Merge(addedHost with { SafeMode = true }, [], [], []).Entries.All(e => !e.CanInstall)
             && InstallerCatalog.Merge(addedHost with { Ready = false }, [], [], []).Entries.All(e => !e.CanInstall),
             "Safe mode and incomplete host readiness must disable install eligibility.");
+        var blockedUpdates=new[]{installed with { HostReady=false },installed with { HostSafeMode=true },installed with { Installed=null },
+            installed with { AvailableFromHost=false },installed with { Repository=installed.Repository with { IsAdded=false } },
+            installed with { Repository=installed.Repository with { IsEnabled=false } },installed with { Repository=installed.Repository with { Status="Fail" } },
+            installed with { Manifest=installed.Manifest with { ApiLevel=14 } },installed with { Installed=native with { IsDevelopment=true } },
+            installed with { Installed=native with { IsBanned=true } }};
+        Require(installed.CanUpdate && blockedUpdates.All(entry=>!entry.CanUpdate)
+            && (installed with { Installed=native with { IsTesting=true },Manifest=installed.Manifest with { IsTestingExclusive=true,IsHidden=true } }).CanUpdate,
+            "Update eligibility must retain every host/source/API/development/banned gate while preserving native testing updates.");
+        string[] updateLabels=["Update all","Updates every eligible plugin, including plugins hidden by the current filters.",
+            "No eligible updates.","Completed {0} updates.","Update all stopped after {0} of {1} updates: {2}. {3}",
+            "No eligible update is available from the installed source."];
+        foreach(var (language,_) in UiText.Languages)
+        {
+            using var text=new UiText(language,_=>throw new InvalidOperationException());
+            foreach(var label in updateLabels)
+            {
+                var translated=text.Resources.GetString(label,true);
+                Require(!string.IsNullOrWhiteSpace(translated),"Manual update action/result localization must exist in "+language+": "+label);
+                if(translated is null) continue;
+                var expected=System.Text.RegularExpressions.Regex.Matches(label,@"\{\d+\}").Select(match=>match.Value).Order().ToArray();
+                var actual=System.Text.RegularExpressions.Regex.Matches(translated,@"\{\d+\}").Select(match=>match.Value).Order().ToArray();
+                Require(actual.SequenceEqual(expected),"Manual update result placeholders must retain counts, plugin and native failure in "+language+".");
+                _=string.Format(text.Culture,translated,1,2,"Fixture (https://example.invalid/feed.json)","FailedDownload");
+            }
+        }
 
         var repoHandle = new { PluginMasterUrl = official, IsEnabled = true, IsThirdParty = false, State = "Success" };
         var manager = new

@@ -367,5 +367,11 @@
   <data name="Unmute UI sounds" xml:space="preserve"><value>Bật âm thanh giao diện</value></data>
   <data name="LCARS panels and outlined controls. Picker colours are retained." xml:space="preserve"><value>Bảng LCARS và điều khiển có viền. Giữ nguyên màu đã chọn.</value></data>
   <data name="Audio output is unavailable." xml:space="preserve"><value>Không có đầu ra âm thanh.</value></data>
+  <data name="Update all" xml:space="preserve"><value>Cập nhật tất cả</value></data>
+  <data name="Updates every eligible plugin, including plugins hidden by the current filters." xml:space="preserve"><value>Cập nhật mọi plugin đủ điều kiện, kể cả plugin bị bộ lọc hiện tại ẩn.</value></data>
+  <data name="No eligible updates." xml:space="preserve"><value>Không có bản cập nhật đủ điều kiện.</value></data>
+  <data name="Completed {0} updates." xml:space="preserve"><value>Đã hoàn tất {0} bản cập nhật.</value></data>
+  <data name="Update all stopped after {0} of {1} updates: {2}. {3}" xml:space="preserve"><value>Cập nhật tất cả đã dừng sau {0}/{1} bản cập nhật: {2}. {3}</value></data>
+  <data name="No eligible update is available from the installed source." xml:space="preserve"><value>Không có bản cập nhật đủ điều kiện từ nguồn đã cài đặt.</value></data>
 </root>
 
