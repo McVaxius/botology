@@ -1,3 +1,9 @@
+2026-10-26 - 3.1.0.1 - Approved material styles and colour controls
+
+- Add Glassmorphism, Spatial and Cyberpunk across the installer, Settings, DTR Manager, Catalog Editor and native supporting surfaces. Preserve Auto, Picker, LCARS, existing actions, IDs, font roles, density and opacity.
+- Add independent palettes and resets, LCARS Background/three-bar colours, and Glass animation, speed and separately resettable wave colours through the existing appearance settings. Translate the controls in all fifteen catalogs.
+- Update the existing CI library pin to the published AethertekUI revision consumed by this integration. Preserve the current installer and Update all behavior.
+
 2026-10-24 - Manual Update all (local implementation)
 
 - Add an explicit Update all action on Updates for every currently eligible installed plugin, including entries hidden by search and filters. Retain the individual Update action, native source and testing-channel selection; assess updates against the native selected channel's API while preserving stable Install eligibility.

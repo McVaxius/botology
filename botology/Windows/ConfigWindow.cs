@@ -38,11 +38,11 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
 
     public override void Draw()
     {
-        windowMotion.DrawChrome();
+        DrawWindowChrome();
         UiGui.TitleWithButtons(PluginInfo.DisplayName+" Settings",PluginInfo.DisplayName+" "+UiText.T("Settings"), this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
-        using var lcars=MaterialLcars.NativeButtonStyle();
+        using var lcars=MaterialSkin.NativeButtonStyle();
         BotologyPresentation.LcarsHeader(UiText.T("Settings"));
         BotologyPresentation.LcarsOwnerFrame(1);
         var settingsRoot = ImGui.GetID("");
@@ -72,7 +72,8 @@ public sealed class ConfigWindow : PositionedWindow, IDisposable
 
     private void DrawGeneralSettings()
     {
-        if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelHeading(UiText.T("Settings"),1);
+        if(MaterialTheme.Current.IsLcars || MaterialTheme.Current.IsCyberpunk)
+            MaterialSkin.Heading(MaterialTheme.Current.IsCyberpunk ? UiText.T("Settings").ToUpper(UiText.Current.Culture) : UiText.T("Settings"),1);
         supportLog.Draw(Plugin.PluginInterface, key => UiText.T(key),
             path => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = path, UseShellExecute = true }), ex => Plugin.Log.Error(ex, "Dalamud log export failed."), Plugin.CommandManager);
         var cfg = plugin.Configuration;

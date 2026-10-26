@@ -31,7 +31,9 @@ Hindi uses installed shaping fonts. The source now leaves other languages usable
 
 Use Settings for shared colour, UI language, compact spacing and window transparency/fade; titlebar appearance actions change the same saved preferences. Main branding and expanded/collapsed titles use the packaged Botology icon in its original colours. Botology's Enabled switch controls assessment alerts; the grid's per-plugin enable and DTR actions remain separate controls for the selected installed plugin.
 
-Colour offers Auto, Picker and LCARS in that order. LCARS adds segmented rails, framed panels and outlined controls across the installer and supporting windows, while retaining saved Picker colours. UI tones start muted; Appearance and each LCARS titlebar speaker change the same saved preference. Local native rendering does not establish game/GPU or audible-device acceptance.
+Colour offers Auto, Picker, LCARS, Glassmorphism, Spatial and Cyberpunk. Each new material retains its own Background, Controls and Text colours; LCARS exposes Background and three bar colours. Individual and current-palette resets retain the other palettes. UI tones start muted; Appearance and each LCARS titlebar speaker change the same saved preference. Local native rendering does not establish game/GPU or audible-device acceptance.
+
+Glass animation starts enabled, with speed from 0.1 to 10x (default 1x) and three independently editable wave colours. Pausing motion keeps the wave editors available. Palette resets preserve wave colours; the separate wave reset preserves the palette. Preferences use the existing appearance configuration.
 
 Botology is public and released as `v2.0.0.1` on 2026-10-07. [Build and Release #34](https://github.com/McVaxius/botology/actions/runs/37602867929) succeeded for commit `7c662c2` and published the package. The plugin provides a functional compatibility grid: installed state, update availability, repo link, enable toggle, best-effort DTR toggle, ignore flags, rule detail popups, category/plugin/author filters, AI attribution, cached catalog patch notes, and a growing `plugin-repository-links.json` catalog for tracked plugins.
 
@@ -85,7 +87,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ". .\eng\Enter-RepoEn
 `AethertekUI.dll` copies beside `botology.dll`; Dalamud assemblies remain host-owned.
 The release workflow checks out Botology and `McVaxius/aethertekUI` into sibling
 `botology` and `aethertekUI` directories, with AethertekUI pinned to revision
-`4c49da19ab6522ed1995cfd2b9bd75020f105d6c`. It builds Botology, uploads the package
+`26365e240855a447cb4b940b0b5d8426847d9ef9`. It builds Botology, uploads the package
 artifacts, and creates the GitHub release.
 
 Run the existing feature/visual harness after a packaging-disabled build using

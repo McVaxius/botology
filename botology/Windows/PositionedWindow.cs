@@ -11,6 +11,7 @@ public abstract class PositionedWindow : Window
     protected readonly AethertekUI.Dalamud.MaterialWindowMotion windowMotion = new();
     private Vector2? pendingWindowPosition;
     private bool pendingPositionConditionReset;
+    private bool materialBackdropPending;
 
     protected PositionedWindow(string name, ImGuiWindowFlags flags = ImGuiWindowFlags.None)
         : base(name, flags)
@@ -33,10 +34,32 @@ public abstract class PositionedWindow : Window
             pendingPositionConditionReset = true;
         }
         windowMotion.Prepare(this, reducedMotion: false, roundedCorners: true);
+        if (BotologyPresentation.IsMaterial)
+        {
+            ImGui.PushStyleColor(ImGuiCol.WindowBg, Vector4.Zero);
+            materialBackdropPending = true;
+        }
     }
 
     public override void PostDraw()
-        => windowMotion.Restore(this);
+    {
+        RestoreMaterialBackdrop();
+        windowMotion.Restore(this);
+    }
+
+    protected void DrawWindowChrome()
+    {
+        RestoreMaterialBackdrop();
+        windowMotion.DrawChrome();
+        AethertekUI.MaterialSkin.Backdrop();
+    }
+
+    private void RestoreMaterialBackdrop()
+    {
+        if (!materialBackdropPending) return;
+        ImGui.PopStyleColor();
+        materialBackdropPending = false;
+    }
 
     protected void FinalizePendingWindowPlacement()
     {

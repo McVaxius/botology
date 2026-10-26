@@ -95,10 +95,10 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
 
     public override void Draw()
     {
-        windowMotion.DrawChrome();
+        DrawWindowChrome();
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=MaterialControls.Push(BotologyPresentation.Controls(34,20));
-        using var lcars=MaterialLcars.NativeButtonStyle();
+        using var lcars=MaterialSkin.NativeButtonStyle();
         BotologyPresentation.LcarsHeader(PluginInfo.DisplayName);
         DrawInstaller();
     }
@@ -346,9 +346,13 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
             }
             var p=ImGui.GetCursorScreenPos(); var dl=ImGui.GetWindowDrawList();
             var c=MaterialTheme.Current.Colors;
-            MaterialCanvas.Surface(p,p+new Vector2(width,height),BotologyPresentation.PanelTop,BotologyPresentation.PanelBottom,4*s);
-            if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelFrame(p,p+new Vector2(width,height),index);
-            dl.AddRect(p,p+new Vector2(width,height),MaterialCanvas.Color(c.OutlineVariant),4*s);
+            if(BotologyPresentation.IsMaterial) MaterialSkin.PanelFrame(p,p+new Vector2(width,height),index);
+            else
+            {
+                MaterialCanvas.Surface(p,p+new Vector2(width,height),BotologyPresentation.PanelTop,BotologyPresentation.PanelBottom,4*s);
+                if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelFrame(p,p+new Vector2(width,height),index);
+                dl.AddRect(p,p+new Vector2(width,height),MaterialCanvas.Color(c.OutlineVariant),4*s);
+            }
             dl.AddCircleFilled(p+new Vector2((inline && index==0 ? 35 : 31)*s,height*.5f),13*s,MaterialCanvas.Color(counter.Color),24);
             MaterialText.AddText(dl,p+new Vector2(labelX*s,inline ? (height-ImGui.GetTextLineHeight())*.5f : 10*s),MaterialCanvas.Color(c.OnSurfaceVariant),label);
             var countX=inline ? labelX*s+labelWidth+16*s : 65*s;
@@ -406,9 +410,13 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         }
         var height=Math.Max(BotologyPresentation.FilterHeight*s,y+rowHeight+padding);
         var c=MaterialTheme.Current.Colors; var dl=ImGui.GetWindowDrawList();
-        MaterialCanvas.Surface(origin,origin+new Vector2(width,height),BotologyPresentation.PanelTop,BotologyPresentation.PanelBottom,4*s);
-        if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelFrame(origin,origin+new Vector2(width,height),1);
-        dl.AddRect(origin,origin+new Vector2(width,height),MaterialCanvas.Color(c.OutlineVariant),4*s);
+        if(BotologyPresentation.IsMaterial) MaterialSkin.PanelFrame(origin,origin+new Vector2(width,height),1);
+        else
+        {
+            MaterialCanvas.Surface(origin,origin+new Vector2(width,height),BotologyPresentation.PanelTop,BotologyPresentation.PanelBottom,4*s);
+            if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelFrame(origin,origin+new Vector2(width,height),1);
+            dl.AddRect(origin,origin+new Vector2(width,height),MaterialCanvas.Color(c.OutlineVariant),4*s);
+        }
         ImGui.SetCursorScreenPos(positions[0]); ImGui.BeginGroup();
         MaterialText.Text(UiText.T("Category"));
         var options=new MaterialOptions<string>(new[]{new MaterialOption<string>("all","",UiText.T("All Categories"))}
@@ -944,7 +952,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         MeasureBounds?.Invoke("rule-"+row.Entry.Id,ImGui.GetItemRectMin(),ImGui.GetItemRectMax());
 
         ImGui.SetNextWindowSize(new Vector2(520f*MaterialTheme.Metrics.Scale, 0f));
-        if (ImGui.BeginPopup("RuleInfo"))
+        if (UiGui.BeginPopup("RuleInfo"))
         {
             ImGui.PushTextWrapPos(480f*MaterialTheme.Metrics.Scale);
             if (row.Ignored)
@@ -963,7 +971,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         // BeginPopup auto-sizes each frame. Wrapped text and controls need a stable
         // width before their content is measured, including after the opening frame.
         ImGui.SetNextWindowSize(new Vector2(360f*MaterialTheme.Metrics.Scale,0));
-        if (!ImGui.BeginPopup(ColumnSelectionPopupId))
+        if (!UiGui.BeginPopup(ColumnSelectionPopupId))
             return;
 
         DrawColumnToggle("Installed?", plugin.Configuration.ShowInstalledColumn, value => plugin.Configuration.ShowInstalledColumn = value);
@@ -1015,7 +1023,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         BotologyPresentation.LcarsOwnerFrame(2);
 
         var releases = plugin.CaptureCatalogReleases();
-        if (ImGui.BeginChild("##PatchNotesScroll", new Vector2(0f, -40f*MaterialTheme.Metrics.Scale), true))
+        if (UiGui.BeginChild("##PatchNotesScroll", new Vector2(0f, -40f*MaterialTheme.Metrics.Scale), true))
         {
             if (releases.Count == 0)
             {

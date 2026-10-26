@@ -375,4 +375,19 @@
   <data name="Completed {0} updates." xml:space="preserve"><value>Completati {0} aggiornamenti.</value></data>
   <data name="Update all stopped after {0} of {1} updates: {2}. {3}" xml:space="preserve"><value>Aggiornamento di tutti interrotto dopo {0} aggiornamenti su {1}: {2}. {3}</value></data>
   <data name="No eligible update is available from the installed source." xml:space="preserve"><value>Nessun aggiornamento idoneo disponibile dalla fonte di installazione.</value></data>
+  <data name="Glassmorphism" xml:space="preserve"><value>Glassmorfismo</value></data>
+  <data name="Spatial" xml:space="preserve"><value>Spaziale</value></data>
+  <data name="Cyberpunk" xml:space="preserve"><value>Cyberpunk</value></data>
+  <data name="LCARS bar 1" xml:space="preserve"><value>Barra LCARS 1</value></data>
+  <data name="LCARS bar 2" xml:space="preserve"><value>Barra LCARS 2</value></data>
+  <data name="LCARS bar 3" xml:space="preserve"><value>Barra LCARS 3</value></data>
+  <data name="Reset" xml:space="preserve"><value>Reimposta</value></data>
+  <data name="Reset colours" xml:space="preserve"><value>Reimposta colori</value></data>
+  <data name="Animation" xml:space="preserve"><value>Animazione</value></data>
+  <data name="Animation speed (0.1–10x; default 1x)" xml:space="preserve"><value>Velocità dell’animazione (0,1–10x; predefinita 1x)</value></data>
+  <data name="Wave colours" xml:space="preserve"><value>Colori delle onde</value></data>
+  <data name="Wave colour 1" xml:space="preserve"><value>Colore onda 1</value></data>
+  <data name="Wave colour 2" xml:space="preserve"><value>Colore onda 2</value></data>
+  <data name="Wave colour 3" xml:space="preserve"><value>Colore onda 3</value></data>
+  <data name="Reset wave colours" xml:space="preserve"><value>Reimposta colori delle onde</value></data>
 </root>

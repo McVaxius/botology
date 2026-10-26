@@ -375,4 +375,19 @@
   <data name="Completed {0} updates." xml:space="preserve"><value>업데이트 {0}개를 완료했습니다.</value></data>
   <data name="Update all stopped after {0} of {1} updates: {2}. {3}" xml:space="preserve"><value>업데이트 {1}개 중 {0}개를 완료한 후 모두 업데이트가 중단되었습니다: {2}. {3}</value></data>
   <data name="No eligible update is available from the installed source." xml:space="preserve"><value>설치된 출처에서 적용 가능한 업데이트를 찾을 수 없습니다.</value></data>
+  <data name="Glassmorphism" xml:space="preserve"><value>글래스모피즘</value></data>
+  <data name="Spatial" xml:space="preserve"><value>공간</value></data>
+  <data name="Cyberpunk" xml:space="preserve"><value>사이버펑크</value></data>
+  <data name="LCARS bar 1" xml:space="preserve"><value>LCARS 막대 1</value></data>
+  <data name="LCARS bar 2" xml:space="preserve"><value>LCARS 막대 2</value></data>
+  <data name="LCARS bar 3" xml:space="preserve"><value>LCARS 막대 3</value></data>
+  <data name="Reset" xml:space="preserve"><value>재설정</value></data>
+  <data name="Reset colours" xml:space="preserve"><value>색상 초기화</value></data>
+  <data name="Animation" xml:space="preserve"><value>애니메이션</value></data>
+  <data name="Animation speed (0.1–10x; default 1x)" xml:space="preserve"><value>애니메이션 속도 (0.1–10x; 기본값 1x)</value></data>
+  <data name="Wave colours" xml:space="preserve"><value>물결 색상</value></data>
+  <data name="Wave colour 1" xml:space="preserve"><value>물결 색상 1</value></data>
+  <data name="Wave colour 2" xml:space="preserve"><value>물결 색상 2</value></data>
+  <data name="Wave colour 3" xml:space="preserve"><value>물결 색상 3</value></data>
+  <data name="Reset wave colours" xml:space="preserve"><value>물결 색상 초기화</value></data>
 </root>

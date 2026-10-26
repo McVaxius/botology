@@ -48,11 +48,11 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
     public override void Draw()
     {
-        windowMotion.DrawChrome();
+        DrawWindowChrome();
         UiGui.TitleWithButtons(PluginInfo.DisplayName+" Catalog Editor",PluginInfo.DisplayName+" "+UiText.T("Catalog Editor"), this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
-        using var lcars=MaterialLcars.NativeButtonStyle();
+        using var lcars=MaterialSkin.NativeButtonStyle();
         BotologyPresentation.LcarsHeader(UiText.T("Catalog Editor"));
         var scale=AethertekUI.MaterialTheme.Metrics.Scale;
         var entries = plugin.CaptureCatalogEditorEntries();
@@ -123,7 +123,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         UiGui.InputTextWithHint("##CatalogCategoryFilter", UiText.T("CATEGORY"), ref categoryFilterText, 128);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(180f*scale);
-        if (MaterialText.BeginCombo("##CatalogSourceFilter", SourceFilterLabel(sourceFilterIndex)))
+        if (UiGui.BeginCombo("##CatalogSourceFilter", SourceFilterLabel(sourceFilterIndex)))
         {
             for (var index = 0; index < SourceFilterLabels.Length; index++)
             {
@@ -137,7 +137,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         var availableHeight = ImGui.GetContentRegionAvail().Y;
         var listWidth = 390f*AethertekUI.MaterialTheme.Metrics.Scale;
 
-        if (ImGui.BeginChild("##CatalogList", new Vector2(listWidth, availableHeight), true,ImGuiWindowFlags.AlwaysUseWindowPadding))
+        if (UiGui.BeginChild("##CatalogList", new Vector2(listWidth, availableHeight), true,ImGuiWindowFlags.AlwaysUseWindowPadding))
         {
             BotologyPresentation.LcarsFrame(1);
             foreach (var entry in filteredEntries)
@@ -157,7 +157,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         ImGui.SameLine();
 
-        if (ImGui.BeginChild("##CatalogEditorPane", new Vector2(0f, availableHeight), true,ImGuiWindowFlags.AlwaysUseWindowPadding))
+        if (UiGui.BeginChild("##CatalogEditorPane", new Vector2(0f, availableHeight), true,ImGuiWindowFlags.AlwaysUseWindowPadding))
         {
             BotologyPresentation.LcarsFrame(2);
             DrawEditorPane(entries);
@@ -186,7 +186,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             return;
 
         ImGui.Separator();
-        if (ImGui.BeginChild("##CatalogEditorScroll", new Vector2(0f, 0f), false))
+        if (UiGui.BeginChild("##CatalogEditorScroll", new Vector2(0f, 0f), false))
             DrawEditorFields(entries);
         ImGui.EndChild();
     }
@@ -493,7 +493,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
 
         MaterialText.Text(UiText.T(label));
         ImGui.SetNextItemWidth(-1f);
-        if (MaterialText.BeginCombo($"##{label.Replace(' ', '_')}_Picker", UiText.T("Select plugin shortname...")))
+        if (UiGui.BeginCombo($"##{label.Replace(' ', '_')}_Picker", UiText.T("Select plugin shortname...")))
         {
             if (ImGui.IsWindowAppearing())
             {
@@ -506,7 +506,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
             ImGui.SameLine();
             ImGui.SetNextItemWidth(180f*AethertekUI.MaterialTheme.Metrics.Scale);
             UiGui.InputTextWithHint($"##{label.Replace(' ', '_')}_DisplayName", UiText.T("DISPLAY NAME"), ref relationDisplayNameFilterText, 128);
-            if (ImGui.BeginChild($"##{label.Replace(' ', '_')}_PickerList", new Vector2(0f, 220f*AethertekUI.MaterialTheme.Metrics.Scale), true))
+            if (UiGui.BeginChild($"##{label.Replace(' ', '_')}_PickerList", new Vector2(0f, 220f*AethertekUI.MaterialTheme.Metrics.Scale), true))
             {
                 foreach (var entry in relationEntries)
                 {
@@ -541,7 +541,7 @@ public sealed class CatalogEditorWindow : PositionedWindow, IDisposable
         }
 
         var height = MathF.Min(120f, 30f + (ids.Length * 24f))*AethertekUI.MaterialTheme.Metrics.Scale;
-        if (ImGui.BeginChild($"##{label.Replace(' ', '_')}_List", new Vector2(-1f, height), true))
+        if (UiGui.BeginChild($"##{label.Replace(' ', '_')}_List", new Vector2(-1f, height), true))
         {
             foreach (var id in ids)
             {

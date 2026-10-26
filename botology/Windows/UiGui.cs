@@ -9,14 +9,83 @@ namespace botology.Windows;
 // This also preserves English-derived helper IDs and existing saved window identities.
 internal static class UiGui
 {
+    internal static bool BeginPopup(string id, ImGuiWindowFlags flags = ImGuiWindowFlags.None)
+    {
+        bool visible;
+        using (var backdrop = MaterialSkin.BackdropStyle(popup: true))
+            visible = ImGui.BeginPopup(id, flags);
+        if (visible) MaterialSkin.Backdrop();
+        return visible;
+    }
+
+    internal static bool BeginCombo(string nativeLabel, string preview, ImGuiComboFlags flags = ImGuiComboFlags.None)
+    {
+        bool visible;
+        using (var backdrop = MaterialSkin.BackdropStyle(popup: true))
+        {
+            var style = ImGui.GetStyle();
+            var framePadding = style.FramePadding;
+            var prepaintPadding = framePadding;
+            if (BotologyPresentation.IsMaterial)
+            {
+                var caption = nativeLabel.Split("##", 2)[0];
+                var visiblePreview = (flags & ImGuiComboFlags.NoPreview) == 0 ? preview.Split("##", 2)[0] : "";
+                using (var height = MaterialText.PushLineHeight(caption, visiblePreview))
+                    prepaintPadding = style.FramePadding;
+            }
+            MaterialStyleScope field;
+            try
+            {
+                // Paint at the shaped height; the native helper reserves that height itself.
+                style.FramePadding = prepaintPadding;
+                field = MaterialSkin.NativeFieldStyle();
+            }
+            finally { style.FramePadding = framePadding; }
+            using (field)
+                visible = MaterialText.BeginCombo(nativeLabel, preview, flags);
+        }
+        if (visible) MaterialSkin.Backdrop();
+        return visible;
+    }
+
+    internal static bool BeginChild(string id, Vector2 size, bool border, ImGuiWindowFlags flags = ImGuiWindowFlags.None)
+    {
+        bool visible;
+        using (var style = new MaterialStyleScope())
+        {
+            if (BotologyPresentation.IsMaterial) style.Color(ImGuiCol.ChildBg, Vector4.Zero);
+            visible = ImGui.BeginChild(id, size, border, flags);
+        }
+        if (visible && border && BotologyPresentation.IsMaterial)
+        {
+            var window = ImGuiP.GetCurrentWindow();
+            var drawing = ImGui.GetWindowDrawList();
+            drawing.PushClipRect(window.InnerRect.Min, window.InnerRect.Max, true);
+            try { MaterialSkin.PanelFrame(window.InnerRect.Min, window.InnerRect.Max, inset: true); }
+            finally { drawing.PopClipRect(); }
+        }
+        return visible;
+    }
+
     internal static MaterialTabs.TabItemScope TabItem(string label,ImGuiTabItemFlags flags=ImGuiTabItemFlags.None)
     {
-        if(!MaterialTheme.Current.IsLcars) return MaterialTabs.Item(label,flags);
+        if(!MaterialTheme.Current.IsLcars && !BotologyPresentation.IsMaterial) return MaterialTabs.Item(label,flags);
         using var style=new MaterialStyleScope();
-        style.Color(ImGuiCol.TabActive,MaterialLcars.Lilac);
-        style.Color(ImGuiCol.TabUnfocusedActive,MaterialLcars.Lilac);
-        style.Color(ImGuiCol.TabHovered,MaterialLcars.Lilac);
-        style.Color(ImGuiCol.Border,MaterialLcars.Lilac);
+        if (BotologyPresentation.IsMaterial)
+        {
+            style.Color(ImGuiCol.Tab,Vector4.Zero);
+            style.Color(ImGuiCol.TabActive,Vector4.Zero);
+            style.Color(ImGuiCol.TabUnfocused,Vector4.Zero);
+            style.Color(ImGuiCol.TabUnfocusedActive,Vector4.Zero);
+            style.Color(ImGuiCol.TabHovered,Vector4.Zero);
+        }
+        else
+        {
+            style.Color(ImGuiCol.TabActive,MaterialLcars.Lilac);
+            style.Color(ImGuiCol.TabUnfocusedActive,MaterialLcars.Lilac);
+            style.Color(ImGuiCol.TabHovered,MaterialLcars.Lilac);
+            style.Color(ImGuiCol.Border,MaterialLcars.Lilac);
+        }
         style.Color(ImGuiCol.Text,Vector4.Zero);
         var tab=MaterialTabs.Item(label,flags);
         try
@@ -31,9 +100,21 @@ internal static class UiGui
             var draw=ImGui.GetWindowDrawList();draw.PushClipRect(clipMin,clipMax,true);
             try
             {
-                draw.AddRect(min,max,MaterialCanvas.Color(MaterialLcars.Lilac),6*MaterialTheme.Metrics.Scale,ImDrawFlags.None,MaterialTheme.Metrics.Scale);
+                using var selected = new MaterialStyleScope();
+                var foreground = tab.Visible || ImGui.IsItemHovered() ? MaterialLcars.Background : MaterialLcars.Text;
+                if (BotologyPresentation.IsMaterial)
+                {
+                    var colors = MaterialTheme.Current.Colors;
+                    var fill = tab.Visible ? colors.Primary : colors.SurfaceContainerHigh;
+                    selected.Color(ImGuiCol.Button,fill);
+                    selected.Color(ImGuiCol.ButtonHovered,Vector4.Lerp(fill,colors.OnSurface,.12f));
+                    selected.Color(ImGuiCol.ButtonActive,Vector4.Lerp(fill,colors.Background,.12f));
+                    foreground = tab.Visible ? colors.OnPrimary : colors.OnSurface;
+                    MaterialSkin.PaintButton(min,max);
+                }
+                else draw.AddRect(min,max,MaterialCanvas.Color(MaterialLcars.Lilac),6*MaterialTheme.Metrics.Scale,ImDrawFlags.None,MaterialTheme.Metrics.Scale);
                 MaterialText.AddText(draw,min+new Vector2(bar.FramePadding.X,(max.Y-min.Y-measured.Y)*.5f),
-                    MaterialCanvas.Color(tab.Visible || ImGui.IsItemHovered() ? MaterialLcars.Background : MaterialLcars.Text),caption);
+                    MaterialCanvas.Color(foreground),caption);
             }
             finally { draw.PopClipRect(); }
         }
@@ -52,7 +133,10 @@ internal static class UiGui
             var viewport = ImGui.GetWindowViewport();
             ImGui.SetNextWindowPos(viewport.Pos + viewport.Size * .5f, ImGuiCond.Appearing, new Vector2(.5f));
         }
-        var visible = ImGui.Begin(name, flags | ImGuiWindowFlags.Popup | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking);
+        bool visible;
+        using (var backdrop = MaterialSkin.BackdropStyle(popup: true))
+            visible = ImGui.Begin(name, flags | ImGuiWindowFlags.Popup | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking);
+        if (visible) MaterialSkin.Backdrop();
         if (!visible) ImGui.EndPopup();
         return visible;
     }
@@ -80,13 +164,19 @@ internal static class UiGui
         using var controls = ImGui.GetStyle().FramePadding.Y == 0 || MaterialControls.Context == MaterialControlContext.Dense
             ? default(MaterialControls.ControlScope) : MaterialControls.Push(MaterialControlContext.Toolbar);
         using var height=MaterialText.PushLineHeight(translated);
-        using var lcars=MaterialLcars.NativeButtonStyle();
+        using var lcars=MaterialSkin.NativeButtonStyle();
         var width=MaterialLayout.FitNextItemWidth(0,MaterialText.Measure(translated).X+2*ImGui.GetStyle().FramePadding.X);
         var foreground=ImGui.GetStyle().Colors[(int)ImGuiCol.Text];
         ImGui.PushStyleColor(ImGuiCol.Text,Vector4.Zero);
-        var clicked=ImGui.Button(label,new Vector2(width,0));
-        ImGui.PopStyleColor();
+        bool clicked;
+        try
+        {
+            using var face=BotologyPresentation.IsMaterial ? MaterialSkin.TransparentButtonFace() : default(MaterialStyleScope);
+            clicked=ImGui.Button(label,new Vector2(width,0));
+        }
+        finally { ImGui.PopStyleColor(); }
         var min=ImGui.GetItemRectMin(); var max=ImGui.GetItemRectMax();
+        if(BotologyPresentation.IsMaterial) MaterialSkin.PaintButton(min,max);
         foreground.W*=ImGui.GetStyle().Alpha;
         ImGui.GetWindowDrawList().PushClipRect(min,max,true);
         try { MaterialText.AddText(ImGui.GetWindowDrawList(),min+(max-min-MaterialText.Measure(translated))*.5f,ImGui.ColorConvertFloat4ToU32(foreground),translated); }
@@ -165,6 +255,7 @@ internal static class UiGui
         try
         {
             using var height=MaterialText.PushLineHeight(value);
+            using var field=MaterialSkin.NativeFieldStyle();
             return MaterialShapedInput.SingleLine("","",ref value,length);
         }
         finally { ImGui.PopID(); }
@@ -172,9 +263,19 @@ internal static class UiGui
     internal static bool InputTextWithHint(string label,string hint,ref string value,int length)
     {
         using var height=MaterialText.PushLineHeight(value,hint);
+        using var field=MaterialSkin.NativeFieldStyle();
         return MaterialShapedInput.SingleLine(label,hint,ref value,length);
     }
-    internal static bool InputInt(string label,ref int value,int step=0,int fastStep=0) { BeginField(label,step>0);var changed=ImGui.InputInt("",ref value,step,fastStep);ImGui.PopID();return changed; }
+    internal static bool InputInt(string label,ref int value,int step=0,int fastStep=0)
+    {
+        BeginField(label,step>0);
+        try
+        {
+            using var field=MaterialSkin.NativeFieldStyle();
+            return ImGui.InputInt("",ref value,step,fastStep);
+        }
+        finally { ImGui.PopID(); }
+    }
     internal static bool Combo(string label,ref int value,string[] options,int count)
     {
         var preview=value>=0 && value<count?UiText.T(options[value]):"";
@@ -182,7 +283,7 @@ internal static class UiGui
         try
         {
             var changed=false;
-            if(!MaterialText.BeginCombo("",preview)) return false;
+            if(!BeginCombo("",preview)) return false;
             try
             {
                 for(var index=0;index<count;index++)

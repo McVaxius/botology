@@ -59,9 +59,11 @@ internal static class BotologyPresentation
             MaterialCanvas.DrawImage(drawList, texture.Handle, new Vector2(texture.Width, texture.Height), min, max);
     }
 
-    private const uint ReferenceAccent=0x1CC9E6;
+    internal const uint ReferenceAccent=0x1CC9E6;
     internal const float ContentWidth=1440, ContentHeight=942;
     internal static bool Compact => MaterialTheme.Current.Density == MaterialDensity.Compact;
+    internal static bool IsMaterial => MaterialTheme.Current.IsGlassmorphism
+        || MaterialTheme.Current.IsSpatial || MaterialTheme.Current.IsCyberpunk;
     internal static float HeaderHeight => Compact ? 64 : 72;
     internal static float ActionHeight => Compact ? 48 : 52;
     internal static float StatusHeight => Compact ? 54 : 64;

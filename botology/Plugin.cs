@@ -216,14 +216,19 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         ImGui.SetNextWindowSize(new Vector2(460 * ImGuiHelpers.GlobalScale, 0), ImGuiCond.Always);
         fontStatusFold.PreDraw("Botology##FontStatus", null, null, reducedMotion: false,
             prepareDecorations: fontStatusDecorations.Prepare);
+        bool statusVisible;
+        using (var backdrop = MaterialSkin.BackdropStyle())
+            statusVisible = ImGui.Begin("Botology##FontStatus", ImGuiWindowFlags.AlwaysAutoResize);
         try
         {
-            if (ImGui.Begin("Botology##FontStatus", ImGuiWindowFlags.AlwaysAutoResize))
+            if (statusVisible)
             {
                 fontStatusDecorations.Paint();
+                MaterialSkin.Backdrop();
                 ImGui.TextWrapped(appliedLanguage == "hi" && !loading ? "Hindi UI fonts are unavailable. Use English to continue."
                     : loading ? "Loading UI fonts..." : "UI fonts failed to load. See the plugin log.");
-                if (appliedLanguage == "hi" && !loading && ImGui.Button("Use English"))
+                if (appliedLanguage == "hi" && !loading && (BotologyPresentation.IsMaterial
+                        ? UiGui.Button("Use English", "Use English") : ImGui.Button("Use English")))
                 {
                     Configuration.UiLanguage = "en";
                     Configuration.Save();
@@ -1090,7 +1095,8 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     public void DrawWindowAppearanceSettings()
     {
         if (!MaterialText.CollapsingHeader(UiText.T("Window appearance") + "###UiWindowAppearance")) return;
-        if(uiTheme.IsLcars) MaterialLcars.PanelHeading(UiText.T("Window appearance"),2);
+        if(uiTheme.IsLcars || uiTheme.IsCyberpunk)
+            MaterialSkin.Heading(uiTheme.IsCyberpunk ? UiText.T("Window appearance").ToUpper(UiText.Current.Culture) : UiText.T("Window appearance"),2);
         var showTitlebarStatus = Configuration.UiShowTitlebarStatus;
         if (UiGui.Checkbox(UiText.T("Show titlebar status") + "###UiShowTitlebarStatus", ref showTitlebarStatus))
         { Configuration.UiShowTitlebarStatus = showTitlebarStatus; Configuration.Save(); }
@@ -1162,7 +1168,15 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
                     UiText.T("Theme colour"), UiText.T("Choose each colour independently."), UiText.T("Background"), UiText.T("Controls"),
                     UiText.T("Text"), UiText.T("Aa  Preview text"), UiText.T("Control"),
                     UiText.T("Switch to Picker to set each colour yourself."), UiText.T("Switch back to Auto to use the automatic theme."))
-                    { Lcars=UiText.T("LCARS"), LcarsHelp=UiText.T("LCARS panels and outlined controls. Picker colours are retained.") },
+                {
+                    Lcars=UiText.T("LCARS"), LcarsHelp=UiText.T("LCARS panels and outlined controls. Picker colours are retained."),
+                    Glassmorphism=UiText.T("Glassmorphism"), Spatial=UiText.T("Spatial"), Cyberpunk=UiText.T("Cyberpunk"),
+                    LcarsBar1=UiText.T("LCARS bar 1"), LcarsBar2=UiText.T("LCARS bar 2"), LcarsBar3=UiText.T("LCARS bar 3"),
+                    Reset=UiText.T("Reset"), ResetColors=UiText.T("Reset colours"), Animation=UiText.T("Animation"),
+                    AnimationSpeed=UiText.T("Animation speed (0.1–10x; default 1x)"), WaveColors=UiText.T("Wave colours"),
+                    GlassWave1=UiText.T("Wave colour 1"), GlassWave2=UiText.T("Wave colour 2"), GlassWave3=UiText.T("Wave colour 3"),
+                    ResetWaveColors=UiText.T("Reset wave colours"),
+                }, new MaterialColorSettings(), MaterialColorSettings.Rgb(BotologyPresentation.ReferenceAccent),
                 Configuration.UiCompact ? 298 : 316)) return;
         Configuration.UiColors = colorDraft;
         Configuration.UiAccentRgb = MaterialColorSettings.ToRgb(accentDraft);
@@ -1177,8 +1191,9 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         MaterialText.Text(UiText.T("Opacity (%)"));
         ImGui.SetNextItemWidth(MaterialLayout.FitNextItemWidth(160 * MaterialTheme.Metrics.Scale, 80 * MaterialTheme.Metrics.Scale));
         var normalOpacity = Configuration.UiWindowOpacityPercent;
-        if (ImGui.InputInt("##UiWindowOpacityPercent", ref normalOpacity))
-        { Configuration.UiWindowOpacityPercent = normalOpacity; Configuration.Save(); }
+        using (var field = MaterialSkin.NativeFieldStyle())
+            if (ImGui.InputInt("##UiWindowOpacityPercent", ref normalOpacity))
+            { Configuration.UiWindowOpacityPercent = normalOpacity; Configuration.Save(); }
         var autoFade = Configuration.UiAutoFade;
         if (UiGui.Checkbox("Auto-fade when unfocused", ref autoFade))
         { Configuration.UiAutoFade = autoFade; Configuration.Save(); }
@@ -1186,13 +1201,15 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         MaterialText.Text(UiText.T("Unfocused opacity (%)"));
         ImGui.SetNextItemWidth(MaterialLayout.FitNextItemWidth(160 * MaterialTheme.Metrics.Scale, 80 * MaterialTheme.Metrics.Scale));
         var fadedOpacity = Configuration.UiFadedOpacityPercent;
-        if (ImGui.InputInt("##UiFadedOpacityPercent", ref fadedOpacity))
-        { Configuration.UiFadedOpacityPercent = fadedOpacity; Configuration.Save(); }
+        using (var field = MaterialSkin.NativeFieldStyle())
+            if (ImGui.InputInt("##UiFadedOpacityPercent", ref fadedOpacity))
+            { Configuration.UiFadedOpacityPercent = fadedOpacity; Configuration.Save(); }
         MaterialText.Text(UiText.T("Unfocused delay (seconds)"));
         ImGui.SetNextItemWidth(MaterialLayout.FitNextItemWidth(160 * MaterialTheme.Metrics.Scale, 80 * MaterialTheme.Metrics.Scale));
         var delay = Configuration.UiUnfocusedDelaySeconds;
-        if (ImGui.InputInt("##UiUnfocusedDelaySeconds", ref delay))
-        { Configuration.UiUnfocusedDelaySeconds = delay; Configuration.Save(); }
+        using (var field = MaterialSkin.NativeFieldStyle())
+            if (ImGui.InputInt("##UiUnfocusedDelaySeconds", ref delay))
+            { Configuration.UiUnfocusedDelaySeconds = delay; Configuration.Save(); }
         ImGui.EndDisabled();
     }
 }

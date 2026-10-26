@@ -36,11 +36,11 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
 
     public override void Draw()
     {
-        windowMotion.DrawChrome();
+        DrawWindowChrome();
         UiGui.TitleWithButtons(PluginInfo.DisplayName+" DTR Manager",PluginInfo.DisplayName+" "+UiText.T("DTR manager"), this);
         using var font=UiText.Font(UiFontRole.Body);
         using var controls=AethertekUI.MaterialControls.Push(BotologyPresentation.Controls(34));
-        using var lcars=MaterialLcars.NativeButtonStyle();
+        using var lcars=MaterialSkin.NativeButtonStyle();
         BotologyPresentation.LcarsHeader(UiText.T("DTR manager"));
         BotologyPresentation.LcarsOwnerFrame(2);
         if (UiGui.SmallButton("XLSettings Server Info Bar"))
@@ -63,7 +63,8 @@ public sealed class DtrManagerWindow : PositionedWindow, IDisposable
             ImGuiTableFlags.ScrollY |
             ImGuiTableFlags.SizingFixedFit;
 
-        if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelHeading(UiText.T("DTR manager"),2);
+        if(MaterialTheme.Current.IsLcars || MaterialTheme.Current.IsCyberpunk)
+            MaterialSkin.Heading(MaterialTheme.Current.IsCyberpunk ? UiText.T("DTR manager").ToUpper(UiText.Current.Culture) : UiText.T("DTR manager"),2);
         using var tightRows = BotologyPresentation.Compact ? MaterialTable.PushTightRows() : default;
         if (ImGui.BeginTable("BotologyDtrEntries", 5, tableFlags, new Vector2(-1f, -1f)))
         {

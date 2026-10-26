@@ -57,7 +57,7 @@ public sealed partial class MainWindow
         var insetPadding=lcars && id!="Card" ? Math.Max(16,padding??16) : padding;
         if(lcars && id is not ("Card" or "InstallerPins") && size.Y>0) size.Y+=2*Math.Max(0,(insetPadding??16)-(padding??16));
         var surface=MaterialSurface.Begin(id,size,elevation,outline,insetPadding,radius,flags);
-        if(surface.Visible)
+        if(surface.Visible && !BotologyPresentation.IsMaterial)
         {
             var c=MaterialTheme.Current.Colors;
             var inset=new Vector2(outline?MaterialTheme.Metrics.Scale:0);
@@ -183,8 +183,9 @@ public sealed partial class MainWindow
         ImGui.SetCursorPosX(ImGui.GetCursorPosX()+horizontalInset);
         var width=Math.Max(1,ImGui.GetContentRegionAvail().X-horizontalInset);
         var background=ImGui.GetCursorScreenPos();
-        MaterialCanvas.Surface(background,background+new Vector2(width,ImGui.GetContentRegionAvail().Y),InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLowest,.8f),
-            InstallerShade(MaterialTheme.Current.Colors.Background,.65f),0);
+        if(!BotologyPresentation.IsMaterial)
+            MaterialCanvas.Surface(background,background+new Vector2(width,ImGui.GetContentRegionAvail().Y),InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLowest,.8f),
+                InstallerShade(MaterialTheme.Current.Colors.Background,.65f),0);
         var rail=line*(pinsExpanded?13:MaterialTheme.Current.IsLcars?3.25f:1.875f);
         using(var panel=InstallerSurface("InstallerPins",new(rail/s,ImGui.GetContentRegionAvail().Y/s),MaterialElevation.Lowest,padding:(pinsExpanded?metrics.Padding.X:line*.1f)/s,radius:0))
         DrawPinnedRail();
@@ -192,7 +193,11 @@ public sealed partial class MainWindow
         ImGui.BeginChild("InstallerContent",new(Math.Max(1,width-rail-ImGui.GetStyle().ItemSpacing.X),-1),false);
         MeasureBounds?.Invoke("installer-content",ImGui.GetWindowPos(),ImGui.GetWindowPos()+ImGui.GetWindowSize());
         DrawInstallerNavigation();
-        if(MaterialTheme.Current.IsLcars) MaterialLcars.PanelHeading(UiText.T(selectedInstaller is null ? installerPage : "View details"),1);
+        if(MaterialTheme.Current.IsLcars || MaterialTheme.Current.IsCyberpunk)
+        {
+            var heading=UiText.T(selectedInstaller is null ? installerPage : "View details");
+            MaterialSkin.Heading(MaterialTheme.Current.IsCyberpunk ? heading.ToUpper(UiText.Current.Culture) : heading,1);
+        }
         if(plugin.InstallerOperation is { } operation)
             MaterialText.TextWrapped(UiText.T(operation.IsRunning ? "Working..." : operation.Succeeded ? "Completed" : "Operation failed")+": "+
                 (operation.MessageArguments is { } arguments?UiText.F(operation.Message,
@@ -1196,7 +1201,8 @@ public sealed partial class MainWindow
             var c=MaterialTheme.Current.Colors;
             var cardTint=entry.Repository.IsAdded?Vector4.One:new Vector4(.48f,.48f,.48f,1);
             var inset=CardInset(size.X);
-            MaterialCanvas.Surface(origin,origin+size,hasPreview?c.SurfaceContainerHigh:InstallerShade(c.SurfaceContainerLow,.75f),c.SurfaceContainerLowest,inset*.65f);
+            if(BotologyPresentation.IsMaterial) MaterialSkin.PanelFrame(origin,origin+size,inset:true);
+            else MaterialCanvas.Surface(origin,origin+size,hasPreview?c.SurfaceContainerHigh:InstallerShade(c.SurfaceContainerLow,.75f),c.SurfaceContainerLowest,inset*.65f);
             if(texture is not null)
             {
                 // Screenshots and real plugin icons share the complete band, including upscaling.
@@ -1219,7 +1225,8 @@ public sealed partial class MainWindow
             return;
         }
         var surface=hasPreview?MaterialTheme.Current.Colors.SurfaceContainerHigh:InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLow,.75f);
-        MaterialCanvas.Surface(origin,origin+size,surface,MaterialTheme.Current.Colors.SurfaceContainerLowest,8*s);
+        if(BotologyPresentation.IsMaterial) MaterialSkin.PanelFrame(origin,origin+size,inset:true);
+        else MaterialCanvas.Surface(origin,origin+size,surface,MaterialTheme.Current.Colors.SurfaceContainerLowest,8*s);
         var labelHeight=label is null?0:MaterialText.Measure(label,false,Math.Max(1,size.X-16*s)).Y;
         var placeholderSide=Math.Min((full?48:32)*s,Math.Max(1,height-labelHeight-12*s));
         var placeholderTop=Math.Max(0,(height-placeholderSide-labelHeight-8*s)*.5f);

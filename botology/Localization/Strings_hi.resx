@@ -775,4 +775,19 @@
   <data name="Completed {0} updates." xml:space="preserve"><value>{0} अपडेट पूरे हुए।</value></data>
   <data name="Update all stopped after {0} of {1} updates: {2}. {3}" xml:space="preserve"><value>सभी अपडेट करने की प्रक्रिया {1} में से {0} अपडेट के बाद रुक गई: {2}। {3}</value></data>
   <data name="No eligible update is available from the installed source." xml:space="preserve"><value>इंस्टॉल किए गए स्रोत से कोई योग्य अपडेट उपलब्ध नहीं है।</value></data>
+  <data name="Glassmorphism" xml:space="preserve"><value>ग्लासमॉर्फ़िज़्म</value></data>
+  <data name="Spatial" xml:space="preserve"><value>स्थानिक</value></data>
+  <data name="Cyberpunk" xml:space="preserve"><value>साइबरपंक</value></data>
+  <data name="LCARS bar 1" xml:space="preserve"><value>LCARS पट्टी 1</value></data>
+  <data name="LCARS bar 2" xml:space="preserve"><value>LCARS पट्टी 2</value></data>
+  <data name="LCARS bar 3" xml:space="preserve"><value>LCARS पट्टी 3</value></data>
+  <data name="Reset" xml:space="preserve"><value>रीसेट</value></data>
+  <data name="Reset colours" xml:space="preserve"><value>रंग रीसेट करें</value></data>
+  <data name="Animation" xml:space="preserve"><value>एनिमेशन</value></data>
+  <data name="Animation speed (0.1–10x; default 1x)" xml:space="preserve"><value>एनिमेशन की गति (0.1–10x; डिफ़ॉल्ट 1x)</value></data>
+  <data name="Wave colours" xml:space="preserve"><value>तरंगों के रंग</value></data>
+  <data name="Wave colour 1" xml:space="preserve"><value>तरंग का रंग 1</value></data>
+  <data name="Wave colour 2" xml:space="preserve"><value>तरंग का रंग 2</value></data>
+  <data name="Wave colour 3" xml:space="preserve"><value>तरंग का रंग 3</value></data>
+  <data name="Reset wave colours" xml:space="preserve"><value>तरंगों के रंग रीसेट करें</value></data>
 </root>
