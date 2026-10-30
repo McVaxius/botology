@@ -208,7 +208,11 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
             WindowSystem.Draw();
         }
         finally { drawPassTitlebarStatus = null; }
-        foreach (var titlebar in appearanceTitleBars.Values) titlebar.DrawPopups();
+        foreach (var (owner, titlebar) in appearanceTitleBars)
+        {
+            PrepareWindowBackground(owner.WindowName);
+            titlebar.DrawPopups();
+        }
         foreach (var window in WindowSystem.Windows)
             if (window.IsOpen) ApplyWindowOpacity(window.WindowName);
     }
