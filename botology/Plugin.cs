@@ -124,6 +124,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         RegisterCommands();
 
         PluginInterface.UiBuilder.Draw += DrawUi;
+        PluginInterface.UiBuilder.ResizeBuffers += ReleaseGlassResources;
         PluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
         PluginInterface.UiBuilder.OpenMainUi += OpenMainUi;
         Framework.Update += OnFrameworkUpdate;
@@ -142,6 +143,9 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     {
         Framework.Update -= OnFrameworkUpdate;
         PluginInterface.UiBuilder.Draw -= DrawUi;
+        PluginInterface.UiBuilder.ResizeBuffers -= ReleaseGlassResources;
+        backgroundGlass?.Dispose();
+        glassImagePicker.Reset();
         PluginInterface.UiBuilder.OpenConfigUi -= OpenConfigUi;
         PluginInterface.UiBuilder.OpenMainUi -= OpenMainUi;
 
@@ -161,7 +165,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         uiTextHost.Dispose();
     }
 
-    private void DrawUi()
+    private void DrawUiContent()
     {
         mainWindow.ReleaseClosedMedia();
         ApplyAppearance();
@@ -194,8 +198,8 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
             }
             catch(Exception ex) { if(!fontIssueLogged) { Log.Error(ex,"[botology] Required UI glyph coverage failed.");fontIssueLogged=true; } DrawFontStatus(false);return; }
         }
-        using var theme = MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, MaterialStyleMode.ColorsOnly);
-        using var geometry=BotologyPresentation.PushHostGeometry(ImGuiHelpers.GlobalScale, Configuration.UiCompact);
+        using var theme = MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, Configuration.UiStylingEnabled ? MaterialStyleMode.ColorsOnly : MaterialStyleMode.Native);
+        using var geometry=Configuration.UiStylingEnabled ? BotologyPresentation.PushHostGeometry(ImGuiHelpers.GlobalScale, Configuration.UiCompact) : default;
         using var chrome = MaterialWindowChrome.Push();
         PrepareAppearanceTitleBars(WindowSystem);
         try
@@ -211,19 +215,22 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
 
     private void DrawFontStatus(bool loading)
     {
-        using var statusPalette = MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, MaterialStyleMode.ColorsOnly);
+        using var background = MaterialSkin.PushBackgroundRenderer(null, false, 0);
+        using var statusPalette = MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, Configuration.UiStylingEnabled ? MaterialStyleMode.ColorsOnly : MaterialStyleMode.Native);
         using var statusChrome = MaterialWindowChrome.Push();
         ImGui.SetNextWindowSize(new Vector2(460 * ImGuiHelpers.GlobalScale, 0), ImGuiCond.Always);
-        fontStatusFold.PreDraw("Botology##FontStatus", null, null, reducedMotion: false,
-            prepareDecorations: fontStatusDecorations.Prepare);
+        fontStatusFold.PreDraw("Botology##FontStatus", null, null, reducedMotion: !Configuration.UiStylingEnabled,
+            prepareDecorations: Configuration.UiStylingEnabled ? fontStatusDecorations.Prepare : null);
         bool statusVisible;
+        var statusFlags = ImGuiWindowFlags.AlwaysAutoResize;
+        if (Configuration.UiWindowsLocked) statusFlags |= ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
         using (var backdrop = MaterialSkin.BackdropStyle())
-            statusVisible = ImGui.Begin("Botology##FontStatus", ImGuiWindowFlags.AlwaysAutoResize);
+            statusVisible = ImGui.Begin("Botology##FontStatus", statusFlags);
         try
         {
             if (statusVisible)
             {
-                fontStatusDecorations.Paint();
+                if (Configuration.UiStylingEnabled) fontStatusDecorations.Paint();
                 MaterialSkin.Backdrop();
                 ImGui.TextWrapped(appliedLanguage == "hi" && !loading ? "Hindi UI fonts are unavailable. Use English to continue."
                     : loading ? "Loading UI fonts..." : "UI fonts failed to load. See the plugin log.");
@@ -238,7 +245,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         finally
         {
             ImGui.End();
-            fontStatusDecorations.Paint();
+            if (Configuration.UiStylingEnabled) fontStatusDecorations.Paint();
             fontStatusFold.PostDraw();
             ApplyWindowOpacity("Botology##FontStatus");
         }
@@ -890,6 +897,12 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     private void OnCommand(string command, string arguments)
     {
         var trimmed = arguments.Trim();
+        if (trimmed.Equals("lock", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("unlock", StringComparison.OrdinalIgnoreCase))
+        { Configuration.UiWindowsLocked = trimmed.Equals("lock", StringComparison.OrdinalIgnoreCase); Configuration.Save(); return; }
+        if (trimmed.Equals("style on", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("styling on", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Equals("style off", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("styling off", StringComparison.OrdinalIgnoreCase))
+        { Configuration.UiStylingEnabled = trimmed.EndsWith(" on", StringComparison.OrdinalIgnoreCase); Configuration.Save(); return; }
+        if (trimmed.Equals("style", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("styling", StringComparison.OrdinalIgnoreCase)) { ToggleUiStyling(); return; }
         if (trimmed.Equals("config", StringComparison.OrdinalIgnoreCase) ||
             trimmed.Equals("settings", StringComparison.OrdinalIgnoreCase))
         {
@@ -1095,6 +1108,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     public void DrawWindowAppearanceSettings()
     {
         if (!MaterialText.CollapsingHeader(UiText.T("Window appearance") + "###UiWindowAppearance")) return;
+        DrawUiWindowControls();
         if(uiTheme.IsLcars || uiTheme.IsCyberpunk)
             MaterialSkin.Heading(uiTheme.IsCyberpunk ? UiText.T("Window appearance").ToUpper(UiText.Current.Culture) : UiText.T("Window appearance"),2);
         var showTitlebarStatus = Configuration.UiShowTitlebarStatus;
@@ -1132,6 +1146,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         {
             if ((window.Flags & ImGuiWindowFlags.NoTitleBar) != 0) continue;
             if (!appearanceTitleBars.ContainsKey(window))
+            {
                 appearanceTitleBars.Add(window, AethertekUI.Dalamud.MaterialAppearanceTitleBar.Register(window,
                     () => new(UiText.T("Language"), UiText.T("Compact mode"), UiText.T("Transparency"), UiText.T("Color")),
                     DrawAppearanceSelector,
@@ -1141,6 +1156,18 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
                         ? new(Configuration.UiLanguageVisibleOnMainWindow, Configuration.UiCompactVisibleOnMainWindow,
                             Configuration.UiTransparencyVisibleOnMainWindow, true)
                         : new(true, true, true, true)));
+                appearanceTitleBars[window].RegisterWindowControls(ToggleUiStyling,
+                    () => UiText.T(Configuration.UiStylingEnabled ? "Use native UI" : "Use styled UI"),
+                    ToggleWindowLock, () => UiText.T(Configuration.UiWindowsLocked ? "Unlock windows" : "Lock windows"));
+            }
+            window.AllowBackgroundBlur = false;
+            if (window is PositionedWindow positioned)
+            {
+                positioned.MovementLocked = Configuration.UiWindowsLocked;
+                positioned.RenderBackground = Configuration.UiStylingEnabled && (colorDraft.HasBackgroundBlur(colorDraft.Mode)
+                    || colorDraft.Mode == MaterialColorMode.Glassmorphism && colorDraft.GlassBackground == MaterialGlassBackground.Image);
+                positioned.PrepareBackground = () => PrepareWindowBackground(window.WindowName);
+            }
             appearanceTitleBars[window].SetLcarsIcons(uiTheme.IsLcars);
             appearanceTitleBars[window].RefreshVisibility();
             if(!soundTitleButtons.TryGetValue(window,out var sound))
@@ -1162,7 +1189,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
 
     private void DrawTitleBarColour()
     {
-        if (!MaterialAppearanceSelector.DrawColors("appearance", ref colorDraft, ref accentDraft,
+        var changed = MaterialAppearanceSelector.DrawColors("appearance", ref colorDraft, ref accentDraft,
                 new(UiText.T("Color"), UiText.T("Language"), UiText.T("Teal"), UiText.T("Blue"), UiText.T("Pink"), UiText.T("Custom RGB")),
                 new(UiText.T("Auto"), UiText.T("Picker"), UiText.T("Default"), UiText.T("Background, controls and text follow your theme."),
                     UiText.T("Theme colour"), UiText.T("Choose each colour independently."), UiText.T("Background"), UiText.T("Controls"),
@@ -1176,8 +1203,18 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
                     AnimationSpeed=UiText.T("Animation speed (0.1–10x; default 1x)"), WaveColors=UiText.T("Wave colours"),
                     GlassWave1=UiText.T("Wave colour 1"), GlassWave2=UiText.T("Wave colour 2"), GlassWave3=UiText.T("Wave colour 3"),
                     ResetWaveColors=UiText.T("Reset wave colours"),
+                    BackgroundMode=UiText.T("Background mode"), Waves=UiText.T("Waves"), Lights=UiText.T("Lights"), Image=UiText.T("Image"),
+                    LightEffect=UiText.T("Light effect"), AmbientGlows=UiText.T("Ambient glows"), SweepingBeams=UiText.T("Sweeping beams"), PointerGlow=UiText.T("Mouse-following glow"),
+                    ImageFile=UiText.T("Image file"), BrowseImage=UiText.T("Browse..."), LoadImage=UiText.T("Load image"),
+                    ImageHelp=UiText.T("The image fills the window. Blur (%) applies to the image."),
+                    LightColors=UiText.T("Light colours"), GlassLight1=UiText.T("Light colour 1"), GlassLight2=UiText.T("Light colour 2"), GlassLight3=UiText.T("Light colour 3"), ResetLightColors=UiText.T("Reset light colours"),
+                    BackgroundBlur=UiText.T("Background blur"), BlurPercent=UiText.T("Blur (%)"),
                 }, new MaterialColorSettings(), MaterialColorSettings.Rgb(BotologyPresentation.ReferenceAccent),
-                Configuration.UiCompact ? 298 : 316)) return;
+                BrowseBackgroundImage, Configuration.UiCompact ? 298 : 316);
+        ImGui.PushID("ColourBackdrop");
+        try { DrawGlassStatusAndScreenshots(); }
+        finally { ImGui.PopID(); }
+        if (!changed) return;
         Configuration.UiColors = colorDraft;
         Configuration.UiAccentRgb = MaterialColorSettings.ToRgb(accentDraft);
         Configuration.Save();
@@ -1185,6 +1222,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
 
     private void DrawTransparencySettings()
     {
+        DrawBackgroundSettings();
         var enabled = Configuration.UiTransparencyEnabled;
         if (UiGui.Checkbox("Transparency", ref enabled))
         { Configuration.UiTransparencyEnabled = enabled; Configuration.Save(); }

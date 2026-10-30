@@ -1,3 +1,9 @@
+2026-10-30 - 3.1.0.2 - Shared background and window controls
+
+- Add saved styled/native UI and movement/resize lock controls in Settings, the titlebar and /botology style or /botology lock.
+- Adopt shared Glasswork Background rendering with per-style blur, continuous Frost (Glassmorphism on at 75% by default), Waves, three independently coloured Lights effects and cover-cropped images with Browse. Foreground controls keep their fills.
+- Add explicit screenshot pause in Colour and Transparency, initially off. Preserve window IDs, fonts, geometry, opacity/focus fading and existing preferences; translate the new controls in all fifteen catalogs.
+
 2026-10-26 - 3.1.0.1 - Approved material styles and colour controls
 
 - Add Glassmorphism, Spatial and Cyberpunk across the installer, Settings, DTR Manager, Catalog Editor and native supporting surfaces. Preserve Auto, Picker, LCARS, existing actions, IDs, font roles, density and opacity.

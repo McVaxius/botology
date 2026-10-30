@@ -53,6 +53,7 @@ internal static class UiGui
         bool visible;
         using (var style = new MaterialStyleScope())
         {
+            style.Color(ImGuiCol.ChildBg, MaterialSkin.BackgroundFill(ImGui.GetStyle().Colors[(int)ImGuiCol.ChildBg]));
             if (BotologyPresentation.IsMaterial) style.Color(ImGuiCol.ChildBg, Vector4.Zero);
             visible = ImGui.BeginChild(id, size, border, flags);
         }

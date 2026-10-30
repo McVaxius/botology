@@ -142,7 +142,7 @@ public sealed partial class MainWindow : PositionedWindow, IDisposable
         using (var tableControls = MaterialControls.Push(BotologyPresentation.Controls(34,20)))
         {
             using var tightRows = BotologyPresentation.Compact ? MaterialTable.PushTightRows() : default;
-            ImGui.PushStyleColor(ImGuiCol.ChildBg,MaterialTheme.Current.Colors.Background);
+            ImGui.PushStyleColor(ImGuiCol.ChildBg,MaterialSkin.BackgroundFill(MaterialTheme.Current.Colors.Background));
             var tableFlags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable |
                 ImGuiTableFlags.ScrollY | ImGuiTableFlags.ScrollX | ImGuiTableFlags.Sortable | ImGuiTableFlags.SizingFixedFit;
             if (ImGui.BeginTable("BotologyGrid", visibleColumns.Length, tableFlags, new Vector2(-1, tableHeight),

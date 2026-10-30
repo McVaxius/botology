@@ -62,7 +62,7 @@ public sealed partial class MainWindow
             var c=MaterialTheme.Current.Colors;
             var inset=new Vector2(outline?MaterialTheme.Metrics.Scale:0);
             MaterialCanvas.Surface(ImGui.GetWindowPos()+inset,ImGui.GetWindowPos()+ImGui.GetWindowSize()-inset,
-                InstallerShade(c.SurfaceContainerLow,.8f),InstallerShade(c.SurfaceContainerLowest,.8f),Math.Max(0,(radius??8)-1)*MaterialTheme.Metrics.Scale);
+                MaterialSkin.BackgroundFill(InstallerShade(c.SurfaceContainerLow,.8f)),MaterialSkin.BackgroundFill(InstallerShade(c.SurfaceContainerLowest,.8f)),Math.Max(0,(radius??8)-1)*MaterialTheme.Metrics.Scale);
             if(lcars) BotologyPresentation.LcarsFrame(id switch { "ProfileAssessment"=>2,"ProfileSource"=>1,"RepositoryCard"=>1,_=>accent });
         }
         return surface;
@@ -184,8 +184,8 @@ public sealed partial class MainWindow
         var width=Math.Max(1,ImGui.GetContentRegionAvail().X-horizontalInset);
         var background=ImGui.GetCursorScreenPos();
         if(!BotologyPresentation.IsMaterial)
-            MaterialCanvas.Surface(background,background+new Vector2(width,ImGui.GetContentRegionAvail().Y),InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLowest,.8f),
-                InstallerShade(MaterialTheme.Current.Colors.Background,.65f),0);
+            MaterialCanvas.Surface(background,background+new Vector2(width,ImGui.GetContentRegionAvail().Y),MaterialSkin.BackgroundFill(InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLowest,.8f)),
+                MaterialSkin.BackgroundFill(InstallerShade(MaterialTheme.Current.Colors.Background,.65f)),0);
         var rail=line*(pinsExpanded?13:MaterialTheme.Current.IsLcars?3.25f:1.875f);
         using(var panel=InstallerSurface("InstallerPins",new(rail/s,ImGui.GetContentRegionAvail().Y/s),MaterialElevation.Lowest,padding:(pinsExpanded?metrics.Padding.X:line*.1f)/s,radius:0))
         DrawPinnedRail();
@@ -716,9 +716,9 @@ public sealed partial class MainWindow
         var labels=new[]{"Plugin","Repository","Author","State","Version","Compatibility","Action"};
         var widths=new[]{160f,140,140,210,90,150,140};
         using var tableColors=new MaterialStyleScope();
-        tableColors.Color(ImGuiCol.TableHeaderBg,InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerHigh,.7f));
-        tableColors.Color(ImGuiCol.TableRowBg,InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLowest,.7f));
-        tableColors.Color(ImGuiCol.TableRowBgAlt,InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLow,.8f));
+        tableColors.Color(ImGuiCol.TableHeaderBg,MaterialSkin.BackgroundFill(InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerHigh,.7f)));
+        tableColors.Color(ImGuiCol.TableRowBg,MaterialSkin.BackgroundFill(InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLowest,.7f)));
+        tableColors.Color(ImGuiCol.TableRowBgAlt,MaterialSkin.BackgroundFill(InstallerShade(MaterialTheme.Current.Colors.SurfaceContainerLow,.8f)));
         uint[] ids=[1,2,7,3,4,5,6];
         for(var i=0;i<labels.Length;i++) widths[i]=Math.Max(widths[i]*s,MaterialText.Measure(UiText.T(labels[i])).X+32*s);
         var badgeSizes=entries.Select(EntryBadgeLabel).Distinct(StringComparer.Ordinal).ToDictionary(label=>label,label=>MaterialText.Measure("    "+label),StringComparer.Ordinal);

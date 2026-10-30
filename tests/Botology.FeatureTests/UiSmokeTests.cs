@@ -471,6 +471,17 @@ internal static class BotologyUiSmoke
         if(!configuration.UiShowTitlebarStatus || !configuration.UiDetailedTitlebarStatus || configuration.UiLanguage!="en" || configuration.UiAccentRgb!=0x1CC9E6 || configuration.Version!=1 || configuration.PluginEnabled || !configuration.ShowAuthorColumn || configuration.IgnoredPluginIds.Single()!="fixture")
             throw new InvalidOperationException("Existing configuration defaults were reset.");
         if(configuration.UiColors.Mode!=MaterialColorMode.Auto || !configuration.UiSoundsMuted) throw new InvalidOperationException("Legacy colours must default to Auto with muted UI sounds.");
+        if (!configuration.UiStylingEnabled || configuration.UiWindowsLocked || !configuration.UiColors.GlassBackgroundBlur
+            || configuration.UiColors.AutoBackgroundBlur || configuration.UiColors.PickerBackgroundBlur || configuration.UiColors.LcarsBackgroundBlur
+            || configuration.UiColors.SpatialBackgroundBlur || configuration.UiColors.CyberpunkBackgroundBlur || configuration.UiColors.BackgroundBlurPercent != 75)
+            throw new InvalidOperationException("Legacy configurations lost the approved styling, lock or per-style Frost defaults.");
+        var rollout = new Configuration { UiStylingEnabled = false, UiWindowsLocked = true,
+            UiColors = new() { Mode = MaterialColorMode.Glassmorphism, GlassBackground = MaterialGlassBackground.Image,
+                GlassLights = MaterialGlassLights.PointerGlow, GlassImagePath = "C:/fixture/background.png",
+                GlassLight1Rgb = 0x112233, GlassLight2Rgb = 0x445566, GlassLight3Rgb = 0x778899, BackgroundBlurPercent = 61 } };
+        var reloaded = Newtonsoft.Json.JsonConvert.DeserializeObject<Configuration>(Newtonsoft.Json.JsonConvert.SerializeObject(rollout))!;
+        if (reloaded.UiStylingEnabled || !reloaded.UiWindowsLocked || reloaded.UiColors != rollout.UiColors)
+            throw new InvalidOperationException("The existing configuration serializer lost approved background or window controls.");
         var automatic=BotologyPresentation.Theme(0x1CC9E6).Colors;
         if(automatic.Background!=BotologyPresentation.Rgb(0x111E2A) || automatic.Primary!=BotologyPresentation.Rgb(0x1CC9E6)
             || automatic.OnSurface!=BotologyPresentation.Rgb(0xDFECFC) || automatic.SecondaryContainer!=BotologyPresentation.Rgb(0x1B2C3C))

@@ -33,7 +33,7 @@ internal static class BotologyPresentation
         if (!MaterialTheme.Current.IsLcars) return;
         var min = ImGui.GetWindowPos();
         var max = min + ImGui.GetWindowSize();
-        MaterialLcars.PanelFrame(min, max, accent);
+        MaterialSkin.PanelFrame(min, max, accent);
     }
 
     internal static void LcarsOwnerFrame(int accent = 0)
@@ -44,7 +44,7 @@ internal static class BotologyPresentation
         // The owner's LCARS padding leaves the side rail outside the existing controls.
         var min = new Vector2(position.X + scale, ImGui.GetCursorScreenPos().Y);
         var max = position + ImGui.GetWindowSize() - new Vector2(scale);
-        if (max.Y > min.Y + 12 * scale) MaterialLcars.PanelFrame(min, max, accent);
+        if (max.Y > min.Y + 12 * scale) MaterialSkin.PanelFrame(min, max, accent);
         ImGui.Dummy(new(0, 12 * scale));
     }
 
