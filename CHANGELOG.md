@@ -1,3 +1,8 @@
+2026-11-09 - 3.1.0.3 - Shared UI library update
+
+- Update shared text controls and glass rendering to the reviewed AethertekUI 0.3.1 baseline.
+- The shared-library rollout to other existing plugins is in progress.
+
 2026-10-30 - 3.1.0.2 - Shared background and window controls
 
 - Keep titlebar popup glass at its own window opacity, including collapsed and reopened windows, without applying foreground opacity twice.
