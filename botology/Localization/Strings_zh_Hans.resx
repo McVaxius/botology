@@ -422,4 +422,6 @@
   <data name="Light colour 1" xml:space="preserve"><value>灯光颜色 1</value></data>
   <data name="Light colour 2" xml:space="preserve"><value>灯光颜色 2</value></data>
   <data name="Light colour 3" xml:space="preserve"><value>灯光颜色 3</value></data>
+  <data name="Highlight contrast" xml:space="preserve"><value>高亮对比度</value></data>
+  <data name="Makes controls and selection states more distinct." xml:space="preserve"><value>使控件和选中状态更易于区分。</value></data>
 </root>

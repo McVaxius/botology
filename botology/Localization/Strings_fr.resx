@@ -422,4 +422,6 @@
   <data name="Light colour 1" xml:space="preserve"><value>Couleur de lumière 1</value></data>
   <data name="Light colour 2" xml:space="preserve"><value>Couleur de lumière 2</value></data>
   <data name="Light colour 3" xml:space="preserve"><value>Couleur de lumière 3</value></data>
+  <data name="Highlight contrast" xml:space="preserve"><value>Contraste de surbrillance</value></data>
+  <data name="Makes controls and selection states more distinct." xml:space="preserve"><value>Rend les commandes et les états de sélection plus distincts.</value></data>
 </root>

@@ -822,4 +822,6 @@
   <data name="Light colour 1" xml:space="preserve"><value>रोशनी का रंग 1</value></data>
   <data name="Light colour 2" xml:space="preserve"><value>रोशनी का रंग 2</value></data>
   <data name="Light colour 3" xml:space="preserve"><value>रोशनी का रंग 3</value></data>
+  <data name="Highlight contrast" xml:space="preserve"><value>हाइलाइट का कंट्रास्ट</value></data>
+  <data name="Makes controls and selection states more distinct." xml:space="preserve"><value>नियंत्रणों और चयन की स्थितियों को अधिक स्पष्ट बनाता है।</value></data>
 </root>

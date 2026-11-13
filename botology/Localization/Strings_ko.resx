@@ -422,4 +422,6 @@
   <data name="Light colour 1" xml:space="preserve"><value>조명 색상 1</value></data>
   <data name="Light colour 2" xml:space="preserve"><value>조명 색상 2</value></data>
   <data name="Light colour 3" xml:space="preserve"><value>조명 색상 3</value></data>
+  <data name="Highlight contrast" xml:space="preserve"><value>강조 대비</value></data>
+  <data name="Makes controls and selection states more distinct." xml:space="preserve"><value>컨트롤과 선택 상태를 더 쉽게 구분할 수 있게 합니다.</value></data>
 </root>

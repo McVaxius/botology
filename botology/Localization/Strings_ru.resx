@@ -422,4 +422,6 @@
   <data name="Light colour 1" xml:space="preserve"><value>Цвет света 1</value></data>
   <data name="Light colour 2" xml:space="preserve"><value>Цвет света 2</value></data>
   <data name="Light colour 3" xml:space="preserve"><value>Цвет света 3</value></data>
+  <data name="Highlight contrast" xml:space="preserve"><value>Контраст выделения</value></data>
+  <data name="Makes controls and selection states more distinct." xml:space="preserve"><value>Делает элементы управления и состояния выделения более заметными.</value></data>
 </root>

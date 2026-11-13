@@ -420,5 +420,7 @@
   <data name="Light colour 1" xml:space="preserve"><value>Warna cahaya 1</value></data>
   <data name="Light colour 2" xml:space="preserve"><value>Warna cahaya 2</value></data>
   <data name="Light colour 3" xml:space="preserve"><value>Warna cahaya 3</value></data>
+  <data name="Highlight contrast" xml:space="preserve"><value>Kontras sorotan</value></data>
+  <data name="Makes controls and selection states more distinct." xml:space="preserve"><value>Membuat kontrol dan status pilihan lebih mudah dibedakan.</value></data>
 </root>
 
