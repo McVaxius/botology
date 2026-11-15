@@ -1,3 +1,9 @@
+2026-11-15 - 3.1.0.5 - Installer search and catalog refresh
+
+- **Fixed Installer search:** Reduce search hitching in large catalogs while preserving case-insensitive phrases across plugin details and tags.
+- **Updated Plugin catalog:** Refresh descriptions, repository and feed URLs, matching aliases and supplied Discord links.
+- **Fixed Catalog submissions:** Accept optional plugin-specific Discord links while preserving compatibility rules and attribution.
+
 2026-11-12 - 3.1.0.4 - Highlight contrast
 
 - Add a saved Highlight contrast control in Appearance and the Colour menu, defaulting to 50%, with translated captions and help.

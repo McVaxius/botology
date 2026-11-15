@@ -19,7 +19,7 @@ Scroll down to "The Dumpster Fire" channel to discuss issues / suggestions for s
 
 ## Current Status
 
-The current source opens a plugin installer with Discover cards, a table view, Installed, Updates and repository management. Known unadded sources remain searchable; review a source and explicitly add it before installing. Repository and author favourites use the existing configuration, with a folding side panel. Invalid favourites stay hidden without deleting saved choices. The Compatibility tab retains the existing grid, DTR and catalog tools.
+The current source opens a plugin installer with Discover cards, a table view, Installed, Updates and repository management. Search is case-insensitive and retains phrases spanning plugin details and tags. Known unadded sources remain searchable; review a source and explicitly add it before installing. Repository and author favourites use the existing configuration, with a folding side panel. Invalid favourites stay hidden without deleting saved choices. The Compatibility tab retains the existing grid, DTR and catalog tools.
 
 Compatibility alerts include the assessment reason and missing dependency names in the selected UI language. Ignored, absent and disabled plugins stay outside active alerts; the summary keeps its four-entry limit. Hover over a plugin's info control for a wrapped description that disappears when the pointer leaves and preserves keyboard focus. Runtime matching uses the host's installed-plugin identity and loaded state; an old directory alone does not establish that a plugin is loaded.
 
@@ -87,7 +87,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ". .\eng\Enter-RepoEn
 `AethertekUI.dll` copies beside `botology.dll`; Dalamud assemblies remain host-owned.
 The release workflow checks out Botology and `McVaxius/aethertekUI` into sibling
 `botology` and `aethertekUI` directories, with AethertekUI pinned to revision
-`26365e240855a447cb4b940b0b5d8426847d9ef9`. It builds Botology, uploads the package
+`0c1b0e488183b51507b2715eff8dc5b957d4829a`. It builds Botology, uploads the package
 artifacts, and creates the GitHub release.
 
 Run the existing feature/visual harness after a packaging-disabled build using

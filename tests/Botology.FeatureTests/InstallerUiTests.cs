@@ -19,6 +19,7 @@ internal static class InstallerUiTests
                 throw new Exception("Allocation-free identity sorting changed canonical source/name ordering.");
         foreach(var count in new[]{250,5000})
         {
+            var startupClock=System.Diagnostics.Stopwatch.StartNew();var startupAllocated=GC.GetAllocatedBytesForCurrentThread();
             const string source="https://benchmark.invalid/plugins.json";
             var manifests=Enumerable.Range(0,count).Select(i=>new InstallerManifest("Bench"+i,"Plugin "+i.ToString("00000")+(i==count/2?"\nA local multiline title outlier":""),
                 i%2==0?InstallerCatalog.OfficialRepository:source,"SampleAuthor","Publisher description.","1.0",15,Tags:["Utility","Tag "+i.ToString("00000"),"Unicode हिन्दी caption that stays readable"],CategoryTags:["UI"," utility "])).ToArray();
@@ -56,6 +57,15 @@ internal static class InstallerUiTests
             var captured=PluginManagerBridge.CaptureInstallerHost(manager,new { ThirdRepoList=Array.Empty<object>() },PluginSnapshot.Empty);
             Console.WriteLine($"Host manifest capture: {count} entries; {captureClock.Elapsed.TotalMilliseconds:F2} ms/{GC.GetAllocatedBytesForCurrentThread()-captureAllocated:N0} bytes.");
             if(captured.Manifests.Count!=count || !captured.Ready) throw new Exception("Fabricated host capture dropped manifests/readiness.");
+            var feedJson=System.Text.Json.JsonSerializer.Serialize(manifests.Where(manifest=>manifest.RepositoryUrl==source).Select(manifest=>new {
+                manifest.InternalName,manifest.Name,manifest.Author,manifest.Description,AssemblyVersion=manifest.Version,
+                DalamudApiLevel=manifest.ApiLevel,manifest.Tags,manifest.CategoryTags }));
+            var discoveryClock=System.Diagnostics.Stopwatch.StartNew();var discoveryAllocated=GC.GetAllocatedBytesForCurrentThread();
+            var discovered=InstallerCatalog.ParseFeed(feedJson,source);
+            Console.WriteLine($"Fixture discovery feed parse: {discovered.Count} manifests; {discoveryClock.Elapsed.TotalMilliseconds:F2} ms/{GC.GetAllocatedBytesForCurrentThread()-discoveryAllocated:N0} bytes (no network).");
+            if(!discovered.Select(manifest=>manifest.InternalName).SequenceEqual(manifests.Where(manifest=>manifest.RepositoryUrl==source).Select(manifest=>manifest.InternalName))
+                || discovered.Any(manifest=>manifest.Tags?.Length!=3 || manifest.CategoryTags?.Length!=2 || manifest.Author!="SampleAuthor"))
+                throw new Exception("Fabricated discovery parsing dropped feed identities, authors or category metadata.");
             var snapshot=new InstallerHostSnapshot([new(InstallerCatalog.OfficialRepository,"Dalamud",true,true,true,"Success")],
                 manifests.Where(m=>m.RepositoryUrl==InstallerCatalog.OfficialRepository).ToArray(),[],true,false);
             var clock=System.Diagnostics.Stopwatch.StartNew();
@@ -97,7 +107,49 @@ internal static class InstallerUiTests
                 if(!actual.Select(entry=>entry.Identity).SequenceEqual(expected.Select(entry=>entry.Identity)))
                     throw new Exception("Indexed installer sorting changed numeric versions, direction or Unicode source/name tie order.");
             }
-            snapshotField.SetValue(main,catalog);sortField.SetValue(main,0);descendingField.SetValue(main,false);
+            sortField.SetValue(main,0);descendingField.SetValue(main,false);
+            var searchField=typeof(MainWindow).GetField("installerSearch",sortFlags)!;
+            var categoryField=typeof(MainWindow).GetField("installerCategory",sortFlags)!;
+            var searchRows=catalog.Entries.Take(7).Select((entry,index)=>entry with {
+                Manifest=entry.Manifest with { Name=index switch { 0=>"Alpha",1 or 5=>"",3=>"\U00010428 Start",4=>"\uD801",_=>null! },
+                    InternalName=index switch { 4=>"\uDC00",5=>"",6=>null!,_=>"Cross.Field"+index },
+                    Author=index switch { 0=>"Raw,\tCredit; Second",3=>"\U00010428",1 or 5 or 6=>null!,_=>"" },
+                    Description=index switch { 0=>"Tail\u00a0Word",3=>new string('x',2048)+" long tail",1 or 5=>"",_=>null! } },
+                Repository=entry.Repository with { Name=index==0?"SourceName":index==1?"":null!,Url=index>=5?"":entry.Repository.Url },
+                ManifestTags=index switch { 0=>["TagOne","TagTwo"],1=>["",null!,"Last"],3=>["\U00010428","\uD801","\uDC00"],5=>[],6=>null,_=>["MustNotFallback"] },
+                BotologyCategory=index==0?"Botology only":index==1?null:"" }).ToArray();
+            snapshotField.SetValue(main,catalog with { Entries=searchRows });
+            foreach(var query in new[]{"","aLpHa","Cross.Field","Raw,\tCredit","\t","\u00a0","Tail\u00a0Word","SourceName",source,
+                "Alpha Cross.Field0","Raw,\tCredit; Second Tail\u00a0Word","SourceName "+searchRows[0].Repository.Url,
+                searchRows[0].Repository.Url+" TagOne","TagOne TagTwo","  Last"," ","      ","       ","not-present",
+                "\U00010400","\U00010428","\uD801","\uDC00","\uD801 \uDC00","\uDC00 "," \U00010400",
+                "\U00010400 "+searchRows[3].Manifest.Description,
+                string.Join(' ',searchRows[3].Manifest.Name,searchRows[3].Manifest.InternalName,searchRows[3].Manifest.Author,
+                    searchRows[3].Manifest.Description,searchRows[3].Repository.Name,searchRows[3].Repository.Url,string.Join(' ',searchRows[3].ManifestTags??[]))})
+            {
+                searchField.SetValue(main,query);
+                var actual=(IReadOnlyList<InstallerEntry>)filterMethod.Invoke(main,null)!;
+                var expected=searchRows.Where(entry=>string.Join(' ',entry.Manifest.Name,entry.Manifest.InternalName,entry.Manifest.Author,
+                    entry.Manifest.Description,entry.Repository.Name,entry.Repository.Url,string.Join(' ',entry.ManifestTags??[])).Contains(query,StringComparison.OrdinalIgnoreCase));
+                if(!actual.SequenceEqual(expected)) throw new Exception("Installer search changed exact joined-field/tag substring semantics.");
+            }
+            searchField.SetValue(main,"fresh-only phrase");
+            if(((IReadOnlyList<InstallerEntry>)filterMethod.Invoke(main,null)!).Count!=0) throw new Exception("Search update fixture already matched its replacement text.");
+            var replacement=searchRows[0] with { Manifest=searchRows[0].Manifest with { Description="fresh-only phrase" } };
+            snapshotField.SetValue(main,catalog with { Entries=searchRows.Select((entry,index)=>index==0?replacement:entry).ToArray() });
+            if(!((IReadOnlyList<InstallerEntry>)filterMethod.Invoke(main,null)!).SequenceEqual([replacement]))
+                throw new Exception("Search did not immediately observe a with-record snapshot replacement.");
+            snapshotField.SetValue(main,catalog with { Entries=searchRows });
+            if(((IReadOnlyList<InstallerEntry>)filterMethod.Invoke(main,null)!).Count!=0) throw new Exception("Search retained text after restoring the original snapshot.");
+            searchField.SetValue(main,"");
+            foreach(var query in new[]{"","Botology","TagOne","Last","MustNotFallback"," "})
+            {
+                categoryField.SetValue(main,query);
+                var actual=(IReadOnlyList<InstallerEntry>)filterMethod.Invoke(main,null)!;
+                var expected=searchRows.Where(entry=>(entry.BotologyCategory??string.Join(' ',entry.ManifestTags??[])).Contains(query,StringComparison.OrdinalIgnoreCase));
+                if(!actual.SequenceEqual(expected)) throw new Exception("Installer category search changed its independent null-only tag fallback.");
+            }
+            categoryField.SetValue(main,"");snapshotField.SetValue(main,catalog);
             var theme=BotologyPresentation.Theme(0x1CC9E6);theme.Motion.Enabled=false;
             var layoutMilliseconds=0d;
             float? requestedScroll=null;
@@ -107,10 +159,14 @@ internal static class InstallerUiTests
             var tableScroll=0f;var tableScrollMax=0f;
             var categoryScroll=0f;var categoryScrollMax=0f;var visibleCategories=0;
             var scrollCategories=false;var focusCategories=false;string? focusedCategory=null;
-            var windowWidth=1440f;var renderedCards=0;
+            var windowWidth=1440f;var renderedCards=0;var renderedProfileAuthors=0;
+            var profileSurfaceBottom=0f;var profileContentBottom=0f;
             main.MeasureBounds=(name,min,max)=>
             {
                 if(name.StartsWith("preview-slot-",StringComparison.Ordinal)) renderedCards++;
+                if(name=="profile-pin-author") renderedProfileAuthors++;
+                if(name=="profile-source-surface") profileSurfaceBottom=max.Y;
+                if(name=="profile-source-content") { profileContentBottom=max.Y;layoutMilliseconds=clock.Elapsed.TotalMilliseconds; }
                 if(name is "installer-browse" or "installer-column-Plugin")
                 {
                     layoutMilliseconds=clock.Elapsed.TotalMilliseconds;
@@ -136,7 +192,7 @@ internal static class InstallerUiTests
             };
             void Draw()
             {
-                reservedRows.Clear();renderedRows=0;visibleCategories=0;renderedCards=0;
+                reservedRows.Clear();renderedRows=0;visibleCategories=0;renderedCards=0;renderedProfileAuthors=0;
                 using var locale=text.Enter(); using var material=MaterialTheme.Push(theme,1,MaterialStyleMode.ColorsOnly);
                 using var geometry=BotologyPresentation.PushHostGeometry(1,false);using var chrome=MaterialWindowChrome.Push();
                 main.PreDraw(); ImGui.SetNextWindowPos(Vector2.Zero); ImGui.SetNextWindowSize(new(windowWidth,960));
@@ -194,6 +250,7 @@ internal static class InstallerUiTests
             }
             var firstAllocated=GC.GetAllocatedBytesForCurrentThread();clock.Restart();host.Frame(Draw);
             Console.WriteLine($"Installer first layout/reflow {scenario}: {count} entries; {clock.Elapsed.TotalMilliseconds:F2} ms/{GC.GetAllocatedBytesForCurrentThread()-firstAllocated:N0} bytes.");
+            if(scenario=="cards") Console.WriteLine($"Fixture startup: {count} manifests/1000 assessments through fabricated model, native context and first draw; {startupClock.Elapsed.TotalMilliseconds:F2} ms/{GC.GetAllocatedBytesForCurrentThread()-startupAllocated:N0} bytes (not live plugin startup).");
             for(var warm=0;warm<3;warm++) host.Frame(Draw);
             var frames=new List<double>();var layouts=new List<double>();var allocations=new List<long>();
             for(var frame=0;frame<12;frame++)
@@ -259,7 +316,42 @@ internal static class InstallerUiTests
             for(var frame=0;frame<3;frame++) host.Frame(Draw);
             if(renderedRows is <1 or >64 || tableScroll<=0 || Math.Abs(tableScroll-tableScrollMax)>1 || Math.Abs(scrollExtent-tableScrollMax)>1)
                 throw new Exception($"Variable-height table lost its scroll extent or last visible rows: rows={renderedRows}, scroll={tableScroll}, max={tableScrollMax}, prior max={scrollExtent}.");
+            var budgetFailures=new List<string>();
+            foreach(var scenario in new[]{"profile","search","search-phrase","search-no-match"})
+            {
+                var profile=catalog.Entries[0] with { Manifest=catalog.Entries[0].Manifest with { Author=" SampleAuthor , SecondAuthor; sampleauthor; ThirdAuthor " } };
+                backend.Installer=scenario=="profile"?catalog with { Entries=catalog.Entries.Select((entry,index)=>index==0?profile:entry).ToArray() }:catalog;
+                typeof(MainWindow).GetField("selectedInstaller",categoryFlags)!.SetValue(main,scenario=="profile"?profile.Identity:null);
+                typeof(MainWindow).GetField("tableView",categoryFlags)!.SetValue(main,false);
+                typeof(MainWindow).GetField("nextInstallerSnapshot",categoryFlags)!.SetValue(main,DateTime.MinValue);
+                typeof(MainWindow).GetMethod("ResetInstallerResults",categoryFlags)!.Invoke(main,null);
+                searchField.SetValue(main,scenario switch { "search"=>"aMpLeAuTh","search-phrase"=>"aMpLeAuThOr Publisher description.","search-no-match"=>"missing publisher token",_=>"" });
+                sortField.SetValue(main,0);descendingField.SetValue(main,false);
+                var firstAllocated=GC.GetAllocatedBytesForCurrentThread();clock.Restart();host.Frame(Draw);
+                Console.WriteLine($"Installer first layout/reflow {scenario}: {count} entries; {clock.Elapsed.TotalMilliseconds:F2} ms/{GC.GetAllocatedBytesForCurrentThread()-firstAllocated:N0} bytes.");
+                for(var warm=0;warm<3;warm++) host.Frame(Draw);
+                var frames=new List<double>();var layouts=new List<double>();var allocations=new List<long>();
+                for(var frame=0;frame<12;frame++)
+                {
+                    allocated=GC.GetAllocatedBytesForCurrentThread();clock.Restart();host.Frame(Draw);
+                    frames.Add(clock.Elapsed.TotalMilliseconds);layouts.Add(layoutMilliseconds);
+                    allocations.Add(GC.GetAllocatedBytesForCurrentThread()-allocated);
+                }
+                frames.Sort();layouts.Sort();allocations.Sort();
+                Console.WriteLine($"Installer performance {scenario}: {count} manifests/1000 assessments; merge {mergeMilliseconds:F2} ms/{mergeBytes:N0} bytes; native frame median {frames[frames.Count/2]:F2} ms, max {frames[^1]:F2} ms; layout median {layouts[layouts.Count/2]:F2} ms; median {allocations[allocations.Count/2]:N0} bytes/frame.");
+                if(allocations[allocations.Count/2]>512_000 || frames[frames.Count/2]>50) budgetFailures.Add($"{scenario}/{count}");
+                if(scenario=="profile" && (renderedProfileAuthors!=3 || profileContentBottom>profileSurfaceBottom+1))
+                    throw new Exception("Profile lost distinct trimmed author controls or clipped its source content.");
+                if(scenario.StartsWith("search",StringComparison.Ordinal))
+                {
+                    var expectedCount=scenario=="search-no-match"?0:count;
+                    if(((IReadOnlyList<InstallerEntry>)filterMethod.Invoke(main,null)!).Count!=expectedCount
+                        || (expectedCount==0?renderedCards!=0:renderedCards is <1 or >64))
+                        throw new Exception("Active case-insensitive substring/phrase search lost results or visible-card clipping: "+scenario);
+                }
+            }
             if(backend.Actions.Count!=0) throw new Exception("Performance fixture dispatched host actions.");
+            if(budgetFailures.Count!=0) throw new Exception("Installer steady frames exceeded their CPU/allocation budget: "+string.Join(", ",budgetFailures)+".");
         }
     }
 

@@ -18,6 +18,7 @@ ALLOWED_FIELDS = {
     "repoUrl",
     "repoJsonUrl",
     "repoJsonUrls",
+    "discordUrl",
     "description",
     "green",
     "yellow",
@@ -28,7 +29,7 @@ LEGACY_ENTRY_FIELDS = {"ruleType", "relatedIds"}
 
 REQUIRED_FIELDS = {"id", "displayName", "matchTokens"}
 LIST_FIELDS = {"matchTokens", "repoJsonUrls", "green", "yellow", "red"}
-TEXT_FIELDS = {"id", "category", "displayName", "notes", "repoUrl", "repoJsonUrl", "description"}
+TEXT_FIELDS = {"id", "category", "displayName", "notes", "repoUrl", "repoJsonUrl", "discordUrl", "description"}
 BOOLEAN_FIELDS = {"isAiAttributed"}
 FIELD_ALIASES = {
     "id": "id",
@@ -39,6 +40,7 @@ FIELD_ALIASES = {
     "repourl": "repoUrl",
     "repojsonurl": "repoJsonUrl",
     "repojsonurls": "repoJsonUrls",
+    "discordurl": "discordUrl",
     "description": "description",
     "green": "green",
     "yellow": "yellow",

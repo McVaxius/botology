@@ -31,7 +31,7 @@ jobs:
         with:
           repository: McVaxius/aethertekUI
           # Publish compatible library APIs before consumer changes.
-          ref: 1f26dbfa27ebff286dc74d07cb32840606d116d2
+          ref: 0c1b0e488183b51507b2715eff8dc5b957d4829a
           path: aethertekUI
           # Repository-specific read-only SSH deploy key; no expiration.
           ssh-key: ${{ secrets.AETHERTEKUI_DEPLOY_KEY }}
@@ -94,11 +94,24 @@ jobs:
             echo "version=${version}" >> "$GITHUB_OUTPUT"
           fi
 
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          manifest = json.loads((Path('artifact') / f"{os.environ['INTERNAL_NAME']}.json").read_text(encoding='utf-8-sig'))
+          manifest = manifest[0] if isinstance(manifest, list) else manifest
+          notes = re.split(r'\n(?=\d{4}-\d{2}-\d{2} - )', Path('CHANGELOG.md').read_text(encoding='utf-8-sig').strip(), maxsplit=1)[0].strip()
+          if notes.splitlines()[0].split(' - ', 2)[1] != manifest['AssemblyVersion']:
+              raise SystemExit('Changelog version does not match the packaged plugin')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f"notes<<BOTOLOGY_RELEASE_NOTES\n{notes}\nBOTOLOGY_RELEASE_NOTES\n")
+          PY
+
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.get_version.outputs.version }}
           name: Release ${{ steps.get_version.outputs.version }}
+          body: ${{ steps.get_version.outputs.notes }}
           draft: false
           prerelease: false
           files: |

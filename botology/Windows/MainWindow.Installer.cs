@@ -335,7 +335,7 @@ public sealed partial class MainWindow
                     && (!botologyCategoryFilters.TryGetValue(category,out var exclude) || exclude!=InstallerFilterMode.Blocked)
                 :!required);
         }
-        entries=entries.Where(e=>(installerSearch.Length==0 || string.Join(' ',e.Manifest.Name,e.Manifest.InternalName,e.Manifest.Author,e.Manifest.Description,e.Repository.Name,e.Repository.Url,string.Join(' ',e.ManifestTags??[])).Contains(installerSearch,StringComparison.OrdinalIgnoreCase))
+        entries=entries.Where(e=>(installerSearch.Length==0 || MatchesInstallerSearch(e,installerSearch))
             && (installerAuthor.Length==0 || e.Manifest.Author.Contains(installerAuthor,StringComparison.OrdinalIgnoreCase))
             && (installerCategory.Length==0 || (e.BotologyCategory??string.Join(' ',e.ManifestTags??[])).Contains(installerCategory,StringComparison.OrdinalIgnoreCase)));
         // Merge supplies name/identity order; filtering retains it without preparing unused secondary sort keys.
@@ -366,6 +366,47 @@ public sealed partial class MainWindow
             }
         return result;
     }
+
+    private static bool MatchesInstallerSearch(InstallerEntry entry,string search)
+    {
+        var query=search.AsSpan();
+        var firstSpace=query.IndexOf(' ');
+        // The joined tag segment is present even when there are no tags, preserving the final separator.
+        var fieldCount=6+Math.Max(1,entry.ManifestTags?.Count??0);
+        for(var index=0;index<fieldCount;index++)
+        {
+            var value=InstallerSearchField(entry,index);
+            if(value.Contains(query,StringComparison.OrdinalIgnoreCase)) return true;
+            if(index==fieldCount-1) continue;
+            // A match crossing its first separator starts in this field's suffix. Later fields may be empty.
+            for(var space=firstSpace;space>=0 && space<=value.Length;)
+            {
+                if(value[^space..].Equals(query[..space],StringComparison.OrdinalIgnoreCase))
+                {
+                    var remaining=query[(space+1)..];
+                    for(var next=index+1;next<fieldCount;next++)
+                    {
+                        var part=InstallerSearchField(entry,next);
+                        if(remaining.Length<=part.Length)
+                        {
+                            if(part[..remaining.Length].Equals(remaining,StringComparison.OrdinalIgnoreCase)) return true;
+                            break;
+                        }
+                        if(!part.Equals(remaining[..part.Length],StringComparison.OrdinalIgnoreCase) || remaining[part.Length]!=' ') break;
+                        remaining=remaining[(part.Length+1)..];
+                    }
+                }
+                var following=query[(space+1)..].IndexOf(' ');
+                if(following<0) break;
+                space+=following+1;
+            }
+        }
+        return false;
+    }
+
+    private static ReadOnlySpan<char> InstallerSearchField(InstallerEntry entry,int index)=>(index switch {
+        0=>entry.Manifest.Name,1=>entry.Manifest.InternalName,2=>entry.Manifest.Author,3=>entry.Manifest.Description,
+        4=>entry.Repository.Name,5=>entry.Repository.Url,_=>entry.ManifestTags is { Count:>0 } tags?tags[index-6]:null }).AsSpan();
 
     private static int CompareInstallerIdentity(InstallerEntry left,InstallerEntry right)
     {
