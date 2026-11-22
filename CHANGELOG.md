@@ -1,6 +1,6 @@
-Unreleased
+2026-11-22 - 3.1.0.6 - Linux and Wine fonts
 
-- **Fixed UI font loading on Linux and Wine** by loading bundled Selawik fonts from the Botology install directory.
+- **Fixed Linux and Wine font loading.** The plugin now uses bundled fonts for its interface.
 
 2026-11-15 - 3.1.0.5 - Installer search and catalog refresh
 
