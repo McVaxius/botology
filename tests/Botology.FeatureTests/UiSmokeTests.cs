@@ -1027,6 +1027,9 @@ internal sealed class SnapshotUi : IBotologyUi
 
 internal sealed unsafe class NativeTestContext : IDisposable
 {
+    // The existing Windows visual baselines use these faces in the offline test context.
+    private static readonly string[] BaselineFontFiles =
+        ["segoeui.ttf", "seguisb.ttf", "segoeuib.ttf", "seguisb.ttf", "seguisb.ttf", "seguisb.ttf", "segoeuib.ttf"];
     private readonly ImGuiContextPtr context;
     private readonly System.Runtime.InteropServices.GCHandle glyphPin;
     private readonly ImFontPtr[] fonts=new ImFontPtr[Enum.GetValues<UiFontRole>().Length];
@@ -1054,7 +1057,7 @@ internal sealed unsafe class NativeTestContext : IDisposable
         {
             for(var role=0;role<fonts.Length;role++)
             {
-                var path=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts),BotologyPresentation.FontFiles[role]);
+                var path=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts),BaselineFontFiles[role]);
                 if(!File.Exists(path)) throw new FileNotFoundException("Required Segoe font missing.",path);
                 fonts[role]=io.Fonts.AddFontFromFileTTF(path,BotologyPresentation.AtlasHeight((UiFontRole)role),default,glyphs);
                 foreach(var locale in UiText.CjkLanguages(language))

@@ -1,3 +1,7 @@
+Unreleased
+
+- **Fixed UI font loading on Linux and Wine** by loading bundled Selawik fonts from the Botology install directory.
+
 2026-11-15 - 3.1.0.5 - Installer search and catalog refresh
 
 - **Fixed Installer search:** Reduce search hitching in large catalogs while preserving case-insensitive phrases across plugin details and tags.

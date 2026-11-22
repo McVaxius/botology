@@ -1,5 +1,6 @@
 using System.Numerics;
 using AethertekUI;
+using AethertekUI.Dalamud;
 using Dalamud.Bindings.ImGui;
 
 namespace botology.Windows;
@@ -76,7 +77,12 @@ internal static class BotologyPresentation
     // Reference sizes are em sizes. Segoe's ascent/descent span is about 4/3 em;
     // ImGui's TTF loader takes that full pixel height rather than a CSS/Windows em size.
     internal static float AtlasHeight(UiFontRole role) => FontSizes[(int)role]*4/3;
-    internal static readonly string[] FontFiles=["segoeui.ttf","seguisb.ttf","segoeuib.ttf","seguisb.ttf","seguisb.ttf","seguisb.ttf","segoeuib.ttf"];
+    internal static readonly MaterialFontWeight[] FontWeights =
+    [
+        MaterialFontWeight.Regular, MaterialFontWeight.Semibold, MaterialFontWeight.Bold,
+        MaterialFontWeight.Semibold, MaterialFontWeight.Semibold, MaterialFontWeight.Semibold,
+        MaterialFontWeight.Bold,
+    ];
     private static bool IsReferenceTheme => MaterialTheme.Current.Colors.Primary==Rgb(ReferenceAccent)
         && MaterialTheme.Current.Colors.Background==Rgb(0x111E2A) && MaterialTheme.Current.Colors.Surface==Rgb(0x152633);
     internal static Vector4 PanelTop => Compact ? MaterialTheme.Current.Colors.SurfaceContainerLow : IsReferenceTheme ? Rgb(0x192B39)

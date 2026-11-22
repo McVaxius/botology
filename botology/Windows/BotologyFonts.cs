@@ -1,4 +1,4 @@
-using Dalamud;
+using AethertekUI.Dalamud;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.ManagedFontAtlas;
 
@@ -9,28 +9,11 @@ internal sealed class BotologyFonts : IDisposable
     private readonly IFontHandle[] handles;
     private int generation;
     internal int Generation => System.Threading.Volatile.Read(ref generation);
-    internal BotologyFonts(IFontAtlas atlas, ushort[] ranges,string language)
+    internal BotologyFonts(IFontAtlas atlas, ushort[] ranges, string language, string assetRoot)
     {
-        handles=BotologyPresentation.FontSizes.Select((size,index)=>atlas.NewDelegateFontHandle(toolkit=>toolkit.OnPreBuild(build=>
-        {
-            build.NewImAtlas.TexDesiredWidth=4096;
-            build.NewImAtlas.TexDesiredHeight=4096;
-            size=BotologyPresentation.AtlasHeight((UiFontRole)index);
-            var config=new SafeFontConfig { SizePx=size, GlyphRanges=ranges };
-            build.Font=build.AddFontFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts),BotologyPresentation.FontFiles[index]),config);
-            build.AddFontFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "seguisym.ttf"),
-                new SafeFontConfig { SizePx=size, MergeFont=build.Font, GlyphRanges=ranges });
-            // Host-managed merges also cover every advertised native language name.
-            build.AddDalamudAssetFont(DalamudAsset.NotoSansCjkRegular,new SafeFontConfig
-            {
-                SizePx=size, MergeFont=build.Font, GlyphRanges=ranges,
-                // Verified bundled TTC faces: JP=0, KR=1, SC=2, TC=3.
-                // Bundled faces share glyph coverage; select the active locale's regional forms.
-                FontNo=language switch { "ko"=>1, "zh-Hans" or "zh-CN"=>2, "zh-Hant" or "zh-TW"=>3, _=>0 },
-            });
-            build.AttachExtraGlyphsForDalamudLanguage(new SafeFontConfig { SizePx=size, MergeFont=build.Font });
-            build.AddGameSymbol(new SafeFontConfig { SizePx=size,MergeFont=build.Font });
-        }))).ToArray();
+        handles = BotologyPresentation.FontSizes.Select((_, index) => MaterialFontAtlas.CreateFont(atlas,
+            BotologyPresentation.FontWeights[index], BotologyPresentation.AtlasHeight((UiFontRole)index),
+            ranges, language, assetRoot)).ToArray();
         foreach(var handle in handles) handle.ImFontChanged+=FontChanged;
     }
     private void FontChanged(IFontHandle handle,ILockedImFont font) => System.Threading.Interlocked.Increment(ref generation);
