@@ -4,6 +4,7 @@ using AethertekUI;
 using AethertekUI.Dalamud;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.ImGuiFileDialog;
+using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using botology.Windows;
 
@@ -16,28 +17,69 @@ public sealed partial class Plugin
 
     private void DrawUi()
     {
-        var active = false;
+        mainWindow.ReleaseClosedMedia();
+        ApplyAppearance();
+        if (!WindowSystem.Windows.Any(window => window.IsOpen))
+        {
+            ReleaseWindowResources();
+            return;
+        }
+
+        uiTextHost ??= new(TextureProvider);
+        if (uiFonts is null)
+        {
+            var atlas = PluginInterface.UiBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.OnNewFrame, true, "Botology UI");
+            uiFonts = new(atlas, uiText.GlyphRanges(), appliedLanguage, PluginInterface.AssemblyLocation.DirectoryName!);
+        }
+
+        using (MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, Configuration.UiStylingEnabled ? MaterialStyleMode.ColorsOnly : MaterialStyleMode.Native))
+            glassImagePicker.Draw();
+        var choices = Configuration.UiColors ?? new();
+        var blur = Configuration.UiStylingEnabled && choices.HasBackgroundBlur(choices.Mode);
+        var image = Configuration.UiStylingEnabled && choices.Mode == MaterialColorMode.Glassmorphism &&
+            choices.GlassBackground == MaterialGlassBackground.Image;
+        if ((blur || image) && uiFonts.Ready)
+        {
+            backgroundGlass ??= new(PluginInterface, Log);
+            backgroundGlass.BeginFrame(blur, image);
+            backgroundGlass.ConfigureImage(TextureProvider, image, choices.GlassImagePath);
+        }
+        else
+        {
+            DisposeBackgroundGlass();
+        }
+
         var completed = false;
         try
         {
-            ApplyAppearance();
-            using (MaterialTheme.Push(uiTheme, ImGuiHelpers.GlobalScale, Configuration.UiStylingEnabled ? MaterialStyleMode.ColorsOnly : MaterialStyleMode.Native))
-                glassImagePicker.Draw();
-            var choices = Configuration.UiColors ?? new();
-            var blur = Configuration.UiStylingEnabled && choices.HasBackgroundBlur(choices.Mode);
-            var image = Configuration.UiStylingEnabled && choices.Mode == MaterialColorMode.Glassmorphism && choices.GlassBackground == MaterialGlassBackground.Image;
-            active = blur || image;
-            if (active) backgroundGlass ??= new(PluginInterface, Log);
-            backgroundGlass?.ConfigureImage(TextureProvider, image, choices.GlassImagePath);
-            backgroundGlass?.BeginFrame();
-            using var background = MaterialSkin.PushBackgroundRenderer(Configuration.UiStylingEnabled ? backgroundGlass : null, blur, choices.BackgroundBlurPercent / 100f);
+            using var background = MaterialSkin.PushBackgroundRenderer(backgroundGlass, blur, choices.BackgroundBlurPercent / 100f);
             DrawUiContent();
             completed = true;
         }
-        finally { backgroundGlass?.EndFrame(active && completed); }
+        finally { backgroundGlass?.EndFrame(completed); }
     }
 
     private void ReleaseGlassResources() => backgroundGlass?.ReleaseResources();
+
+    private void DisposeBackgroundGlass()
+    {
+        backgroundGlass?.Dispose();
+        backgroundGlass = null;
+    }
+
+    private void ReleaseWindowResources()
+    {
+        if (uiFonts is null && uiTextHost is null) return;
+        glassImagePicker.Reset();
+        DisposeBackgroundGlass();
+        uiFonts?.Dispose();
+        uiFonts = null!;
+        uiTextHost?.Dispose();
+        uiTextHost = null;
+        checkedFontGeneration = -1;
+        fontIssueLogged = false;
+    }
+
     private void ToggleUiStyling() { Configuration.UiStylingEnabled = !Configuration.UiStylingEnabled; Configuration.Save(); }
     private void ToggleWindowLock() { Configuration.UiWindowsLocked = !Configuration.UiWindowsLocked; Configuration.Save(); }
 

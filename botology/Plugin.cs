@@ -80,7 +80,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
     private readonly Dictionary<string, MaterialWindowOpacity> windowOpacities = new();
     private BotologyFonts uiFonts = null!;
     private UiText uiText = null!;
-    private readonly MaterialTextHost uiTextHost;
+    private MaterialTextHost? uiTextHost;
     private string appliedLanguage = "";
     private uint appliedAccent;
     private System.Numerics.Vector3 accentDraft;
@@ -100,7 +100,6 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
 
     public Plugin()
     {
-        uiTextHost = new(TextureProvider);
         var savedConfiguration=PluginInterface.GetPluginConfig() as Configuration;
         Configuration = Configuration.FromSaved(savedConfiguration);
         if (Configuration.ApplyCompactDefaults() || savedConfiguration is null) Configuration.Save();
@@ -144,8 +143,7 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         Framework.Update -= OnFrameworkUpdate;
         PluginInterface.UiBuilder.Draw -= DrawUi;
         PluginInterface.UiBuilder.ResizeBuffers -= ReleaseGlassResources;
-        backgroundGlass?.Dispose();
-        glassImagePicker.Reset();
+        ReleaseWindowResources();
         PluginInterface.UiBuilder.OpenConfigUi -= OpenConfigUi;
         PluginInterface.UiBuilder.OpenMainUi -= OpenMainUi;
 
@@ -160,18 +158,14 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         configWindow.Dispose();
         mainWindow.Dispose();
         uiSoundPlayer.Dispose();
-        uiFonts.Dispose();
         uiText.Dispose();
-        uiTextHost.Dispose();
     }
 
     private void DrawUiContent()
     {
-        mainWindow.ReleaseClosedMedia();
-        ApplyAppearance();
-        if(!mainWindow.IsOpen && !configWindow.IsOpen && !dtrManagerWindow.IsOpen && !catalogEditorWindow.IsOpen) return;
         using var text = uiText.Enter();
-        using var shapedText = uiTextHost.Push();
+        var textHost = uiTextHost!;
+        using var shapedText = textHost.Push();
         if(!uiFonts.Ready)
         {
             if(!fontIssueLogged && uiFonts.LoadException is { } error) { Log.Error(error,"[botology] Required UI fonts failed to load.");fontIssueLogged=true; }
@@ -185,12 +179,12 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
             {
                 var generation=uiFonts.Generation;
                 foreach (var role in Enum.GetValues<UiFontRole>())
-                    uiTextHost.Renderer.CheckGlyphs(uiText.RequiredText, BotologyPresentation.AtlasHeight(role) * ImGuiHelpers.GlobalScale);
+                    textHost.Renderer.CheckGlyphs(uiText.RequiredText, BotologyPresentation.AtlasHeight(role) * ImGuiHelpers.GlobalScale);
                 uiFonts.CheckGlyphs(uiText.RequiredText.Select(MaterialText.NativeGlyphText));
                 var hindiLabel = UiText.Languages.Single(l => l.Code == "hi").Name;
                 var hindiAvailable = true;
                 foreach (var size in Enum.GetValues<UiFontRole>())
-                    hindiAvailable &= uiTextHost.Renderer.TryCheckGlyphs([hindiLabel], BotologyPresentation.AtlasHeight(size) * ImGuiHelpers.GlobalScale, out _);
+                    hindiAvailable &= textHost.Renderer.TryCheckGlyphs([hindiLabel], BotologyPresentation.AtlasHeight(size) * ImGuiHelpers.GlobalScale, out _);
                 languageOptions.Replace(UiText.Languages.Select(l => new MaterialOption<string>(l.Code, l.Code,
                     l.Code == "hi" && !hindiAvailable ? "Hindi (unavailable)" : l.Name,
                     l.Code == "hi" && !hindiAvailable)).ToArray());
@@ -261,10 +255,9 @@ public sealed partial class Plugin : IDalamudPlugin, IBotologyUi
         if(language!=appliedLanguage)
         {
             uiFonts?.Dispose();
+            uiFonts = null!;
             uiText?.Dispose();
-            uiText=new(language,role=>uiFonts!.Push(role));
-            uiFonts = new(PluginInterface.UiBuilder.FontAtlas, uiText.GlyphRanges(), language,
-                PluginInterface.AssemblyLocation.DirectoryName!);
+            uiText = new(language, role => uiFonts.Push(role));
             languageOptions=new(UiText.Languages.Select(l=>new MaterialOption<string>(l.Code,l.Code,l.Name)).ToArray());
             appliedLanguage=language;
             checkedFontGeneration=-1;

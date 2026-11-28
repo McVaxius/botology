@@ -1,3 +1,7 @@
+2026-11-28 - 3.1.0.7 - On-demand interface resources
+
+- **Reduced interface memory use while windows are closed.** The plugin loads fonts and backdrop resources when needed and releases them when the last window closes.
+
 2026-11-22 - 3.1.0.6 - Linux and Wine fonts
 
 - **Fixed Linux and Wine font loading.** The plugin now uses bundled fonts for its interface.
